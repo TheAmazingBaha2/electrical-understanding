@@ -1,6 +1,24 @@
 // Lesson-specific orientation: concrete scenarios rather than repeating tab names.
 // Legacy L01–L05 use their existing learning topics; EIM companion numbers derive from scanned PreLab and DC 02.
 const intro = {
+ "BDMM-01":{
+  eyebrow:"GEIER / CHAPTER 6 / PP. 97–98",
+  mission:"A supply labeled 5 V produces a display reading of 5.04 V. Has the DMM proven that the supply is defective?",
+  reveal:"No. The nominal label is a target and the meter has its own resolution and accuracy limits. Check permitted variation, test conditions and circuit behavior before diagnosing a fault.",
+  anchors:[["5.04 V","A reading, not a standalone fault diagnosis"],["Resolution","Smallest change the display can show"],["Fast dropout","May be missed by slow numerical updates"]],
+  missionType:"wave",hint:"What does this number prove?",
+  outcome:"Decide what confidence a meter reading supports and whether a time trace would provide better evidence.",
+  caution:"No physical probing of mains, energized appliances or circuits beyond verified equipment ratings. Scope grounding and probe ratings must be checked separately."
+ },
+ "BDMM-02":{
+  eyebrow:"GEIER / CHAPTER 6 / PP. 98–99",
+  mission:"Your virtual red probe touches a point at +5 V and the black probe touches verified common. What appears if you swap the probes?",
+  reveal:"The meter changes from +5 V to −5 V, because it reads the potential of red relative to black. Neither the circuit nor the two selected nodes have changed.",
+  anchors:[["+5 V","Red at source, black at verified common"],["−5 V","Red at common, black at source"],["Reference","Must come from verified circuit information"]],
+  missionType:"meter",hint:"Two points, one difference",
+  outcome:"Select a circuit reference, interpret probe polarity and locate a modeled open circuit from voltage measurements.",
+  caution:"Never assume a chassis, heat sink or speaker negative is safe circuit common. Check meter mode, input jacks and voltage rating."
+ },
  "EIM-BEC-PRELAB":{
   eyebrow:"PRELAB · BENCH READINESS",
   mission:"You pull a resistor labeled 1 kΩ ±5% from your kit. Your meter reads 1,080 Ω. Would you use it as an in-tolerance 1 kΩ component?",
