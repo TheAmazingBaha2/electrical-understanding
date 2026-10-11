@@ -18,7 +18,17 @@ See **[three-track / sub-track hierarchy](./TRACK_STRUCTURE.md)** for the defini
 
 **Current focus:** Develop **EIM Basic Electric Circuits** thoroughly first. **Fundamental Analog Circuits and Semiconductors is indexed and staged at §2.1 only**; do not request or draft §2.2+ until the learner says to resume it. FPGA and RP2040 stay on hold. Maximum two allocated lab manuals; currently only the first is actively being advanced. Never treat waiting manuals as a failure or force textbook/guide work to advance CETa core.
 
-The user's owned **Associate CET Study Guide** can be integrated under Track 1; **exact edition and table of contents have not been supplied in this turn**, so chapter-level mapping awaits source scans. The main CETa course stays self-contained.
+The user's owned **Associate CET Study Guide** is incorporated as a Track 1 sub-track: its two photographed contents pages have been received (nine units, 22 chapters and appendices), see **[guide index](./CETA_GUIDE_CONTENTS.md)**. The exact edition and *chapter body pages* are not verified; only request short source-specific pages later when needed. The main CETa course stays self-contained.
+
+## Dashboard, just-in-time source requests and automated progression
+
+**Visual dashboard:** Use the learner's favorite **light blues and cyan** for graphs and active controls, yellow multi-bolt branding, and an accessible dark-navy visual foundation. Show overall scope-specific progress, track/sub-track graphs, skills mastery, recent activity, review queue, lab evidence, and scan readiness with clickable drilldowns. **[Dashboard design](./DASHBOARD_DESIGN.md)**.
+
+**New lesson cadence:** On a saved passing/completion event, immediately evaluate/unlock the next approved lesson for **that specific sub-track**. Run an **hourly server-side reconciliation** to pick up missed completions, approved content and stalled draft jobs; maintain one next approved lesson ahead when verified content allows. Generation requires authenticated Supabase backend scheduling/jobs and (for AI-generated content/feedback) a separate paid model API—**not provided by GitHub Pages or this documentation**. AI drafts must pass source, safety, formula, grading and interaction-template validation before publishing. See **[automation and scan-request design](./AUTOMATION_SCAN_INTAKE.md)**.
+
+**Scan Inbox:** When a source-backed lesson requires unsupplied chapter pages, prompt for the **smallest relevant page range/diagram/procedure**, show what is blocked and let the learner continue in other tracks. No repeated requests for already verified pages. User uploads must be private; no scanned copyrighted book material in the public repository. Paused kit manuals produce no prompts. In-app prompts are the default; external notifications require setup and opt-in.
+
+**CET Guide scan intake complete for 2.0 planning:** The guide's photographed table of contents, **nine units, Chapters 1–22 and appendices**, has been received and indexed in **[CETa Guide chapter index](./CETA_GUIDE_CONTENTS.md)**. Only targeted content scans may be requested in future when the relevant guide companion subsection becomes active. This is the **last intake scan for the v2.0 planning phase**; do not ask to resend the chapter outline.
 
 ## Teaching standard for each future lesson
 
