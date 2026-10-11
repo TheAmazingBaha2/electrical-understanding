@@ -45,6 +45,13 @@ try {
  assert.equal(await page.locator('.quiz-step').count(),10);
  await page.locator('.quiz-step[data-quiz-index="3"]').click();
  assert.match(await page.locator('.quiz-card').innerText(),/CHECK 4 \/ 10/);
+ await page.locator('.quiz-step[data-quiz-index="0"]').click();
+ await page.locator('.quiz-card input[type="radio"][value="1"]').check();
+ await page.locator('[data-submit="p01"]').click();
+ const saved=await page.evaluate(()=>JSON.parse(localStorage.getItem('eu_demo_v1')||'{}'));
+ assert.equal(saved["EIM-BEC-PRELAB"]?.answers?.p01?.correct,true,'Quiz answer is saved under its original companion ID');
+ await page.locator('.lesson-tabs [data-lesson-tab="quiz"]').click();
+ assert.match(await page.locator('.quiz-card').innerText(),/Meets the check/);
  await page.locator('[data-lesson-tab="review"]').first().click();
  assert.equal(await page.locator('.lesson-review-item').count(),10);
  await page.locator('.workspace-top-tabs [data-view="dashboard"]').click();
