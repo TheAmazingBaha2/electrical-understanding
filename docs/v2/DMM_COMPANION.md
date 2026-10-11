@@ -1,6 +1,6 @@
 # Chapter 6 Companion — Digital Multimeters
 
-**Status:** Curriculum and exercise draft; not deployed, and not yet a working interactive site feature.  
+**Status:** BDMM-01 and BDMM-02 are implemented as working, graded and visually interactive staging lessons. BDMM-03 through BDMM-07 remain authored curriculum plans, **not** published or accessible lessons.  
 **Companion unit ID:** BOOK-GEIER3-CH06-DMM  
 **Source:** Michael Jay Geier, *How to Diagnose and Fix Everything Electronic*, third edition, Chapter 6, pages 97–103 ("Digital Multimeter"). Chapter 6's separate ESR meter subsection starts on page 103 and is outside this draft.  
 **Audience:** A learner with basic experience who mixed up current and voltage probe placement in their CETa diagnostic.  
@@ -214,3 +214,19 @@ Now imagine the reading dances between 4.98 and 5.03 V. That might be ordinary n
 ## Follow-on unit
 
 Page 103 begins **ESR Meter**, which continues on subsequent pages that were not included in the provided scan. Do not develop that companion lesson from presumed chapter content; request the next pages before grounding it in the book.
+
+## Implementation milestone — the first two DMM lessons (2026-10-11)
+
+**Implemented on \`draft/v2-dmm-companion\`; not merged into \`main\` or production.**
+
+- \`book-lessons.js\`: original independent companion lesson records \`BDMM-01\` and \`BDMM-02\`, ten graded checks each, clear source-page annotations (pp. 97–98 and 98–99), and five substantive Explain → Interact mini-labs each. Safety-critical checks must pass. Written reflections use explicit self-assessment rubrics; AI grading is still **not** enabled.
+- \`dmm-widgets.js\`: ten responsive SVG visual experiments for steady/transient signals, specified voltage tolerance, display accuracy vs resolution, fluctuation, instrument choice, two-node voltage probes, verified circuit common, simulated open switch fault, proper voltage function/range, and an intermittent rail.
+- \`v2-panels.js\`: a dedicated Geier Chapter 6 sub-track page with only the first two lessons launchable, \`BDMM-02\` gated behind completion of \`BDMM-01\`. BDMM-03 through 07 appear as **planned** only.
+- \`app.js\`: book progress and review items are recorded under separate stable \`BDMM-* \` keys, using the existing \`lesson_progress\` structure without touching core \`L01–L05\` or \`EIM-BEC-*\` records. Unlocking a textbook lesson **never gates other tracks**.
+- Dashboard includes separate virtual textbook completion and graded-evidence categories. The answer pie correctly separates answered and unattempted checks for both EIM and textbook companions.
+- \`lesson-overviews.js\` provides independent real electronics scenarios instead of repeating Learn/Interact/Quiz tab labels.
+- Cloudflare Workers \`*.workers.dev\` staging safeguard remains in force: production Supabase sync disabled; practice saves to this browser only.
+- JavaScript check, static asset deployment allowlist, Node regression tests and headless Chromium desktop/mobile browser tests cover the new content. Inspect the latest GitHub Actions result before claiming deployment verified.
+- Textbook citations here refer to the specific **previously reviewed** Geier section. Original illustrations and explanatory wording are used; the scanned chapter is not uploaded or copied into the public repository.
+
+**Known limitations:** No physical bench probe placement, actual instrument calibration, live wave capture, secure AI evaluation or user-approved cross-device staging sync. The five remaining DMM chapter designs are **not** passed or published. No new user scans are required to review this first pair.
