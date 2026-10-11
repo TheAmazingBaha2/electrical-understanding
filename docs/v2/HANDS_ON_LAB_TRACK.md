@@ -9,11 +9,22 @@
 3. **Fundamental Analog Circuits and Semiconductors**
 4. **Introduction to Microcontroller with RP2040**
 
-**Important source boundary:** This draft uses only the student's kit titles and described learning context. **No EIM manual pages or exercise indexes have been supplied or checked yet.** Every project idea below is a *proposed enhancement or possible project theme*, not a claim that a particular manual contains it, that all necessary parts are in the kit, or that specific I/O connections are safe.
+**Current source boundary:** The user's *Basic Electric Circuits* table of contents plus photographed **PreLab and DC 02** procedures have been reviewed. The *Fundamental Analog Circuits and Semiconductors* **first contents page** has been reviewed, but its experiment instructions, equipment list, and ratings have **not** been checked. FPGA and RP2040 manuals remain unreviewed and on hold. All unverified project ideas are *possible extensions*, not claims about official exercises or kit inventory.
+
+## Two-active-manual rule (user preference)
+
+Only two EIM kit manuals are **active at any one time**. The current pair is:
+
+1. **Basic Electric Circuits** — TOC and actual PreLab/DC 02 reviewed; continue manual and selected projects.
+2. **Fundamental Analog Circuits and Semiconductors** — first contents page reviewed; see **[Analog Circuits and Semiconductors: initial index](./EIM_ANALOG_SEMICONDUCTORS_INDEX.md)**.
+
+**Fundamental Digital Design with FPGA** and **Introduction to Microcontroller with RP2040** must stay **on hold**: do not request or review their manuals or build exercises for them until the active pair is completed or the learner explicitly changes that plan. Each kit has separate parts, power, experiment IDs and physical build records. A link to shared theory is fine, but **do not assume a part can be borrowed or a voltage rail safely shared across kits**. Disable/avoid physical cross-kit projects by default; original cross-kit project ideas are only a future backlog and not assigned work.
+
+Completion is based on covering the manuals' meaningful skills and finishing the chosen worthwhile lab experiments / capstones, rather than forcing unnecessary duplicate measurements. The user decides when a manual is considered finished and which waiting kit is activated next.
 
 ## First kit manual inventory received
 
-The table of contents of **Basic Electric Circuits** has now been reviewed: one PreLab component-basics section, **DC 01–14**, **AC 15–19**, and an answer-sheet appendix. Actual experiment pages, equipment ratings and inventory have **not** been reviewed yet; priorities and suggested cross-experiment upgrades remain provisional.
+The table of contents of **Basic Electric Circuits** has now been reviewed: one PreLab component-basics section, **DC 01–14**, **AC 15–19**, and an answer-sheet appendix. The **PreLab and DC 02** procedures have now been reviewed; all other experiments, specific ratings and the complete kit inventory still need verification. Other experiment priorities and proposed upgrades remain provisional.
 
 See **[Basic Electric Circuits — project index and first-pass priorities](./EIM_BASIC_ELECTRIC_CIRCUITS_INDEX.md)** for all official section titles and starting pages, and an initial selection of especially valuable experiments for this learner.
 
@@ -102,7 +113,7 @@ A project is **not complete** merely because the student clicked "I did it." Sep
 - Possible extension: sample a safe analog voltage with an RP2040 ADC, convert raw readings into voltage using verified reference/scaling, log/plot data, and investigate noise.
 - Use a staged coding scaffold: code to run, explanation of each new command, expected output, and debugging prompts.
 
-### Cross-kit capstones (later, only after checking manuals and pinouts)
+### Cross-kit capstones (ON HOLD: no multi-kit projects during the current two-manual phase)
 - **Measure → Decide → Act:** Analog sensor or adjustable divider → RP2040 input → threshold decision → indicator output; add fault cases and test points.
 - **Digital controls analog:** Verified logic output switches a small low-voltage load through a suitable driver; measure voltage drop, current and signal shape with safe boundaries.
 - **Verification challenge:** Compare a predicted RC response to observed data, then use a microcontroller to log or visualize it if hardware/toolchain permits.
@@ -136,6 +147,6 @@ Lab main page:
 
 ## What to request next
 
-For each kit, **just the cover/product revision, contents page, experiment/project index, and parts/supplied equipment list**. Additional pages (diagrams, specific procedure, expected results) are requested **only for promising experiments**. This avoids needing to scan entire manuals before prioritizing.
+For each **currently active** kit only, **just the cover/product revision, contents page, experiment/project index, and parts/supplied equipment list**. Additional pages (diagrams, specific procedure, expected results) are requested **only for promising experiments**. This avoids needing to scan entire manuals before prioritizing.
 
 First suggestion: begin with **Basic Electric Circuits**, since the learner's diagnostic revealed DMM current/voltage measurement gaps, series/parallel prediction trouble, and Ohm's-law confusion. That is a teaching priority, not an assertion about the kit's exact experiments.
