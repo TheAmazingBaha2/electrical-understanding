@@ -1,38 +1,66 @@
-// GitHub Actions browser smoke test; never writes to real Supabase.
+// End-to-end Chromium checks for the static Workers build. Never connects to production Supabase.
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 import {chromium} from 'playwright';
 await mkdir('test-artifacts',{recursive:true});
 const browser=await chromium.launch({headless:true});
-try{
+try {
  const page=await browser.newPage({viewport:{width:1440,height:1000},deviceScaleFactor:1});
+ const errors=[];
+ page.on('pageerror',e=>errors.push(e.message));
  await page.route('https://esm.sh/**',route=>route.abort());
  await page.goto('http://127.0.0.1:8080/',{waitUntil:'domcontentloaded'});
  await page.locator('.v2-hero').waitFor({timeout:30000});
- assert.match(await page.title(),/Electrical Understanding/);
- assert.equal(await page.locator('.v2-donut').count(),1);
- await page.locator('[data-view="labs"]').click();
- assert.match(await page.locator('main').innerText(),/Hands-On Laboratory/);
- await page.locator('[data-goto="subtrack"][data-lesson="basic"]').first().click();
- assert.equal(await page.locator('[data-goto="lesson"][data-lesson="EIM-BEC-PRELAB"]').count(),1);
+ assert.equal(await page.locator('.workspace-top-tabs .workspace-tab').count(),6);
+ assert.equal(await page.locator('.v2-frost-ring').count(),3);
+ assert.equal(await page.locator('.v2-evidence-pie').count(),1);
+ await page.locator('#course-paths-trigger').click();
+ assert.equal(await page.locator('#course-paths-menu').isVisible(),true);
+ assert.equal(await page.locator('#course-paths-menu .course-menu-group').count(),3);
+ await page.locator('#course-paths-menu [data-goto="subtrack"][data-lesson="basic"]').click();
+ assert.match(await page.locator('main').innerText(),/Basic Electric Circuits/);
  await page.locator('[data-goto="lesson"][data-lesson="EIM-BEC-PRELAB"]').click();
- assert.equal(await page.locator('.lab-widget').count(),5);
- assert.equal(await page.locator('.quiz-card').count(),10);
+ assert.equal(await page.locator('.lesson-tab').count(),5);
+ assert.equal(await page.locator('.quiz-card').count(),0);
+ await page.locator('[data-lesson-tab="learn"]').click();
+ assert.equal(await page.locator('.lab-widget').count(),0,'Learn separates prose from interactive widgets');
+ await page.locator('[data-lesson-tab="interact"]').first().click();
+ assert.equal(await page.locator('.lab-widget').count(),1,'Only one mini-lab appears at a time');
+ assert.equal(await page.locator('.lab-illustration').count(),1);
+ assert.equal(await page.locator('.activity-step').count(),5);
+ await page.locator('.activity-step[data-activity-index="3"]').click();
+ assert.equal(await page.locator('.lab-widget[data-lab-kind="breadboard"]').count(),1);
+ await page.locator('[data-board-hole="F1"]').click();
+ assert.ok((await page.locator('.lab-output').innerText()).includes('F1'));
+ await page.locator('.activity-step[data-activity-index="4"]').click();
  await page.locator('.lab-widget[data-lab-kind="meter"] [data-x="mode"]').selectOption('a');
- const warning=await page.locator('.lab-widget[data-lab-kind="meter"] .lab-output').innerText();
- assert.match(warning,/UNSAFE.*short/i);
- await page.locator('[data-view="dashboard"]').click();
- await page.screenshot({path:'test-artifacts/desktop.png',fullPage:true});
+ assert.match(await page.locator('.lab-output').innerText(),/UNSAFE.*short/i);
+ assert.equal(await page.locator('.lab-illustration').count(),1);
+ await page.locator('[data-lesson-tab="quiz"]').first().click();
+ assert.equal(await page.locator('.quiz-card').count(),1);
+ assert.equal(await page.locator('.quiz-step').count(),10);
+ await page.locator('.quiz-step[data-quiz-index="3"]').click();
+ assert.match(await page.locator('.quiz-card').innerText(),/CHECK 4 \/ 10/);
+ await page.locator('[data-lesson-tab="review"]').first().click();
+ assert.equal(await page.locator('.lesson-review-item').count(),10);
+ await page.locator('.workspace-top-tabs [data-view="dashboard"]').click();
+ await page.screenshot({path:'test-artifacts/desktop-aurora.png',fullPage:true});
 
  const phone=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1});
+ const mobileErrors=[];phone.on('pageerror',e=>mobileErrors.push(e.message));
  await phone.route('https://esm.sh/**',route=>route.abort());
  await phone.goto('http://127.0.0.1:8080/',{waitUntil:'domcontentloaded'});
  await phone.locator('.v2-hero').waitFor({timeout:30000});
- await phone.locator('#menu-toggle').click();
- await phone.locator('[data-view="labs"]').click();
- await phone.locator('[data-goto="subtrack"][data-lesson="basic"]').first().click();
+ await phone.locator('#course-paths-trigger').click();
+ assert.equal(await phone.locator('#course-paths-menu').isVisible(),true);
+ await phone.locator('#course-paths-menu [data-goto="subtrack"][data-lesson="basic"]').click();
+ await phone.locator('[data-goto="lesson"][data-lesson="EIM-BEC-PRELAB"]').click();
+ await phone.locator('[data-lesson-tab="interact"]').first().click();
+ assert.equal(await phone.locator('.lab-illustration').count(),1);
  const width=await phone.evaluate(()=>({document:document.documentElement.scrollWidth,view:window.innerWidth}));
  assert.ok(width.document<=width.view+2,'Mobile layout overflow: '+JSON.stringify(width));
- await phone.screenshot({path:'test-artifacts/mobile.png',fullPage:true});
- console.log('PASS: Desktop and phone rendered; lab controls, safety feedback, navigation and widths verified.');
-}finally{await browser.close()}
+ assert.deepEqual(errors,[],'Desktop JavaScript runtime errors');
+ assert.deepEqual(mobileErrors,[],'Mobile JavaScript runtime errors');
+ await phone.screenshot({path:'test-artifacts/mobile-aurora.png',fullPage:true});
+ console.log('PASS: responsive icy dashboard, real pie charts, course dropdown, five lesson tabs, single-question quiz, breadboard and meter illustrations.');
+} finally { await browser.close(); }
