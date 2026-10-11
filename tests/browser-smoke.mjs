@@ -32,7 +32,7 @@ try {
  assert.equal(await page.locator('.lab-widget[data-lab-kind="ceta-ladder"]').count(),1);
  assert.equal(await page.locator('.ceta-illustration').count(),1);
  await page.locator('[data-x="p"]').selectOption('kilo');
- assert.match(await page.locator('.lab-output').innerText(),/10\^3/);
+ assert.match(await page.locator('.ceta-illustration').textContent(),/1 kA = 1,000 A/);
  await page.locator('.activity-step[data-activity-index="3"]').click();
  assert.equal(await page.locator('.lab-widget[data-lab-kind="ceta-convert"]').count(),1);
  await page.locator('[data-x="example"]').selectOption('farad');
