@@ -22,6 +22,9 @@ const publicFiles = [
   "v2-panels.js",
   "lab-lessons.js",
   "lab-widgets.js",
+  "lab-visuals.js",
+  "lesson-tabs.js",
+  "lesson-view.js",
   "styles.css",
   "config.js", // Public Supabase URL and publishable key only; NEVER a secret/service_role key.
   "icon.svg",
