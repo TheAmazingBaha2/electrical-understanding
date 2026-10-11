@@ -33,7 +33,7 @@
 | Review queue | Due today, next 7 days, overdue by age and topic | Urgency chart with linked exercises |
 | Hardware proficiency | Simulated vs built vs measured vs troubleshot by EIM manual; experiments completed | Multiple-step lab progress cards |
 | Source readiness | Verified page coverage, current requested scans, uploads in review, chapters awaiting source | Small actionable Scan Inbox, not an intimidating blank completion chart |
-| Lesson pipeline health | Last hourly check, latest published, queued drafts, validation failures, cost status | Quiet status strip with timestamps and actionable error text |
+| Lesson pipeline health | Last six-hour check, latest published, queued drafts, validation failures, cost status | Quiet status strip with timestamps and actionable error text |
 
 ### Avoid misleading "overall completion" percentages
 
