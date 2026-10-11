@@ -432,3 +432,38 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;
 .path-plan-points span{border:1px solid rgba(155,216,243,.28);border-radius:99px;padding:6px 11px;
  font-size:11px;color:#B9E4F4;background:rgba(116,206,232,.09)}
 @media(max-width:420px){.path-card-details{gap:6px}.path-card-details>div{padding:11px 5px}}
+
+
+/* Geier Chapter 6 — Digital Multimeter companion, Aurora Ice panel styling */
+.dmm-introduction{display:grid;gap:10px;border:1px solid rgba(125,226,253,.38);border-radius:15px;
+ padding:22px;background:linear-gradient(140deg,rgba(74,157,193,.17),rgba(24,67,94,.23))}
+.dmm-introduction h3{font-size:clamp(19px,2.6vw,26px);margin:0;color:#F2FDFF}
+.dmm-introduction p{margin:0;line-height:1.7;max-width:820px}
+.dmm-book-kicker{color:#93F4FF;font-weight:800;letter-spacing:.16em;font-size:10px}
+.dmm-safety{margin-top:3px;border-left:3px solid #9AE6F7;padding:9px 13px;
+ color:#D0F1FA;background:rgba(99,197,232,.1);border-radius:7px;font-size:12px}
+.dmm-lessons{margin-top:25px}
+.dmm-lesson-entry{display:grid;grid-template-columns:43px minmax(0,1fr) auto;align-items:center;gap:17px;
+ padding:19px 0;border-bottom:1px solid rgba(144,218,246,.22)}
+.dmm-lesson-num{width:42px;height:42px;display:grid;place-items:center;border:1px solid #568FAB;
+ border-radius:12px;background:rgba(99,217,241,.13);font-weight:800;color:#B0F6FF}
+.dmm-lesson-main h3{margin:10px 0 5px;font-size:17px;color:#F1FCFF}
+.dmm-lesson-main p{margin:6px 0;font-size:12px}
+.dmm-lesson-main .v2-pill{display:inline-flex}
+.dmm-upcoming{border-top:1px solid rgba(147,218,246,.25);margin-top:25px;padding-top:9px}
+.dmm-upcoming>h3{margin:6px 0;font-size:17px}
+.dmm-upcoming-row{display:grid;grid-template-columns:90px 1fr auto;align-items:center;gap:15px;padding:13px 0;
+ border-bottom:1px solid rgba(142,202,228,.13);font-size:12px}
+.dmm-upcoming-row>strong{font-size:12px;color:#A9EBFB}
+.dmm-upcoming-row>span:nth-child(2){color:#C7E5F3}
+.dmm-illustration text{font-family:Inter,ui-sans-serif,system-ui,sans-serif}
+.dmm-illustration{max-height:260px}
+@media(min-width:1201px){.v2-scope-chart-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(min-width:741px) and (max-width:1200px){.v2-scope-chart-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:740px){.v2-scope-chart-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:560px){
+ .dmm-lesson-entry{grid-template-columns:36px minmax(0,1fr);gap:12px}
+ .dmm-lesson-num{width:36px;height:36px}
+ .dmm-lesson-entry button{grid-column:2;justify-self:start}
+ .dmm-upcoming-row{grid-template-columns:78px 1fr}.dmm-upcoming-row>.v2-pill{grid-column:2;justify-self:start}
+}
