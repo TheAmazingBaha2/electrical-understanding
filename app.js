@@ -1,4 +1,4 @@
-import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
+import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_ENVIRONMENT } from './config.js';
 import { lessons, books } from './lessons.js';
 import { v2Dashboard, v2Page } from './v2-panels.js';
 import { labLessons } from './lab-lessons.js';
@@ -25,10 +25,13 @@ let lessonTab='overview', activityIndex=0, quizIndex=0, learnIndex=0;
 // Treat every Cloudflare-hosted preview as local-only; never write to production Supabase.
 const stagingPreview = /(^|\.)(?:pages|workers)\.dev$/i.test(window.location.hostname);
 // Cloudflare staging is isolated from production Supabase progress by design.
-const configured = !stagingPreview && Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
+const stagingBackend = SUPABASE_ENVIRONMENT === 'staging' && SUPABASE_URL === 'https://hkwmtjhgrskidaizamwy.supabase.co';
+const configured = stagingPreview && stagingBackend && Boolean(SUPABASE_PUBLISHABLE_KEY);
+// Fail closed if this development build is opened anywhere other than Cloudflare's staging domain.
 let toastTimer;
 function notify(message){const el=$('#toast');el.textContent=message;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),4200)}
-function deviceKey(){return user?`eu_progress_v1_${user.id}`:'eu_demo_v1'}
+function deviceKey(){return user?`eu_staging_progress_v1_${user.id}`:'eu_demo_v1'}
+function getAnonymousSnapshot(){try{return JSON.parse(localStorage.getItem('eu_demo_v1')||'{}')}catch{return {}}}
 function localLoad(){try{return JSON.parse(localStorage.getItem(deviceKey())||'{}')}catch{return {}}}
 function persistLocal(){localStorage.setItem(deviceKey(),JSON.stringify(progress))}
 function getState(id){return progress[id] || {answers:{},complete:false,updatedAt:0}}
@@ -44,12 +47,12 @@ function reviewQueue(){return allLessons.flatMap((lesson,index)=>!canOpenLesson(
 function syncLabel(text,isOnline=false){$('#sync-status').textContent=text;$('#status-dot').classList.toggle('online',isOnline);$('#account-pill').textContent=user?'Cloud account':configured?'Sign in':'Local practice'}
 async function connect(){
  progress=localLoad();
- if(!configured){syncLabel(stagingPreview?'Staging preview · local practice only':'Local only · cloud not configured');render();return}
+ if(!configured){syncLabel(stagingPreview?'Staging · sign in to sync':'Staging sync unavailable on this hostname');render();return}
  try {
    const pkg=await import('https://esm.sh/@supabase/supabase-js@2');
    supabase=pkg.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
    supabase.auth.onAuthStateChange((_event,session)=>{
-     if(session?.user?.id!==user?.id){user=session?.user||null;progress=localLoad();syncLabel(user?'Cloud connected':'Sign in to synchronize',!!user);render();if(user)void loadCloud();}
+     if(session?.user?.id!==user?.id){user=session?.user||null;progress=localLoad();syncLabel(user?'Staging cloud connected':'Sign in for staging sync',!!user);render();if(user)void loadCloud();}
    });
    const {data,error}=await supabase.auth.getSession();if(error)throw error;
    user=data.session?.user||null;progress=localLoad();syncLabel(user?'Cloud connected':'Sign in to synchronize',!!user);
@@ -80,7 +83,7 @@ async function saveCloud(lessonId,state){
  if(error){syncLabel('Sync error · cached locally');notify('Saved locally; cloud sync failed: '+error.message);return}
  syncLabel('Saved to cloud',true);
 }
-async function saveLesson(lessonId){const s=getState(lessonId);s.complete=s.complete===true || hasPassed(findLesson(lessonId));s.updatedAt=now();progress[lessonId]=s;persistLocal();if(user)await saveCloud(lessonId,s);else syncLabel(configured?'Sign in to sync · local only':'Local only · cloud not configured');}
+async function saveLesson(lessonId){const s=getState(lessonId);s.complete=s.complete===true || hasPassed(findLesson(lessonId));s.updatedAt=now();progress[lessonId]=s;persistLocal();if(user)await saveCloud(lessonId,s);else syncLabel(configured?'Sign in for staging sync':'Local-only · outside staging');}
 function switchTo(next,id=null,qid=null){
  const startingLesson=next==='lesson'&&(view!=='lesson'||activeLesson!==id);
  if(startingLesson){lessonTab=qid?'quiz':'overview';activityIndex=0;learnIndex=0;quizIndex=Math.max(0,findLesson(id)?.questions.findIndex(q=>q.id===qid)||0);}
@@ -126,7 +129,7 @@ function render(){setNav();const names={dashboard:'Your learning dashboard',ceta
  if(view==='account')attachAuth();
 }
 function cloudBanner(){if(user)return `<div class="success sm">Signed in. Your completed lessons and answers are saved to your cloud account.</div>`;
-  if(stagingPreview)return `<div class="flash sm"><b>Safe staging mode:</b> This Cloudflare preview stores trial answers only in this browser. Production Supabase sign-in and syncing are intentionally disabled until a separate test database is configured. Your live study progress is protected.</div>`;
+  if(stagingPreview)return `<div class="flash sm"><b>Staging sync enabled:</b> Sign in to the separate preview Supabase project to sync trial answers between devices. Production progress is never used by this preview. <button class="outline small-button" data-goto="account">Sign in →</button></div>`;
  return `<div class="flash sm"><b>${configured?'Sign in required for cross-device sync':'Cloud connection not configured yet'}.</b> You can explore this prototype and save locally, but that practice does <em>not</em> synchronize between your phone and desktop. <button class="outline small-button" data-goto="account">Account setup</button></div>`;
 }
 function renderDashboard(){return v2Dashboard(v2Context());}
@@ -182,12 +185,12 @@ function renderExperiment(){const l=findLesson(activeLesson);const body=$('#expe
  }
 }
 function renderAccount(){return `<div class="auth-card"><div class="panel"><h2>Account and cross-device sync</h2>${user?`<div class="success">Connected as <b>${esc(user.email||'your account')}</b>.<br>Lesson results are saved locally and to your Supabase account whenever you submit an answer.</div><div class="actions"><button id="refresh-sync" class="outline">Refresh cloud progress</button><button id="sign-out" class="ghost">Sign out</button></div>`:
- stagingPreview?`<div class="flash"><b>Staging mode: production sync disabled.</b> This site intentionally uses browser-only practice progress. Use your production GitHub Pages site for cloud-synced study until a separate test Supabase environment is configured.</div>`:
+ !configured?`<div class="flash"><b>Staging synchronization is unavailable on this address.</b> This development build only connects on a Cloudflare workers.dev/pages.dev staging domain and only to its isolated test database.</div>`:
   configured?`<p class="muted">Sign in with the same email address on your phone and your computer. You'll receive an email with a secure sign-in link.</p><label for="email">Email address</label><input class="email-input" type="email" id="email" autocomplete="email" placeholder="you@example.com"><div class="actions"><button id="email-login" class="primary">Email me a sign-in link</button></div>`:`<div class="flash"><b>Cloud service not configured.</b> This starter can be previewed in local practice mode, but it cannot synchronize devices until the Supabase connection is set up.</div><p class="muted sm">Follow SETUP.md in the project to create a Supabase project, apply the database rules and enter its URL and <em>publishable</em> key into <code>site/config.js</code>. Never put a secret/service-role key in the site.</p>`}
  <hr class="divider"><h3>Progress storage</h3><p class="muted sm">${user?'You are in cloud mode.':'You are in device-only practice mode.'} Local storage is used as a cache. Cloud records are private to the authenticated account through database access policies.</p>${user&&Object.keys(localDemo()).length?`<button id="import-demo" class="outline small-button">Import this device's local practice</button><p class="muted sm">Only practice data from this device will be merged; newer cloud data is retained.</p>`:''}
  <div class="actions" style="margin-top:20px"><button id="export-progress" class="outline small-button">Export my progress (JSON)</button></div>
  </div><div class="panel" style="margin-top:16px"><h3>How synchronization behaves</h3><p class="muted sm">A submitted answer is saved locally and then sent to your account. Switching devices loads the newest saved record. If the cloud cannot be reached, the device keeps a local copy and retries when you return online. In this starter, simultaneous edits to the <em>same lesson</em> on different devices may use last-write-wins rather than a fine-grained merge.</p></div></div>`}
-function localDemo(){try{return JSON.parse(localStorage.getItem('eu_demo_v1')||'{}')}catch{return {}}}
+function localDemo(){return getAnonymousSnapshot()}
 function attachAuth(){const login=$('#email-login');if(login)login.addEventListener('click',async()=>{const email=$('#email').value.trim();if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){notify('Enter a valid email address.');return}login.disabled=true;login.textContent='Sending…';const {error}=await supabase.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname}});login.disabled=false;login.textContent='Email me a sign-in link';notify(error?'Sign-in failed: '+error.message:'Check your email for the sign-in link.');});
  $('#sign-out')?.addEventListener('click',async()=>{await supabase.auth.signOut();user=null;progress=localLoad();syncLabel('Sign in to synchronize');render()});
  $('#refresh-sync')?.addEventListener('click',()=>void loadCloud());
