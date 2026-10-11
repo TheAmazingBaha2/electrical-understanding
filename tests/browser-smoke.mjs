@@ -41,6 +41,7 @@ try {
  assert.equal(await page.locator('.quiz-card').count(),1);
  await page.locator('.question-input').fill('1000');
  await page.locator('[data-submit="c30101"]').click();
+ await page.waitForFunction(()=>JSON.parse(localStorage.getItem('eu_progress:hkwmtjhgrskidaizamwy:anonymous')||'{}').progress?.['CETA-G03-01']?.answers?.c30101?.correct===true);
  const cetaSaved=await page.evaluate(()=>(JSON.parse(localStorage.getItem('eu_progress:hkwmtjhgrskidaizamwy:anonymous')||'{}').progress||{}));
  assert.equal(cetaSaved['CETA-G03-01']?.answers?.c30101?.correct,true);
  await page.locator('.lesson-tabs [data-lesson-tab="review"]').click();
@@ -96,6 +97,7 @@ await page.locator('.legacy-minilink').click();
  await page.locator('.quiz-step[data-quiz-index="0"]').click();
  await page.locator('.quiz-card input[type="radio"][value="1"]').check();
  await page.locator('[data-submit="p01"]').click();
+ await page.waitForFunction(()=>JSON.parse(localStorage.getItem('eu_progress:hkwmtjhgrskidaizamwy:anonymous')||'{}').progress?.['EIM-BEC-PRELAB']?.answers?.p01?.correct===true);
  const saved=await page.evaluate(()=>(JSON.parse(localStorage.getItem('eu_progress:hkwmtjhgrskidaizamwy:anonymous')||'{}').progress||{}));
  assert.equal(saved["EIM-BEC-PRELAB"]?.answers?.p01?.correct,true,'Quiz answer is saved under its original companion ID');
  await page.locator('.lesson-tabs [data-lesson-tab="quiz"]').click();
@@ -130,6 +132,7 @@ await page.locator('.legacy-minilink').click();
  assert.equal(await page.locator('.quiz-step').count(),10);
  await page.locator('.quiz-card input[type="radio"][value="0"]').check();
  await page.locator('[data-submit="b101"]').click();
+ await page.waitForFunction(()=>JSON.parse(localStorage.getItem('eu_progress:hkwmtjhgrskidaizamwy:anonymous')||'{}').progress?.['BDMM-01']?.answers?.b101?.correct===true);
  const bookSaved=await page.evaluate(()=>(JSON.parse(localStorage.getItem('eu_progress:hkwmtjhgrskidaizamwy:anonymous')||'{}').progress||{}));
  assert.equal(bookSaved['BDMM-01']?.answers?.b101?.correct,true);
  assert.equal(bookSaved['EIM-BEC-PRELAB']?.answers?.p01?.correct,true,'Lab answer not replaced by textbook save');
@@ -168,3 +171,4 @@ await page.locator('.legacy-minilink').click();
  await phone.screenshot({path:'test-artifacts/mobile-aurora.png',fullPage:true});
  console.log('PASS: responsive icy dashboard, real pie charts, course dropdown, five lesson tabs, single-question quiz, breadboard and meter illustrations.');
 } finally { await browser.close(); }
+
