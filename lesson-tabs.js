@@ -49,7 +49,17 @@ const activityDescriptions={
   series:"Change the value of one resistor, then predict the current through the single series path.",
   divider:"Explore how three series voltage drops divide a fixed 5 V.",
   parallel3:"Change one parallel branch while the source remains at 5 V.",
-  fault:"Open and close a parallel branch to diagnose the change in total current."
+  fault:"Open and close a parallel branch to diagnose the change in total current.",
+  "dmm-signal":"Compare steady DC voltage and short events on a time trace versus a numerical display.",
+  "dmm-tolerance":"Move a measured voltage across an example tolerance band; decide what it does and does not prove.",
+  "dmm-digits":"Vary the decimal precision and meter error independently to separate resolution from accuracy.",
+  "dmm-noise":"Change a small simulated ripple; discover why changing digits alone do not reveal its cause.",
+  "dmm-choice":"Choose what kind of evidence to seek for a stable rail or a hidden brief dropout.",
+  "dmm-probes":"Swap two simulated voltage probes and watch red-minus-black polarity change.",
+  "dmm-reference":"Choose a verified common point rather than assuming metal parts share ground.",
+  "dmm-fault":"Locate an open switch by comparing upstream and downstream DC voltage readings.",
+  "dmm-range":"Choose voltage mode and a sufficient range for a known-safe modeled 5 V circuit.",
+  "dmm-dropout":"See a brief voltage interruption on a time trace that may not appear in a DMM snapshot."
 };
 export function renderLessonTabs(active,answersCount,questionCount) {
   return '<nav class="lesson-tabs" role="tablist" aria-label="Lesson sections">'+lessonTabs.map(t=>
