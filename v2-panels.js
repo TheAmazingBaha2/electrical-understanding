@@ -67,7 +67,7 @@ function legacyView(c){
  return '<header class="legacy-heading"><p class="v2-kicker">CETa / EARLIER MATERIAL</p><h2>Legacy Lessons</h2><p class="muted">The original foundations course is available here whenever you want to revisit it. Existing lesson IDs, answers and review schedules are unchanged.</p>'+
  '<button class="legacy-back" type="button" data-goto="ceta">← Back to CETa preparation</button></header>'+
  '<section class="v2-panel legacy-listing"><div class="v2-panel-heading"><h2>Original pilot course</h2><span class="muted sm">'+done+' / '+archived.length+' completed</span></div>'+bar(percent(done,archived.length))+
- '<div class="legacy-list">'+(c.coreRows||'<p class="muted">No archived lesson cards are available yet.</p>')+'</div></section>'+
+ '<div class="legacy-list">'+(c.legacyRows||c.coreRows||'<p class="muted">No archived lesson cards are available yet.</p>')+'</div></section>'+
  '<p class="legacy-archive-note">Future retired lessons can join this library without replacing the material already here.</p>';
 }
 function guideView(){
