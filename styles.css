@@ -486,3 +486,19 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;
 .guide-index-intro p{font-size:12px;max-width:770px}
 .ceta-illustration text{font-family:ui-sans-serif,system-ui,sans-serif}
 @media(max-width:480px){.guide-feature-numbers{gap:7px}.guide-feature-numbers>div{padding:10px 7px}.guide-feature-numbers strong{font-size:20px}}
+
+
+/* Private model evaluation console, neutral Aurora Ice controls. */
+.ai-lab-panel{display:grid;gap:18px;max-width:1000px}
+.ai-lab-panel h2{font-size:clamp(22px,3vw,29px);margin:0;color:#EDF9FF}
+.ai-lab-panel>p{max-width:760px;color:#C8DFEA;line-height:1.65;margin:0}
+.ai-lab-controls{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) auto;align-items:end;gap:14px}
+.ai-lab-controls .lab-control{display:grid;gap:8px}
+.ai-lab-controls select{width:100%;max-width:100%;color:#E6F7FF;background:#173247;border:1px solid #619EBD;border-radius:9px;padding:12px}
+.ai-lab-controls button{min-height:45px}
+.ai-lab-output{display:grid;gap:13px}
+.ai-result{border:1px solid rgba(131,220,245,.3);border-radius:13px;padding:18px;background:rgba(28,78,109,.20)}
+.ai-result h3{font-size:16px;margin:0 0 9px}
+.ai-result-text{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;font-size:13px;line-height:1.65;padding:14px;
+ border:1px solid rgba(147,228,244,.19);border-radius:9px;color:#D9F3FC;background:rgba(13,35,53,.35)}
+@media(max-width:740px){.ai-lab-controls{grid-template-columns:1fr}.ai-lab-controls button{justify-self:start}}
