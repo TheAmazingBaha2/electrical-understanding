@@ -333,3 +333,20 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;
 .lab-resistor-picture{fill:url(#resGlow);stroke:#99D8E7;stroke-width:4}
 .lab-graphic+.lab-control{margin-top:7px}
 @media(prefers-reduced-motion:reduce){.lab-path{animation:none}}
+
+
+/* Prediction checkpoints make simulation decisions interactive without changing quiz mastery */
+.prediction-challenge{border:1px solid rgba(142,232,248,.38);border-radius:13px;padding:15px;
+ background:linear-gradient(140deg,rgba(93,179,216,.17),rgba(31,81,107,.18));display:grid;gap:8px}
+.prediction-title{display:flex;gap:8px;align-items:center;font-size:13px;color:#E2FAFF;font-weight:800}
+.prediction-title>span{color:#8AEFFB;font-size:21px}
+.prediction-title>small{margin-left:auto;color:#AACFDF;font-size:10px;font-weight:500}
+.prediction-challenge>p{font-size:12px;color:#D0EAF7;margin:0 0 6px}
+.prediction-choices{display:flex;gap:8px;flex-wrap:wrap}
+.prediction-choices button{border:1px solid #548BA7;border-radius:10px;padding:10px 14px;
+ background:rgba(39,87,116,.45);color:#E2F8FF;font-size:12px;font-weight:750}
+.prediction-choices button.chosen,.prediction-choices button:hover{border-color:#A2EDFF;background:rgba(112,219,248,.2)}
+.prediction-feedback{padding:11px 13px;border:1px solid rgba(246,198,139,.6);border-radius:10px;
+ background:rgba(116,80,56,.17);color:#FCE0B9;font-size:12px}
+.prediction-feedback.correct{background:rgba(42,115,111,.23);border-color:#84F5DE;color:#B5FFED}
+.prediction-feedback[hidden]{display:none}
