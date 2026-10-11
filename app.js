@@ -1,12 +1,17 @@
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
 import { lessons, books } from './lessons.js';
 import { v2Dashboard, v2Page } from './v2-panels.js';
+import { labLessons } from './lab-lessons.js';
+import { attachLabWidgets } from './lab-widgets.js';
 
 const $ = (s) => document.querySelector(s);
 const esc = (value='') => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const duration = ms => new Date(ms).toLocaleDateString(undefined,{month:'short',day:'numeric'});
 const now = () => Date.now();
 const DAY = 24*60*60*1000;
+const allLessons=[...lessons,...labLessons];
+const findLesson=id=>allLessons.find(l=>l.id===id);
+const labUnlocked=l=>l?.id===labLessons[0].id || Boolean(labLessons.length && hasPassed(labLessons[0]));
 let supabase=null, user=null, view='dashboard', activeLesson=null, focusQuestion=null, progress={}, busy=false;
 const configured = Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
 let toastTimer;
@@ -21,7 +26,7 @@ function hasPassed(lesson){const state=getState(lesson.id);if(state.complete===t
 }
 function unlocked(index){return index===0 || hasPassed(lessons[index-1]);}
 function finishedCount(){return lessons.filter(hasPassed).length}
-function reviewQueue(){return lessons.flatMap((lesson,index)=>!unlocked(index)?[]:lesson.questions.flatMap(q=>{
+function reviewQueue(){return allLessons.flatMap((lesson,index)=>(index<lessons.length?!unlocked(index):!labUnlocked(lesson))?[]:lesson.questions.flatMap(q=>{
  const a=getState(lesson.id).answers?.[q.id];return a&&typeof a.correct==='boolean'&&a.reviewDue<=now()?[{lesson,q,a}]:[];
 })).sort((a,b)=>a.a.reviewDue-b.a.reviewDue)}
 function syncLabel(text,isOnline=false){$('#sync-status').textContent=text;$('#status-dot').classList.toggle('online',isOnline);$('#account-pill').textContent=user?'Cloud account':configured?'Sign in':'Local practice'}
@@ -63,7 +68,7 @@ async function saveCloud(lessonId,state){
  if(error){syncLabel('Sync error · cached locally');notify('Saved locally; cloud sync failed: '+error.message);return}
  syncLabel('Saved to cloud',true);
 }
-async function saveLesson(lessonId){const s=getState(lessonId);s.complete=s.complete===true || hasPassed(lessons.find(l=>l.id===lessonId));s.updatedAt=now();progress[lessonId]=s;persistLocal();if(user)await saveCloud(lessonId,s);else syncLabel(configured?'Sign in to sync · local only':'Local only · cloud not configured');}
+async function saveLesson(lessonId){const s=getState(lessonId);s.complete=s.complete===true || hasPassed(findLesson(lessonId));s.updatedAt=now();progress[lessonId]=s;persistLocal();if(user)await saveCloud(lessonId,s);else syncLabel(configured?'Sign in to sync · local only':'Local only · cloud not configured');}
 function switchTo(next,id=null,qid=null){view=next;activeLesson=id;focusQuestion=qid;$('.sidebar').classList.remove('open');render();window.scrollTo({top:0,behavior:'instant'});if(qid)setTimeout(()=>document.getElementById('question-'+qid)?.scrollIntoView({behavior:'smooth',block:'center'}),70)}
 function bindNavigation(){document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>switchTo(b.dataset.view)));
  $('#menu-toggle').addEventListener('click',()=>$('.sidebar').classList.toggle('open'));
@@ -71,7 +76,7 @@ function bindNavigation(){document.querySelectorAll('[data-view]').forEach(b=>b.
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&user&&supabase)void loadCloud()});
  window.addEventListener('online',()=>{if(user)void loadCloud()});
 }
-function v2Context(){return {lessons,progress,hasPassed,unlocked,reviews:reviewQueue().length,banner:cloudBanner(),coreRows:lessonRows(lessons)};}
+function v2Context(){return {lessons,progress,hasPassed,unlocked,reviews:reviewQueue().length,banner:cloudBanner(),coreRows:lessonRows(lessons),labLessons};}
 function setNav(){const current=view==='lesson'?'curriculum':view==='subtrack'?(activeLesson==='core'?'curriculum':['guide','exam'].includes(activeLesson)?'ceta':['geier','teach','principles','cabling'].includes(activeLesson)?'textbooks':'labs'):view;
  document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',current===b.dataset.view));}
 function render(){setNav();const names={dashboard:'Your learning dashboard',ceta:'CETa preparation',curriculum:'Pilot Unit 1',textbooks:'Textbook companions',labs:'Hands-on laboratory',subtrack:'Learning sub-track',lesson:'Lesson workbench',reviews:'Spaced review',library:'Textbook companions','scan-inbox':'Scan Inbox',account:'Your study account'};
@@ -79,7 +84,7 @@ function render(){setNav();const names={dashboard:'Your learning dashboard',ceta
  const main=$('#main');
  main.innerHTML=view==='dashboard'?renderDashboard():view==='lesson'?renderLesson():view==='reviews'?renderReviews():view==='account'?renderAccount():view==='library'?renderLibrary():v2Page(view,v2Context(),activeLesson);
  main.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>switchTo(b.dataset.goto,b.dataset.lesson||null,b.dataset.question||null)));
- if(view==='lesson'){attachQuiz();renderExperiment()}
+ if(view==='lesson'){attachQuiz();renderExperiment();attachLabWidgets()}
  if(view==='account')attachAuth();
 }
 function cloudBanner(){if(user)return `<div class="success sm">Signed in. Your completed lessons and answers are saved to your cloud account.</div>`;
@@ -90,18 +95,18 @@ function lessonRows(group){return group.map(l=>{const i=lessons.indexOf(l),a=get
 function renderCurriculum(){return v2Page('curriculum',v2Context());}
 function renderLibrary(){return v2Page('textbooks',v2Context());}
 function renderReviews(){const queue=reviewQueue();return `<p class="muted">Reviews are scheduled after each check: one day after a missed answer, seven days after an initial success, and 21 days after a successful retry. Open a question to answer again.</p>${cloudBanner()}<div class="panel"><h2>${queue.length} review${queue.length===1?'':'s'} due</h2>${queue.length?queue.map(({lesson,q,a})=>`<div class="review-item"><div><b>${esc(lesson.title)}</b><p class="muted sm">${esc(q.prompt)}<br>Scheduled ${duration(a.reviewDue)}</p></div><button class="primary small-button" data-goto="lesson" data-lesson="${lesson.id}" data-question="${q.id}">Review →</button></div>`).join(''):`<div class="empty"><h3>You're caught up.</h3><p>When your completed questions become due, they'll appear here.</p></div>`}</div>`}
-function renderLesson(){const lesson=lessons.find(l=>l.id===activeLesson);if(!lesson)return `<p>Lesson not found. <button data-goto="curriculum">Back to lessons</button></p>`;const idx=lessons.indexOf(lesson);if(!unlocked(idx))return `<div class="panel"><h2>Lesson locked</h2><p>Complete the previous lesson’s checks before continuing.</p><button class="primary" data-goto="curriculum">Back</button></div>`;
- const score=getAccuracy(lesson),passed=hasPassed(lesson);return `<div class="learning"><div class="bread">${esc(lesson.module)} / LESSON ${idx+1} OF ${lessons.length}</div><div class="lesson-header"><h2>${esc(lesson.title)}</h2><p class="muted">${esc(lesson.description)}</p><span class="chip">About ${lesson.minutes} minutes</span></div><section class="panel reading">${lesson.html}<div class="callout sm">Pilot Unit 1 is self-contained. Textbook chapters have their own companion sub-tracks.</div></section>
- <section id="experiment" class="experiment"><h3>Interactive circuit lab</h3><p class="muted sm" id="experiment-caption">Change a value, make a prediction, and compare the result.</p><div id="experiment-body"></div></section>
+function renderLesson(){const lesson=findLesson(activeLesson);if(!lesson)return `<p>Lesson not found. <button data-goto="curriculum">Back to lessons</button></p>`;const idx=lessons.indexOf(lesson),isPilot=idx>=0;if((isPilot&&!unlocked(idx))||(!isPilot&&!labUnlocked(lesson)))return `<div class="panel"><h2>Lesson locked</h2><p>Complete the previous lesson’s checks before continuing.</p><button class="primary" data-goto="curriculum">Back</button></div>`;
+ const score=getAccuracy(lesson),passed=hasPassed(lesson),nextLesson=isPilot?lessons[idx+1]:labLessons[labLessons.indexOf(lesson)+1];return `<div class="learning"><div class="bread">${esc(lesson.module)} / ${isPilot?'PILOT LESSON '+(idx+1)+' OF '+lessons.length:'EIM LAB COMPANION'}</div><div class="lesson-header"><h2>${esc(lesson.title)}</h2><p class="muted">${esc(lesson.description)}</p><span class="chip">About ${lesson.minutes} minutes</span></div><section class="panel reading">${lesson.html}<div class="callout sm">Pilot Unit 1 is self-contained. Textbook chapters have their own companion sub-tracks.</div></section>
+ <section id="experiment" class="experiment" style="${lesson.experiment==='embedded'?'display:none':''}"><h3>Interactive circuit lab</h3><p class="muted sm" id="experiment-caption">Change a value, make a prediction, and compare the result.</p><div id="experiment-body"></div></section>
  <div class="section-heading"><h2>Knowledge checks</h2><span class="tag">${score.correct} / ${score.total} correct</span></div><p class="muted sm">Numerical and multiple-choice questions are checked automatically. For explanations, compare your answer against a rubric and decide whether it includes the essential ideas. These self-checks are not AI-graded.</p>
  ${lesson.questions.map((q,i)=>questionHtml(lesson,q,i)).join('')}
- <div class="gate"><h3>${passed?'Lesson mastered — next lesson available':'Lesson completion requirements'}</h3><p class="muted sm">${score.correct} of ${score.total} correct. All ${score.total} checks must be submitted, with at least ${Math.ceil(.8*score.total)} correct (${Math.round(100*Math.ceil(.8*score.total)/score.total)}% minimum). ${lesson.questions.some(q=>q.safety)?'The safety-critical check must also be correct.':''}</p><div class="progress-track"><div class="progress-fill" style="width:${100*score.correct/score.total}%"></div></div><div class="actions" style="margin-top:17px"><button class="outline" data-goto="curriculum">All lessons</button>${passed&&lessons[idx+1]?`<button class="primary" data-goto="lesson" data-lesson="${lessons[idx+1].id}">Next lesson →</button>`:''}</div></div></div>`}
+ <div class="gate"><h3>${passed?'Lesson mastered — next lesson available':'Lesson completion requirements'}</h3><p class="muted sm">${score.correct} of ${score.total} correct. All ${score.total} checks must be submitted, with at least ${Math.ceil(.8*score.total)} correct (${Math.round(100*Math.ceil(.8*score.total)/score.total)}% minimum). ${lesson.questions.some(q=>q.safety)?'The safety-critical check must also be correct.':''}</p><div class="progress-track"><div class="progress-fill" style="width:${100*score.correct/score.total}%"></div></div><div class="actions" style="margin-top:17px"><button class="outline" data-goto="curriculum">All lessons</button>${passed&&nextLesson?`<button class="primary" data-goto="lesson" data-lesson="${nextLesson.id}">Next lesson →</button>`:''}</div></div></div>`}
 function questionHtml(lesson,q,i){const a=getState(lesson.id).answers?.[q.id];const valid=typeof a?.correct==='boolean';const cls=valid?(a.correct?'good':'needs'):'';const val=a?.value||'';
  let input=q.type==='choice'?`<div class="options">${q.choices.map((c,j)=>`<label class="option"><input type="radio" name="${q.id}" value="${j}" ${String(val)===String(j)?'checked':''}>${esc(c)}</label>`).join('')}</div>`:q.type==='number'?`<input class="question-input" inputmode="decimal" type="text" aria-label="Numerical answer" placeholder="Enter number in ${esc(q.unit)}" value="${esc(val)}"> <span class="muted sm">${esc(q.unit)}</span>`:`<textarea class="short-answer" aria-label="Your explanation" placeholder="Explain your reasoning in your own words…">${esc(val)}</textarea>`;
  const feedback=a?.pending&&q.type==='reflection'?`<div class="feedback"><b>Compare your response to this rubric:</b><p>${esc(q.rubric)}</p><div class="actions"><button class="primary small-button" data-mark="pass">My answer covers this</button><button class="outline small-button" data-mark="retry">I need more practice</button></div></div>`:valid?`<div class="feedback ${a.correct?'good':'needs'}"><b>${a.correct?'Meets the check':'Review this concept'}</b><p>${esc(q.explain)}</p>${q.type==='reflection'?`<p><b>Rubric:</b> ${esc(q.rubric)}</p>`:''}<p class="muted sm">Review scheduled: ${duration(a.reviewDue)} · Attempts: ${a.attempts||1}</p></div>`:'';
  return `<article class="quiz-card ${cls}" id="question-${q.id}" data-qid="${q.id}"><div class="question-meta">CHECK ${i+1} / ${lesson.questions.length} · ${q.type==='choice'?'Multiple choice':q.type==='number'?'Calculation':'Explain'} ${q.safety?'· SAFETY CRITICAL':''}</div><h3>${esc(q.prompt)}</h3>${input}<div class="actions" style="margin-top:14px"><button class="primary small-button" data-submit="${q.id}">${q.type==='reflection'?'Compare to rubric':'Check answer'}</button>${valid?`<span class="muted sm">You can retry this check at any time.</span>`:''}</div>${feedback}</article>`;
 }
-function attachQuiz(){const lesson=lessons.find(l=>l.id===activeLesson);if(!lesson)return;document.querySelectorAll('[data-submit]').forEach(b=>b.addEventListener('click',async()=>{
+function attachQuiz(){const lesson=findLesson(activeLesson);if(!lesson)return;document.querySelectorAll('[data-submit]').forEach(b=>b.addEventListener('click',async()=>{
  if(busy)return;const q=lesson.questions.find(q=>q.id===b.dataset.submit);const card=b.closest('article');let value;
  if(q.type==='choice')value=card.querySelector(`input[name="${q.id}"]:checked`)?.value;
  else if(q.type==='number')value=card.querySelector('input.question-input')?.value?.trim();
@@ -120,7 +125,7 @@ function attachQuiz(){const lesson=lessons.find(l=>l.id===activeLesson);if(!less
  }));
 }
 function expControl(label,id,min,max,value,unit,step=1){return `<div class="control"><label for="${id}">${label}: <b id="${id}-label">${value} ${unit}</b></label><input id="${id}" type="range" min="${min}" max="${max}" value="${value}" step="${step}"></div>`}
-function renderExperiment(){const l=lessons.find(x=>x.id===activeLesson);const body=$('#experiment-body');if(!l||!body)return;
+function renderExperiment(){const l=findLesson(activeLesson);const body=$('#experiment-body');if(!l||!body||l.experiment==='embedded')return;
  const type=l.experiment;
  if(type==='power'||type==='ohm'||type==='meters'){
   body.innerHTML=`<svg class="experiment-graph" viewBox="0 0 500 145" role="img" aria-label="Simple DC circuit with battery and resistor"><g fill="none" stroke="#b1c8d6" stroke-width="3"><path d="M88 70 V25 H215 M280 25 H410 V117 H88 V90"/><path d="M215 25 l10 -8 10 16 10 -16 10 16 10 -8 h15"/><path d="M75 70 H101 M81 77 H95"/><circle cx="88" cy="80" r="16"/></g><text x="250" y="12" text-anchor="middle" font-size="13" fill="#92d6be">Resistor</text><text x="45" y="79" fill="#b1c8d6" font-size="12">DC</text><text x="305" y="135" fill="#a8b8c9" font-size="12">Simple load circuit</text></svg><div class="controls">${expControl('Voltage','exp-v',1,24,12,'V')}${expControl('Resistance','exp-r',1,24,6,'kΩ')}</div><p class="reading-stat" id="exp-out"></p><p class="muted sm">Predict what happens when voltage doubles or resistance doubles. These are ideal component values.</p>`;
