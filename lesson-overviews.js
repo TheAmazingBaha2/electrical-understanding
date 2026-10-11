@@ -1,6 +1,16 @@
 // Lesson-specific orientation: concrete scenarios rather than repeating tab names.
 // Legacy L01–L05 use their existing learning topics; EIM companion numbers derive from scanned PreLab and DC 02.
 const intro = {
+ "CETA-G03-01":{
+   eyebrow:"ASSOCIATE CET GUIDE / UNIT 2 / CHAPTER 3 / P. 16",
+   hint:"Can a unit error change your answer by 1,000 times?",
+   mission:"A simulated 5 V supply drives a 1 kΩ resistor. Your worksheet says the current is 5 A. Where did the calculation go wrong?",
+   reveal:"Ohm’s law gives 5 V ÷ 1,000 Ω = 0.005 A, which equals 5 mA. Forgetting the milli prefix inflates the result by a factor of one thousand.",
+   anchors:[["1 kΩ = 1,000 Ω","Kilo is 10³, or one thousand"],["1 mA = 0.001 A","Milli is 10⁻³, or one thousandth"],["Check the scale","A unit mistake can invalidate a component calculation"]],
+   missionType:"units",
+   outcome:"Convert among scientific notation, SI prefixes, base units and everyday electronic measurements without losing the scale factor.",
+   caution:"All examples are simulated. Check power, voltage and current limits before any real-world hookup; a correct unit conversion is not a safety rating."
+ },
  "BDMM-01":{
   eyebrow:"GEIER / CHAPTER 6 / PP. 97–98",
   mission:"A supply labeled 5 V produces a display reading of 5.04 V. Has the DMM proven that the supply is defective?",
