@@ -420,3 +420,15 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;
  .legacy-listing .legacy-list{margin:10px -17px 0}
 }
 @media(max-width:430px){.briefing-facts{grid-template-columns:1fr}.briefing-facts article{padding:14px}}
+
+
+/* Purposeful CETa card details: verified source counts and clearly planned activities */
+.path-card-details{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;width:100%;margin:10px 0 2px}
+.path-card-details>div{display:grid;gap:5px;text-align:center;border:1px solid rgba(153,229,249,.25);
+ border-radius:10px;background:rgba(90,180,212,.10);padding:13px 7px}
+.path-card-details strong{font-size:clamp(18px,2.1vw,25px);color:#D1F8FF;line-height:1.1}
+.path-card-details span{font-size:10px;color:#B1DCEA;line-height:1.4}
+.path-plan-points{display:flex;flex-wrap:wrap;gap:7px;margin:15px 0 1px;width:100%}
+.path-plan-points span{border:1px solid rgba(155,216,243,.28);border-radius:99px;padding:6px 11px;
+ font-size:11px;color:#B9E4F4;background:rgba(116,206,232,.09)}
+@media(max-width:420px){.path-card-details{gap:6px}.path-card-details>div{padding:11px 5px}}
