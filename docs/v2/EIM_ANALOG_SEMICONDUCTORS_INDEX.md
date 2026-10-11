@@ -4,7 +4,11 @@
 
 **Source:** Student's photographed first table-of-contents page for *Fundamental Analog Circuits and Semiconductors* (EIM Technology), plus a subsequent **13-page PDF scan covering all of §2.1 (printed pp. 81–93)**. This TOC page lists Chapters 1–6 and subsections, without establishing whether additional chapters appear on following contents pages. The table's numbers are **starting pages**.
 
-**Active-kit policy:** For the current phase, **only** (A) *Basic Electric Circuits* and (B) *Fundamental Analog Circuits and Semiconductors* are actively reviewed, expanded, or studied within the EIM Hands-On Lab track. The FPGA and RP2040 kits are **on hold** until these two active manuals have been worked through as agreed, or the student explicitly changes the active pair. Do **not** design projects requiring parts from inactive kits. Each active kit has its own isolated parts/tools/power inventory, source references, lab progress, and build checklists. Cross-linking conceptual skills across tracks is appropriate; cross-kit physical wiring is **not presumed**.
+**Kit policy:** The two manuals allocated to the EIM Hands-On Lab track are (A) *Basic Electric Circuits* and (B) *Fundamental Analog Circuits and Semiconductors*. **Only Basic Electric Circuits is presently being advanced; Analog is on hold after §2.1**. The FPGA and RP2040 kits are **on hold** until these two active manuals have been worked through as agreed, or the student explicitly changes the active pair. Do **not** design projects requiring parts from inactive kits. Each active kit has its own isolated parts/tools/power inventory, source references, lab progress, and build checklists. Cross-linking conceptual skills across tracks is appropriate; cross-kit physical wiring is **not presumed**.
+
+## Current staging state
+
+**ON HOLD after §2.1.** The user wants the Basic Electric Circuits manual firmly established first. Maintain this contents index and the §2.1 equipment draft as source-backed reference, but **do not request §2.2 or begin additional analog-kit lessons/projects** until the user gives the go-ahead. The Analog kit is one of the two allocated manuals but is not the current development focus. See **[Track Structure](./TRACK_STRUCTURE.md)**.
 
 ## 1. Source-grounded chapter and subsection index
 
