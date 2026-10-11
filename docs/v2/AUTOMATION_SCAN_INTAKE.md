@@ -6,11 +6,19 @@
 ## Default cadence and immediate event behavior
 
 1. **Immediately after a graded submission is saved to Supabase**, recompute that learner's completion and mastery *for the affected lesson/sub-track*, and check for its next approved lesson. Do not require a refresh or a new chat prompt. A completed prerequisite can unlock already-authored lessons **immediately**.
-2. **Hourly reconciliation**, server-side: re-evaluate all *active, opted-in sub-tracks* for unfinished prerequisite transitions, pending source materials, approved lessons ready to release, and failed generation jobs. The hourly cadence is the **fallback/reliability check**, not a reason to wait an hour before unlocking prebuilt content.
-3. Maintain **at least one approved lesson ahead** of the learner, where enough verified content exists. When the learner reaches the end of the approved backlog, prepare the **next one candidate lesson per eligible sub-track** (not an unlimited batch). A generation job can run after completion or during the next hourly reconciliation and moves through DRAFT -> VALIDATING -> APPROVED/NEEDS_REVIEW -> PUBLISHED. Quality and safety checks may delay publication.
+2. **Six-hour reconciliation**, server-side: re-evaluate all *active, opted-in sub-tracks* for unfinished prerequisite transitions, pending source materials, approved lessons ready to release, and failed generation jobs. The six-hour cadence is a **fallback/reliability check**, not a reason to delay unlocking prebuilt content.
+3. Maintain **at least one approved lesson ahead** of the learner, where enough verified content exists. When the learner reaches the end of the approved backlog, prepare the **next one candidate lesson per eligible sub-track** (not an unlimited batch). A generation job can run after completion or during the next six-hour reconciliation and moves through DRAFT -> VALIDATING -> APPROVED/NEEDS_REVIEW -> PUBLISHED. Quality and safety checks may delay publication.
 4. Each *sub-track* has its own progression cursor, prerequisites, backlog and status. **Do not generate lessons merely because a track exists**. Only active and source-ready sub-tracks are eligible. Paused/queued tracks are excluded from generation but retain existing progress and content.
 5. **Spaced review** is a separate stream: due questions appear daily/on login (e.g. after 1, 7 and 30 days as starting review intervals) without resetting completed lessons. Repeated failures can recommend a targeted refresher or practice exercise while leaving other sub-tracks usable.
-6. **No invented promises:** These are intended behaviors for a to-be-built Supabase-authenticated backend worker / job queue (e.g. an Edge Function and scheduled job). GitHub Pages static hosting, the existing Supabase connection, and a normal ChatGPT conversation do **not** create this service automatically. Do not advertise hourly checks or AI lesson generation as live until deployed, observable, and tested end-to-end on phone and desktop.
+6. **No invented promises:** These are intended behaviors for a to-be-built Supabase-authenticated backend worker / job queue (e.g. an Edge Function and scheduled job). GitHub Pages static hosting, the existing Supabase connection, and a normal ChatGPT conversation do **not** create this service automatically. Do not advertise six-hour checks or AI lesson generation as live until deployed, observable, and tested end-to-end on phone and desktop.
+
+### Cost-aware reconciliation contract (every 6 hours)
+
+- Schedule a **lightweight state/queue reconciliation** on a six-hour cadence (illustrative UTC cron: `0 */6 * * *`). The scheduler is not a subscription to AI model queries.
+- Check **only active, opted-in sub-tracks with changed progress, due retries, approved pending content, or overdue source requests**. Paused/empty/no-change queues are ignored without model inference. If no work is due, **perform no paid AI/API calls**.
+- Track `last_event_version` / `last_reconciled_version`, status timestamps and a durable pending-job queue to avoid full rescans and duplicate releases. The completion event runs immediately; the six-hour scheduler repairs missed events and resumes incomplete work.
+- Budget caps per day and per month, cost-per-generated-lesson estimates, maximum concurrent jobs, user-approved quotas, and a manual **Generate next** control. Upon reaching the budget cap, defer the generation and show the reason; never charge through uncontrolled retries.
+- Scheduling exact wall-clock time and available cron facilities are to be confirmed during backend implementation; not yet live.
 
 ### What "completion" means
 
@@ -49,7 +57,7 @@
 ## Dynamic lesson implementation principles
 
 - **Generate structured lesson content, not untrusted executable JavaScript.** Interactive experiences use vetted reusable components (sliders, movable virtual probes, waveform charts, breadboards, resistance network explorers, fault injectors, drag/drop sequence, etc.). AI may choose an interaction template and parameters that pass schema validation and electrical formula tests.
-- Future content can be served from authenticated Supabase lesson/content tables rather than committing a new JS application bundle to GitHub every hour. GitHub continues to manage the application and its tested component library. Source uploads remain private. Never permit AI to inject arbitrary scripts into the browser.
+- Future content can be served from authenticated Supabase lesson/content tables rather than committing a new JS application bundle to GitHub every six hours. GitHub continues to manage the application and its tested component library. Source uploads remain private. Never permit AI to inject arbitrary scripts into the browser.
 - Source-grounding gate: reject lessons that invent textbook/manual pages, unverified real hardware pinouts/ratings, or unsupported learning claims; request minimum necessary scans.
 - Engineering gate: verify units/dimensions, calculated examples, numerical quiz answers/tolerances, cross-track references, safe volt/current/resistance hookups and critical simulated fault states. Require additional explicit human review for physical-hardware steps, safety-critical content, AI-origin answers of low confidence, and any major code change.
 - AI feedback, source analysis and generation require **server-side API credentials** not stored in the GitHub Pages bundle, plus usage limits, rate limits, privacy controls, retry budgets, and a visible "AI services unavailable" fallback. Model API usage is separately billed and must be budgeted/authorized.
@@ -59,7 +67,7 @@
 
 - Completion event -> transactional authorized progress update (or proper conflict detection) -> idempotent next-lesson evaluation.
 - Unique generation job key: (subtrack_id, next_lesson_id, syllabus_version) for shared curriculum, not one duplicate job per device or user. A lesson generated once can be assigned to many learners; private user progress stays separate.
-- Use job queue with attempts, next_retry_at, lease/heartbeat, terminal failure visible, backoff, and per-sub-track last_checked_at / last_published_at. Cron re-evaluates missed events hourly. Add monitoring/alerts when a job is stuck.
+- Use job queue with attempts, next_retry_at, lease/heartbeat, terminal failure visible, backoff, and per-sub-track last_checked_at / last_published_at. Cron re-evaluates missed events every six hours. Add monitoring/alerts when a job is stuck.
 - Source request uniqueness and "once reviewed, no repeat" logic. Logged provenance by page/source revision; on new sources, update only relevant drafts rather than rewriting completed units.
 - Prevent desktop/mobile stale write overwrites using server-side version or updated_at / optimistic concurrency. Test simultaneous submissions, disconnect/reconnect, local offline cache and reconciliation.
 - Human-readable status on dashboard: "Up to date", "Next lesson available", "Preparing next lesson", "Scan requested", "Review due", "Paused", "Needs attention". A visible **Last checked** timestamp and **Retry** option (for permitted failed jobs) avoids silently stalled tracks.
@@ -73,7 +81,7 @@
 - Content quality: unsupported figure/page references, safety issues, quiz validation status, untested interaction schema.
 - Manual override to approve, request source, pause/resume, skip redundant content, reorder priorities or re-run generation.
 - User-facing graph denominator: **avoid misleading "overall 14%"** when total lesson count can grow. Separate **published content completion** vs **planned syllabus coverage** vs **skill mastery**. Paused/waiting books don't count as overdue/incomplete.
-- Release rollout: Stage A reliable pre-authored lessons + completion-driven unlocks; Stage B hourly reconciliation and Scan Inbox; Stage C server-side AI grading; Stage D controlled source-grounded next-lesson generation. Do not label Stage D working before it is deployed.
+- Release rollout: Stage A reliable pre-authored lessons + completion-driven unlocks; Stage B six-hour reconciliation and Scan Inbox; Stage C server-side AI grading; Stage D controlled source-grounded next-lesson generation. Do not label Stage D working before it is deployed.
 
 ## Palette/design tokens
 
