@@ -94,7 +94,7 @@ try {
  assert.match(await page.locator('.lab-output').innerText(),/time-domain trace/);
  await page.locator('.activity-step[data-activity-index="1"]').click();
  assert.equal(await page.locator('.lab-widget[data-lab-kind="dmm-tolerance"]').count(),1);
- await page.locator('.lab-widget input[data-x="reading"]').fill('5.40');
+ await page.locator('.lab-widget input[data-x="reading"]').evaluate(el=>{el.value='5.40';el.dispatchEvent(new Event('input',{bubbles:true}));});
  assert.match(await page.locator('.lab-output').innerText(),/beyond this example/);
  await page.locator('.lesson-tabs [data-lesson-tab="quiz"]').click();
  assert.equal(await page.locator('.quiz-card').count(),1);
