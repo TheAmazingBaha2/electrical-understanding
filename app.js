@@ -100,8 +100,19 @@ function render(){setNav();const names={dashboard:'Your learning dashboard',ceta
  main.querySelectorAll('[data-quiz-index]').forEach(b=>b.addEventListener('click',()=>{quizIndex=Number(b.dataset.quizIndex);render()}));
  main.querySelectorAll('[data-quiz-jump]').forEach(b=>b.addEventListener('click',()=>{quizIndex=Number(b.dataset.quizJump);lessonTab='quiz';render()}));
  const pathToggle=main.querySelector('[data-toggle-paths]');const courseMenu=main.querySelector('#course-paths-menu');
- if(pathToggle&&courseMenu){pathToggle.addEventListener('click',()=>{courseMenu.hidden=!courseMenu.hidden;pathToggle.setAttribute('aria-expanded',String(!courseMenu.hidden))});
-   courseMenu.addEventListener('keydown',e=>{if(e.key==='Escape'){courseMenu.hidden=true;pathToggle.setAttribute('aria-expanded','false');pathToggle.focus()}})}
+ if(pathToggle&&courseMenu){
+   const closePaths=()=>{courseMenu.hidden=true;pathToggle.setAttribute('aria-expanded','false')};
+   pathToggle.addEventListener('click',()=>{courseMenu.hidden=!courseMenu.hidden;pathToggle.setAttribute('aria-expanded',String(!courseMenu.hidden))});
+   for(const node of [courseMenu,pathToggle])node.addEventListener('keydown',e=>{if(e.key==='Escape'){closePaths();pathToggle.focus()}});
+   main.onclick=e=>{if(!e.target.closest('.course-menu-wrap'))closePaths()};
+ } else main.onclick=null;
+ const tabButtons=[...main.querySelectorAll('.lesson-tab')];
+ tabButtons.forEach((button,i)=>button.addEventListener('keydown',event=>{
+   if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
+   event.preventDefault();
+   const next=event.key==='Home'?0:event.key==='End'?tabButtons.length-1:(i+(event.key==='ArrowRight'?1:tabButtons.length-1))%tabButtons.length;
+   lessonTab=tabButtons[next].dataset.lessonTab;render();main.querySelector('.lesson-tab.selected')?.focus();
+ }));
  if(view==='lesson'){attachQuiz();if(lessonTab==='interact'){renderExperiment();attachLabWidgets()}}
  if(view==='account')attachAuth();
 }
