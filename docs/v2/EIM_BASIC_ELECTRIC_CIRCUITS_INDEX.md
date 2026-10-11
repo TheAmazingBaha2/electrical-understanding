@@ -13,7 +13,7 @@ This permits upgrading the **PreLab** from "provisional required" to a confirmed
 
 **Read [full source-backed PreLab + DC 02 review, original lesson drafts and 10-question assessments](./EIM_BEC_PRELAB_DC02_REVIEW.md).**
 
-The scan appears to omit printed PreLab p. 1 and the completion of DC 02's final exercises; the remaining 17 experiments have only their table-of-contents titles reviewed, so keep their priorities **provisional**.
+**Page coverage resolved:** The learner subsequently supplied the PreLab opening on **printed p. 1**, and confirmed that **DC 02 ends on p. 27** (p. 28 is blank). No further page scans are needed for these two sections. The remaining 17 numbered experiments have only their table-of-contents titles reviewed, so keep **their** priorities provisional.
 
 ## Inventory: 1 PreLab, 19 numbered experiments, appendix
 
@@ -91,10 +91,10 @@ This is a possible study path; maintain the original manual order as a selectabl
 ## Exact information needed before final ranking or project instructions
 
 For **PreLab and DC 01–05** (first pass):
-1. Scan the kit's **parts/inventory list and equipment/power supply specifications**.
-2. Scan **PreLab** pages 1–12 if reasonably convenient (or its specific breadboard, instrument and safety portions).
-3. Scan the opening experiment pages and **the schematic plus procedure** for **DC 02, Series & Parallel Circuits, p. 21 onward**. The table of contents suggests DC 02 occupies p. 21–28, but confirm page boundaries from the pages themselves.
-4. Only request other entire experiment sections when an exercise looks worth curating after previewing its exact parts, goal and steps.
+1. **Completed:** PreLab opening p. 1 and remaining PreLab pp. 2–12 reviewed; no missing opening page.
+2. **Completed:** DC 02 pp. 21–27 reviewed, and the owner confirmed p. 28 is blank.
+3. **If needed for a real build:** Check the particular MEGO/VEGO model's markings, ratings, and the learner's actual component inventory. Don't assume specifications from a drawing alone.
+4. **Other experiments:** Request exact diagrams/procedures selectively for worthwhile projects after evaluating their titles and prerequisites.
 
 Project review should record actual experiment identifiers if present (e.g. DC 02 Task 2.1), which of its sub-exercises are redundant, the instrument use involved, verified power/component constraints, and an original extension. Do not use guessed lab IDs or claim proposed extensions are official exercises.
 
