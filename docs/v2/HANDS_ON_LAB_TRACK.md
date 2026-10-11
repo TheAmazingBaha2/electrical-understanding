@@ -9,14 +9,14 @@
 3. **Fundamental Analog Circuits and Semiconductors**
 4. **Introduction to Microcontroller with RP2040**
 
-**Current source boundary:** The user's *Basic Electric Circuits* table of contents plus photographed **PreLab and DC 02** procedures have been reviewed. The *Fundamental Analog Circuits and Semiconductors* **first contents page** has been reviewed, but its experiment instructions, equipment list, and ratings have **not** been checked. FPGA and RP2040 manuals remain unreviewed and on hold. All unverified project ideas are *possible extensions*, not claims about official exercises or kit inventory.
+**Current source boundary:** The user's *Basic Electric Circuits* table of contents plus photographed **PreLab and DC 02** procedures have been reviewed. The *Fundamental Analog Circuits and Semiconductors* **first contents page and full §2.1 (printed pp. 81–93)** have now been reviewed. Section 2.1 describes major instrument options (power supplies, DMMs, oscilloscopes and function generators), **not a component-by-component kit inventory**. Physical experiment procedures, actual device ratings and the remaining small-parts inventory are still unverified. FPGA and RP2040 manuals remain unreviewed and on hold. All unverified project ideas are *possible extensions*, not claims about official exercises or kit inventory.
 
 ## Two-active-manual rule (user preference)
 
 Only two EIM kit manuals are **active at any one time**. The current pair is:
 
 1. **Basic Electric Circuits** — TOC and actual PreLab/DC 02 reviewed; continue manual and selected projects.
-2. **Fundamental Analog Circuits and Semiconductors** — first contents page reviewed; see **[Analog Circuits and Semiconductors: initial index](./EIM_ANALOG_SEMICONDUCTORS_INDEX.md)**.
+2. **Fundamental Analog Circuits and Semiconductors** — first contents page and §2.1 tools/instrument selection reviewed; see **[analog manual index](./EIM_ANALOG_SEMICONDUCTORS_INDEX.md)** and **[§2.1 equipment review](./EIM_ANALOG_SECTION_2_1_REVIEW.md)**.
 
 **Fundamental Digital Design with FPGA** and **Introduction to Microcontroller with RP2040** must stay **on hold**: do not request or review their manuals or build exercises for them until the active pair is completed or the learner explicitly changes that plan. Each kit has separate parts, power, experiment IDs and physical build records. A link to shared theory is fine, but **do not assume a part can be borrowed or a voltage rail safely shared across kits**. Disable/avoid physical cross-kit projects by default; original cross-kit project ideas are only a future backlog and not assigned work.
 
@@ -147,6 +147,6 @@ Lab main page:
 
 ## What to request next
 
-For each **currently active** kit only, **just the cover/product revision, contents page, experiment/project index, and parts/supplied equipment list**. Additional pages (diagrams, specific procedure, expected results) are requested **only for promising experiments**. This avoids needing to scan entire manuals before prioritizing.
+For each **currently active** kit only, request its cover/revision, contents/experiment index and **the instrument capabilities required for selected experiments**, if not yet supplied. Not every manual itemizes small components: *do not demand an exhaustive loose-parts inventory*. Confirm component values, actual part markings, and safety ratings from the relevant **chosen experiment's diagrams/procedure** or a photo when necessary. Additional pages are requested **only for worthwhile experiments or safety-critical equipment setup**. This avoids scanning entire manuals before prioritizing.
 
 First suggestion: begin with **Basic Electric Circuits**, since the learner's diagnostic revealed DMM current/voltage measurement gaps, series/parallel prediction trouble, and Ohm's-law confusion. That is a teaching priority, not an assertion about the kit's exact experiments.
