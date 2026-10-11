@@ -87,15 +87,16 @@ function bindNavigation(){document.querySelectorAll('[data-view]').forEach(b=>b.
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&user&&supabase)void loadCloud()});
  window.addEventListener('online',()=>{if(user)void loadCloud()});
 }
-function v2Context(){return {lessons,progress,hasPassed,unlocked,reviews:reviewQueue().length,banner:cloudBanner(),coreRows:lessonRows(lessons),labLessons};}
-function setNav(){const current=view==='lesson'?'curriculum':view==='subtrack'?(activeLesson==='core'?'curriculum':['guide','exam'].includes(activeLesson)?'ceta':['geier','teach','principles','cabling'].includes(activeLesson)?'textbooks':'labs'):view;
+function v2Context(){return {lessons,progress,hasPassed,unlocked,reviews:reviewQueue().length,banner:cloudBanner(),coreRows:lessonRows(lessons),legacyRows:lessonRows(lessons.filter(l=>l.legacy===true||/^L\d{2,}$/.test(l.id))),labLessons};}
+function setNav(){const current=view==='lesson'?(lessons.some(l=>l.id===activeLesson)?'ceta':'labs'):(view==='legacy'||view==='curriculum')?'ceta':view==='subtrack'?(activeLesson==='core'||['guide','exam'].includes(activeLesson)?'ceta':['geier','teach','principles','cabling'].includes(activeLesson)?'textbooks':'labs'):view;
  document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',current===b.dataset.view));}
-function render(){setNav();const names={dashboard:'Your learning dashboard',ceta:'CETa preparation',curriculum:'Pilot Unit 1',textbooks:'Textbook companions',labs:'Hands-on laboratory',subtrack:'Learning sub-track',lesson:'Lesson workbench',reviews:'Spaced review',library:'Textbook companions','scan-inbox':'Scan Inbox',account:'Your study account'};
+function render(){setNav();const names={dashboard:'Your learning dashboard',ceta:'CETa preparation',curriculum:'Legacy lessons',legacy:'Legacy lessons',textbooks:'Textbook companions',labs:'Hands-on laboratory',subtrack:'Learning sub-track',lesson:'Lesson workbench',reviews:'Spaced review',library:'Textbook companions','scan-inbox':'Scan Inbox',account:'Your study account'};
  $('#page-title').textContent=names[view]||names.dashboard;
  const main=$('#main');
  main.innerHTML=view==='dashboard'?renderDashboard():view==='lesson'?renderLesson():view==='reviews'?renderReviews():view==='account'?renderAccount():view==='library'?renderLibrary():v2Page(view,v2Context(),activeLesson);
  main.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>switchTo(b.dataset.goto,b.dataset.lesson||null,b.dataset.question||null)));
  main.querySelectorAll('[data-lesson-tab]').forEach(b=>b.addEventListener('click',()=>{lessonTab=b.dataset.lessonTab;render()}));
+ main.querySelectorAll('[data-reveal-insight]').forEach(b=>b.addEventListener('click',()=>{const p=main.querySelector('#starting-insight');if(!p)return;p.hidden=!p.hidden;b.setAttribute('aria-expanded',String(!p.hidden));b.innerHTML=p.hidden?'Reveal the starting insight <span aria-hidden="true">⌄</span>':'Hide the starting insight <span aria-hidden="true">⌃</span>'; }));
  main.querySelectorAll('[data-activity-index]').forEach(b=>b.addEventListener('click',()=>{activityIndex=Number(b.dataset.activityIndex);render()}));
  main.querySelectorAll('[data-learn-index]').forEach(b=>b.addEventListener('click',()=>{learnIndex=Number(b.dataset.learnIndex);render()}));
  main.querySelectorAll('[data-quiz-index]').forEach(b=>b.addEventListener('click',()=>{quizIndex=Number(b.dataset.quizIndex);render()}));
@@ -128,7 +129,7 @@ function renderLibrary(){return v2Page('textbooks',v2Context());}
 function renderReviews(){const queue=reviewQueue();return `<p class="muted">Reviews are scheduled after each check: one day after a missed answer, seven days after an initial success, and 21 days after a successful retry. Open a question to answer again.</p>${cloudBanner()}<div class="panel"><h2>${queue.length} review${queue.length===1?'':'s'} due</h2>${queue.length?queue.map(({lesson,q,a})=>`<div class="review-item"><div><b>${esc(lesson.title)}</b><p class="muted sm">${esc(q.prompt)}<br>Scheduled ${duration(a.reviewDue)}</p></div><button class="primary small-button" data-goto="lesson" data-lesson="${lesson.id}" data-question="${q.id}">Review →</button></div>`).join(''):`<div class="empty"><h3>You're caught up.</h3><p>When your completed questions become due, they'll appear here.</p></div>`}</div>`}
 function renderLesson(){const lesson=findLesson(activeLesson);if(!lesson)return '<p>Lesson not found.</p>';
  const idx=lessons.indexOf(lesson),isPilot=idx>=0;
- if((isPilot&&!unlocked(idx))||(!isPilot&&!labUnlocked(lesson)))return '<div class="panel"><h2>Lesson locked</h2><p>Complete the previous lesson’s checks before continuing.</p><button class="primary" data-goto="'+(isPilot?'curriculum':'subtrack')+'" '+(isPilot?'':'data-lesson="basic"')+'>Back</button></div>';
+ if((isPilot&&!unlocked(idx))||(!isPilot&&!labUnlocked(lesson)))return '<div class="panel"><h2>Lesson locked</h2><p>Complete the previous lesson’s checks before continuing.</p><button class="primary" data-goto="'+(isPilot?'legacy':'subtrack')+'" '+(isPilot?'':'data-lesson="basic"')+'>Back</button></div>';
  const score=getAccuracy(lesson),passed=hasPassed(lesson),nextLesson=isPilot?lessons[idx+1]:labLessons[labLessons.indexOf(lesson)+1];
  return tabbedLesson({lesson,isPilot,idx,score,passed,nextLesson,tab:lessonTab,activityIndex,learnIndex,quizIndex,answers:getState(lesson.id).answers||{},questionHtml});
 }
