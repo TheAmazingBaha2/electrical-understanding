@@ -2,7 +2,9 @@ import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './config.js';
 import { lessons, books } from './lessons.js';
 import { v2Dashboard, v2Page } from './v2-panels.js';
 import { labLessons } from './lab-lessons.js';
+import { bookLessons } from './book-lessons.js';
 import { attachLabWidgets } from './lab-widgets.js';
+import { attachDmmWidgets } from './dmm-widgets.js';
 import { tabbedLesson } from './lesson-view.js';
 
 const $ = (s) => document.querySelector(s);
@@ -10,9 +12,11 @@ const esc = (value='') => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','
 const duration = ms => new Date(ms).toLocaleDateString(undefined,{month:'short',day:'numeric'});
 const now = () => Date.now();
 const DAY = 24*60*60*1000;
-const allLessons=[...lessons,...labLessons];
+const allLessons=[...lessons,...labLessons,...bookLessons];
 const findLesson=id=>allLessons.find(l=>l.id===id);
 const labUnlocked=l=>l?.id===labLessons[0].id || Boolean(labLessons.length && hasPassed(labLessons[0]));
+const bookUnlocked=l=>l?.id===bookLessons[0].id || Boolean(bookLessons.length && hasPassed(bookLessons[0]));
+const canOpenLesson=(l,i)=>i<lessons.length?unlocked(i):l?.subtrack==='geier'?bookUnlocked(l):labUnlocked(l);
 let supabase=null, user=null, view='dashboard', activeLesson=null, focusQuestion=null, progress={}, busy=false;
 let lessonTab='overview', activityIndex=0, quizIndex=0, learnIndex=0;
 // Treat every Cloudflare-hosted preview as local-only; never write to production Supabase.
@@ -31,7 +35,7 @@ function hasPassed(lesson){const state=getState(lesson.id);if(state.complete===t
 }
 function unlocked(index){return index===0 || hasPassed(lessons[index-1]);}
 function finishedCount(){return lessons.filter(hasPassed).length}
-function reviewQueue(){return allLessons.flatMap((lesson,index)=>(index<lessons.length?!unlocked(index):!labUnlocked(lesson))?[]:lesson.questions.flatMap(q=>{
+function reviewQueue(){return allLessons.flatMap((lesson,index)=>!canOpenLesson(lesson,index)?[]:lesson.questions.flatMap(q=>{
  const a=getState(lesson.id).answers?.[q.id];return a&&typeof a.correct==='boolean'&&a.reviewDue<=now()?[{lesson,q,a}]:[];
 })).sort((a,b)=>a.a.reviewDue-b.a.reviewDue)}
 function syncLabel(text,isOnline=false){$('#sync-status').textContent=text;$('#status-dot').classList.toggle('online',isOnline);$('#account-pill').textContent=user?'Cloud account':configured?'Sign in':'Local practice'}
@@ -87,8 +91,8 @@ function bindNavigation(){document.querySelectorAll('[data-view]').forEach(b=>b.
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&user&&supabase)void loadCloud()});
  window.addEventListener('online',()=>{if(user)void loadCloud()});
 }
-function v2Context(){return {lessons,progress,hasPassed,unlocked,reviews:reviewQueue().length,banner:cloudBanner(),coreRows:lessonRows(lessons),legacyRows:lessonRows(lessons.filter(l=>l.legacy===true||/^L\d{2,}$/.test(l.id))),labLessons};}
-function setNav(){const current=view==='lesson'?(lessons.some(l=>l.id===activeLesson)?'ceta':'labs'):(view==='legacy'||view==='curriculum')?'ceta':view==='subtrack'?(activeLesson==='core'||['guide','exam'].includes(activeLesson)?'ceta':['geier','teach','principles','cabling'].includes(activeLesson)?'textbooks':'labs'):view;
+function v2Context(){return {lessons,progress,hasPassed,unlocked,reviews:reviewQueue().length,banner:cloudBanner(),coreRows:lessonRows(lessons),legacyRows:lessonRows(lessons.filter(l=>l.legacy===true||/^L\d{2,}$/.test(l.id))),labLessons,bookLessons};}
+function setNav(){const current=view==='lesson'?(lessons.some(l=>l.id===activeLesson)?'ceta':bookLessons.some(l=>l.id===activeLesson)?'textbooks':'labs'):(view==='legacy'||view==='curriculum')?'ceta':view==='subtrack'?(activeLesson==='core'||['guide','exam'].includes(activeLesson)?'ceta':['geier','teach','principles','cabling'].includes(activeLesson)?'textbooks':'labs'):view;
  document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',current===b.dataset.view));}
 function render(){setNav();const names={dashboard:'Your learning dashboard',ceta:'CETa preparation',curriculum:'Legacy lessons',legacy:'Legacy lessons',textbooks:'Textbook companions',labs:'Hands-on laboratory',subtrack:'Learning sub-track',lesson:'Lesson workbench',reviews:'Spaced review',library:'Textbook companions','scan-inbox':'Scan Inbox',account:'Your study account'};
  $('#page-title').textContent=names[view]||names.dashboard;
@@ -115,7 +119,7 @@ function render(){setNav();const names={dashboard:'Your learning dashboard',ceta
    const next=event.key==='Home'?0:event.key==='End'?tabButtons.length-1:(i+(event.key==='ArrowRight'?1:tabButtons.length-1))%tabButtons.length;
    lessonTab=tabButtons[next].dataset.lessonTab;render();main.querySelector('.lesson-tab.selected')?.focus();
  }));
- if(view==='lesson'){attachQuiz();if(lessonTab==='interact'){renderExperiment();attachLabWidgets()}}
+ if(view==='lesson'){attachQuiz();if(lessonTab==='interact'){renderExperiment();attachLabWidgets();attachDmmWidgets()}}
  if(view==='account')attachAuth();
 }
 function cloudBanner(){if(user)return `<div class="success sm">Signed in. Your completed lessons and answers are saved to your cloud account.</div>`;
@@ -129,8 +133,8 @@ function renderLibrary(){return v2Page('textbooks',v2Context());}
 function renderReviews(){const queue=reviewQueue();return `<p class="muted">Reviews are scheduled after each check: one day after a missed answer, seven days after an initial success, and 21 days after a successful retry. Open a question to answer again.</p>${cloudBanner()}<div class="panel"><h2>${queue.length} review${queue.length===1?'':'s'} due</h2>${queue.length?queue.map(({lesson,q,a})=>`<div class="review-item"><div><b>${esc(lesson.title)}</b><p class="muted sm">${esc(q.prompt)}<br>Scheduled ${duration(a.reviewDue)}</p></div><button class="primary small-button" data-goto="lesson" data-lesson="${lesson.id}" data-question="${q.id}">Review →</button></div>`).join(''):`<div class="empty"><h3>You're caught up.</h3><p>When your completed questions become due, they'll appear here.</p></div>`}</div>`}
 function renderLesson(){const lesson=findLesson(activeLesson);if(!lesson)return '<p>Lesson not found.</p>';
  const idx=lessons.indexOf(lesson),isPilot=idx>=0;
- if((isPilot&&!unlocked(idx))||(!isPilot&&!labUnlocked(lesson)))return '<div class="panel"><h2>Lesson locked</h2><p>Complete the previous lesson’s checks before continuing.</p><button class="primary" data-goto="'+(isPilot?'legacy':'subtrack')+'" '+(isPilot?'':'data-lesson="basic"')+'>Back</button></div>';
- const score=getAccuracy(lesson),passed=hasPassed(lesson),nextLesson=isPilot?lessons[idx+1]:labLessons[labLessons.indexOf(lesson)+1];
+ if(!canOpenLesson(lesson,allLessons.indexOf(lesson)))return '<div class="panel"><h2>Lesson locked</h2><p>Complete the preceding lesson in this sub-track before continuing. Other tracks remain independent.</p><button class="primary" data-goto="'+(isPilot?'legacy':'subtrack')+'" '+(isPilot?'':'data-lesson="'+(lesson.subtrack||'basic')+'"')+'>Back</button></div>';
+ const score=getAccuracy(lesson),passed=hasPassed(lesson),nextLesson=isPilot?lessons[idx+1]:lesson.subtrack==='geier'?bookLessons[bookLessons.indexOf(lesson)+1]:labLessons[labLessons.indexOf(lesson)+1];
  return tabbedLesson({lesson,isPilot,idx,score,passed,nextLesson,tab:lessonTab,activityIndex,learnIndex,quizIndex,answers:getState(lesson.id).answers||{},questionHtml});
 }
 function questionHtml(lesson,q,i){const a=getState(lesson.id).answers?.[q.id];const valid=typeof a?.correct==='boolean';const cls=valid?(a.correct?'good':'needs'):'';const val=a?.value||'';
