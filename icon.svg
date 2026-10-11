@@ -1,1 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><rect width="96" height="96" rx="22" fill="#17283d"/><path d="M52 11 25 51h19l-5 34 32-47H50z" fill="#5dd4b3"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Three sequential yellow lightning bolts">
+ <rect width="96" height="96" rx="22" fill="#101B2A"/>
+ <path d="M33 17 13 52h15l-4 24 27-39H35l7-20Z" fill="#FFF0A6"/>
+ <path d="M54 12 35 49h16l-7 30 29-44H56l8-23Z" fill="#FFD84D"/>
+ <path d="M71 23 54 54h13l-5 26 25-39H73l7-18Z" fill="#F5AF27"/>
+ <path d="M33 17 13 52h15M54 12 35 49h16M71 23 54 54h13" stroke="#FFF9D8" stroke-opacity=".55" stroke-width="1.6" fill="none" stroke-linejoin="round"/>
+</svg>
