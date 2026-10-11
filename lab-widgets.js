@@ -1,3 +1,4 @@
+import {drawLabGraphic} from './lab-visuals.js';
 // Tested interactive visual exercises for EIM Basic companion lessons.
 // Safe simulations only: all physical hookups require separate instrument verification.
 const controls=(label,name,min,max,initial,step=1)=>'<label class="lab-control">'+label+' <input type="range" data-x="'+name+'" min="'+min+'" max="'+max+'" step="'+step+'" value="'+initial+'"></label>';
@@ -23,7 +24,7 @@ function setup(el) {
   update=()=>{const v=chosen(el,'v'),p=v*v/1000;el.querySelector('.lab-output').textContent=v+' V → '+(1000*p).toFixed(1)+' mW dissipated. '+(p>.25?'Above the example 250 mW rating: unsuitable in this model.':'At or below 250 mW (do not operate real parts at their limit without checking ratings and derating).')};
  }
  if(kind==='breadboard'){
-  const pts=[['A1','A1'],['E1','E1'],['F1','F1'],['J1','J1'],['A2','A2'],['F2','F2']];
+  const pts=Array.from({length:2},(_,row)=>'ABCDEFGHIJ'.split('').map(c=>[c+(row+1),c+(row+1)])).flat();
   content='<p class="lab-prompt">Choose two breadboard holes and predict whether a continuity test would beep on a typical unpowered training board.</p>'+select('First hole','first',pts)+select('Second hole','second',pts)+output();
   update=()=>{const a=val(el,'first'),b=val(el,'second'),n1=a.slice(1),n2=b.slice(1),side=c=>(c.charCodeAt(0)<70?'left':'right'),connected=n1===n2&&side(a)===side(b);el.querySelector('.lab-output').textContent=a+' ↔ '+b+': '+(connected?'connected strip':'not the same strip')+'. Real board power rails and layout must be verified separately.'};
  }
@@ -63,11 +64,13 @@ function setup(el) {
  }
  if(!content)return;
  el.innerHTML=content;
+ el.querySelector('.lab-prompt')?.insertAdjacentHTML('afterend','<div class="lab-graphic" aria-label="Visual circuit simulation"></div>');
  const first=el.querySelector('[data-x="d1"]');if(first)first.value='1';
  const second=el.querySelector('[data-x="d2"]');if(second)second.value='0';
  const multiplier=el.querySelector('[data-x="mul"]');if(multiplier)multiplier.value='100';
  const b2=el.querySelector('[data-x="second"]');if(b2)b2.value='E1';
- for(const input of el.querySelectorAll('[data-x]')){input.addEventListener('input',update);input.addEventListener('change',update)}
- update();
+ const paint=()=>{update();drawLabGraphic(el,kind)};
+ for(const input of el.querySelectorAll('[data-x]')){input.addEventListener('input',paint);input.addEventListener('change',paint)}
+ paint();
 }
 export function attachLabWidgets(root=document){root.querySelectorAll('.lab-widget[data-lab-kind]').forEach(setup)}
