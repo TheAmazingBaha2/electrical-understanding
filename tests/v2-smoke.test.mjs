@@ -136,7 +136,7 @@ test('source-backed Learn sections display a single teaching concept at a time',
  const lesson=labLessons[0];
  const first=renderLearnSteps(lesson,0),third=renderLearnSteps(lesson,2);
  assert.equal((first.match(/class="learning-concept-reading"/g)||[]).length,1);
- assert.equal((first.match(/class="concept-step/g)||[]).length,6); // five buttons and container
+ assert.equal((first.match(/class="concept-step/g)||[]).length,5); // five concept buttons
  assert.match(third,/power limit/);
  assert.doesNotMatch(third,/data-lab-kind/);
 });
