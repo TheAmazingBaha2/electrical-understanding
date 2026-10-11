@@ -3,6 +3,7 @@ import { lessons, books } from './lessons.js';
 import { v2Dashboard, v2Page } from './v2-panels.js';
 import { labLessons } from './lab-lessons.js';
 import { attachLabWidgets } from './lab-widgets.js';
+import { tabbedLesson } from './lesson-view.js';
 
 const $ = (s) => document.querySelector(s);
 const esc = (value='') => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -13,6 +14,7 @@ const allLessons=[...lessons,...labLessons];
 const findLesson=id=>allLessons.find(l=>l.id===id);
 const labUnlocked=l=>l?.id===labLessons[0].id || Boolean(labLessons.length && hasPassed(labLessons[0]));
 let supabase=null, user=null, view='dashboard', activeLesson=null, focusQuestion=null, progress={}, busy=false;
+let lessonTab='overview', activityIndex=0, quizIndex=0;
 // Treat every Cloudflare-hosted preview as local-only; never write to production Supabase.
 const stagingPreview = /(^|\.)(?:pages|workers)\.dev$/i.test(window.location.hostname);
 // Cloudflare staging is isolated from production Supabase progress by design.
@@ -72,7 +74,13 @@ async function saveCloud(lessonId,state){
  syncLabel('Saved to cloud',true);
 }
 async function saveLesson(lessonId){const s=getState(lessonId);s.complete=s.complete===true || hasPassed(findLesson(lessonId));s.updatedAt=now();progress[lessonId]=s;persistLocal();if(user)await saveCloud(lessonId,s);else syncLabel(configured?'Sign in to sync · local only':'Local only · cloud not configured');}
-function switchTo(next,id=null,qid=null){view=next;activeLesson=id;focusQuestion=qid;$('.sidebar').classList.remove('open');render();window.scrollTo({top:0,behavior:'instant'});if(qid)setTimeout(()=>document.getElementById('question-'+qid)?.scrollIntoView({behavior:'smooth',block:'center'}),70)}
+function switchTo(next,id=null,qid=null){
+ const startingLesson=next==='lesson'&&(view!=='lesson'||activeLesson!==id);
+ if(startingLesson){lessonTab=qid?'quiz':'overview';activityIndex=0;quizIndex=Math.max(0,findLesson(id)?.questions.findIndex(q=>q.id===qid)||0);}
+ view=next;activeLesson=id;focusQuestion=qid;
+ $('.sidebar').classList.remove('open');render();window.scrollTo({top:0,behavior:'instant'});
+ if(qid)setTimeout(()=>document.getElementById('question-'+qid)?.scrollIntoView({behavior:'smooth',block:'center'}),70);
+}
 function bindNavigation(){document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>switchTo(b.dataset.view)));
  $('#menu-toggle').addEventListener('click',()=>$('.sidebar').classList.toggle('open'));
  $('#account-pill').addEventListener('click',()=>switchTo('account'));
@@ -87,7 +95,14 @@ function render(){setNav();const names={dashboard:'Your learning dashboard',ceta
  const main=$('#main');
  main.innerHTML=view==='dashboard'?renderDashboard():view==='lesson'?renderLesson():view==='reviews'?renderReviews():view==='account'?renderAccount():view==='library'?renderLibrary():v2Page(view,v2Context(),activeLesson);
  main.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>switchTo(b.dataset.goto,b.dataset.lesson||null,b.dataset.question||null)));
- if(view==='lesson'){attachQuiz();renderExperiment();attachLabWidgets()}
+ main.querySelectorAll('[data-lesson-tab]').forEach(b=>b.addEventListener('click',()=>{lessonTab=b.dataset.lessonTab;render()}));
+ main.querySelectorAll('[data-activity-index]').forEach(b=>b.addEventListener('click',()=>{activityIndex=Number(b.dataset.activityIndex);render()}));
+ main.querySelectorAll('[data-quiz-index]').forEach(b=>b.addEventListener('click',()=>{quizIndex=Number(b.dataset.quizIndex);render()}));
+ main.querySelectorAll('[data-quiz-jump]').forEach(b=>b.addEventListener('click',()=>{quizIndex=Number(b.dataset.quizJump);lessonTab='quiz';render()}));
+ const pathToggle=main.querySelector('[data-toggle-paths]');const courseMenu=main.querySelector('#course-paths-menu');
+ if(pathToggle&&courseMenu){pathToggle.addEventListener('click',()=>{courseMenu.hidden=!courseMenu.hidden;pathToggle.setAttribute('aria-expanded',String(!courseMenu.hidden))});
+   courseMenu.addEventListener('keydown',e=>{if(e.key==='Escape'){courseMenu.hidden=true;pathToggle.setAttribute('aria-expanded','false');pathToggle.focus()}})}
+ if(view==='lesson'){attachQuiz();if(lessonTab==='interact'){renderExperiment();attachLabWidgets()}}
  if(view==='account')attachAuth();
 }
 function cloudBanner(){if(user)return `<div class="success sm">Signed in. Your completed lessons and answers are saved to your cloud account.</div>`;
@@ -99,12 +114,12 @@ function lessonRows(group){return group.map(l=>{const i=lessons.indexOf(l),a=get
 function renderCurriculum(){return v2Page('curriculum',v2Context());}
 function renderLibrary(){return v2Page('textbooks',v2Context());}
 function renderReviews(){const queue=reviewQueue();return `<p class="muted">Reviews are scheduled after each check: one day after a missed answer, seven days after an initial success, and 21 days after a successful retry. Open a question to answer again.</p>${cloudBanner()}<div class="panel"><h2>${queue.length} review${queue.length===1?'':'s'} due</h2>${queue.length?queue.map(({lesson,q,a})=>`<div class="review-item"><div><b>${esc(lesson.title)}</b><p class="muted sm">${esc(q.prompt)}<br>Scheduled ${duration(a.reviewDue)}</p></div><button class="primary small-button" data-goto="lesson" data-lesson="${lesson.id}" data-question="${q.id}">Review →</button></div>`).join(''):`<div class="empty"><h3>You're caught up.</h3><p>When your completed questions become due, they'll appear here.</p></div>`}</div>`}
-function renderLesson(){const lesson=findLesson(activeLesson);if(!lesson)return `<p>Lesson not found. <button data-goto="curriculum">Back to lessons</button></p>`;const idx=lessons.indexOf(lesson),isPilot=idx>=0;if((isPilot&&!unlocked(idx))||(!isPilot&&!labUnlocked(lesson)))return `<div class="panel"><h2>Lesson locked</h2><p>Complete the previous lesson’s checks before continuing.</p><button class="primary" data-goto="curriculum">Back</button></div>`;
- const score=getAccuracy(lesson),passed=hasPassed(lesson),nextLesson=isPilot?lessons[idx+1]:labLessons[labLessons.indexOf(lesson)+1];return `<div class="learning"><div class="bread">${esc(lesson.module)} / ${isPilot?'PILOT LESSON '+(idx+1)+' OF '+lessons.length:'EIM LAB COMPANION'}</div><div class="lesson-header"><h2>${esc(lesson.title)}</h2><p class="muted">${esc(lesson.description)}</p><span class="chip">About ${lesson.minutes} minutes</span></div><section class="panel reading">${lesson.html}<div class="callout sm">Pilot Unit 1 is self-contained. Textbook chapters have their own companion sub-tracks.</div></section>
- <section id="experiment" class="experiment" style="${lesson.experiment==='embedded'?'display:none':''}"><h3>Interactive circuit lab</h3><p class="muted sm" id="experiment-caption">Change a value, make a prediction, and compare the result.</p><div id="experiment-body"></div></section>
- <div class="section-heading"><h2>Knowledge checks</h2><span class="tag">${score.correct} / ${score.total} correct</span></div><p class="muted sm">Numerical and multiple-choice questions are checked automatically. For explanations, compare your answer against a rubric and decide whether it includes the essential ideas. These self-checks are not AI-graded.</p>
- ${lesson.questions.map((q,i)=>questionHtml(lesson,q,i)).join('')}
- <div class="gate"><h3>${passed?'Lesson mastered — next lesson available':'Lesson completion requirements'}</h3><p class="muted sm">${score.correct} of ${score.total} correct. All ${score.total} checks must be submitted, with at least ${Math.ceil(.8*score.total)} correct (${Math.round(100*Math.ceil(.8*score.total)/score.total)}% minimum). ${lesson.questions.some(q=>q.safety)?'All safety-critical checks must also be correct.':''}</p><div class="progress-track"><div class="progress-fill" style="width:${100*score.correct/score.total}%"></div></div><div class="actions" style="margin-top:17px"><button class="outline" data-goto="${isPilot?'curriculum':'subtrack'}" ${isPilot?'':'data-lesson="basic"'}>${isPilot?'All pilot lessons':'Back to lab manual'}</button>${passed&&nextLesson?`<button class="primary" data-goto="lesson" data-lesson="${nextLesson.id}">Next lesson →</button>`:''}</div></div></div>`}
+function renderLesson(){const lesson=findLesson(activeLesson);if(!lesson)return '<p>Lesson not found.</p>';
+ const idx=lessons.indexOf(lesson),isPilot=idx>=0;
+ if((isPilot&&!unlocked(idx))||(!isPilot&&!labUnlocked(lesson)))return '<div class="panel"><h2>Lesson locked</h2><p>Complete the previous lesson’s checks before continuing.</p><button class="primary" data-goto="'+(isPilot?'curriculum':'subtrack')+'" '+(isPilot?'':'data-lesson="basic"')+'>Back</button></div>';
+ const score=getAccuracy(lesson),passed=hasPassed(lesson),nextLesson=isPilot?lessons[idx+1]:labLessons[labLessons.indexOf(lesson)+1];
+ return tabbedLesson({lesson,isPilot,idx,score,passed,nextLesson,tab:lessonTab,activityIndex,quizIndex,answers:getState(lesson.id).answers||{},questionHtml});
+}
 function questionHtml(lesson,q,i){const a=getState(lesson.id).answers?.[q.id];const valid=typeof a?.correct==='boolean';const cls=valid?(a.correct?'good':'needs'):'';const val=a?.value||'';
  let input=q.type==='choice'?`<div class="options">${q.choices.map((c,j)=>`<label class="option"><input type="radio" name="${q.id}" value="${j}" ${String(val)===String(j)?'checked':''}>${esc(c)}</label>`).join('')}</div>`:q.type==='number'?`<input class="question-input" inputmode="decimal" type="text" aria-label="Numerical answer" placeholder="Enter number in ${esc(q.unit)}" value="${esc(val)}"> <span class="muted sm">${esc(q.unit)}</span>`:`<textarea class="short-answer" aria-label="Your explanation" placeholder="Explain your reasoning in your own words…">${esc(val)}</textarea>`;
  const feedback=a?.pending&&q.type==='reflection'?`<div class="feedback"><b>Compare your response to this rubric:</b><p>${esc(q.rubric)}</p><div class="actions"><button class="primary small-button" data-mark="pass">My answer covers this</button><button class="outline small-button" data-mark="retry">I need more practice</button></div></div>`:valid?`<div class="feedback ${a.correct?'good':'needs'}"><b>${a.correct?'Meets the check':'Review this concept'}</b><p>${esc(q.explain)}</p>${q.type==='reflection'?`<p><b>Rubric:</b> ${esc(q.rubric)}</p>`:''}<p class="muted sm">Review scheduled: ${duration(a.reviewDue)} · Attempts: ${a.attempts||1}</p></div>`:'';
