@@ -14,6 +14,26 @@ export function learningContent(lesson) {
     ? lesson.html.replace(widgetPattern, '<div class="lesson-practice-hint"><span>✧</span> Practice this in the <button data-lesson-tab="interact" type="button">Interact tab →</button></div>')
     : lesson.html;
 }
+// For source-backed EIM lessons, the Learn tab itself is also broken into
+// bite-sized concept cards instead of five sections in one scrolling document.
+export function renderLearnSteps(lesson,step=0){
+ const html=learningContent(lesson);
+ if(lesson.experiment!=="embedded")return html;
+ const pieces=html.split(/(?=<h3>)/);
+ const intro=pieces.shift()||"";
+ if(!pieces.length)return html;
+ const current=Math.min(Math.max(0,step),pieces.length-1);
+ const headings=pieces.map((part,i)=>part.match(/<h3>([\s\S]*?)<\/h3>/)?.[1]?.replace(/<[^>]+>/g,"")||"Concept "+(i+1));
+ return '<div class="learning-concept"><div class="activity-step-top"><span class="v2-kicker">CONCEPT '+(current+1)+' OF '+pieces.length+'</span><span class="activity-caption">Small steps, lasting understanding</span></div>'+
+ (current===0?'<div class="learning-intro">'+intro+'</div>':'')+
+ '<div class="learning-concept-steps" role="group" aria-label="Choose a lesson concept">'+
+ headings.map((head,i)=>'<button class="concept-step'+(current===i?' selected':'')+'" data-learn-index="'+i+'" aria-current="'+(current===i?'step':'false')+'" aria-label="'+escapeHtml(head)+'">'+(i+1)+'</button>').join('')+'</div>'+
+ '<div class="learning-concept-reading">'+pieces[current]+'</div>'+
+ '<div class="activity-nav"><button class="outline small-button" '+(current===0?'disabled':'data-learn-index="'+(current-1)+'"')+'>← Previous idea</button>'+
+ '<span class="muted sm">'+(current+1)+' / '+pieces.length+'</span>'+
+ '<button class="primary small-button" '+(current===pieces.length-1?'data-lesson-tab="interact"':'data-learn-index="'+(current+1)+'"')+'>'+(current===pieces.length-1?'Try the activities →':'Next idea →')+'</button></div></div>';
+}
+
 export function lessonActivities(lesson) {
   if (lesson.experiment!=="embedded") return [{kind:"legacy",title:"Circuit workbench",description:"Adjust the circuit, predict the result, then compare your answer with the calculated values."}];
   const headings=[...lesson.html.matchAll(/<h3>([\s\S]*?)<\/h3>/g)].map(m=>m[1].replace(/<[^>]+>/g,"").replace(/^\d+\.\s*/,""));
