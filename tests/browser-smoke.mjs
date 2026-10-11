@@ -24,6 +24,10 @@ try {
  assert.equal(await page.locator('.quiz-card').count(),0);
  await page.locator('.lesson-tabs [data-lesson-tab="learn"]').click();
  assert.equal(await page.locator('.lab-widget').count(),0,'Learn separates prose from interactive widgets');
+ assert.equal(await page.locator('.concept-step').count(),5);
+ assert.equal(await page.locator('.learning-concept-reading h3').count(),1);
+ await page.locator('.concept-step[data-learn-index="2"]').click();
+ assert.match(await page.locator('.learning-concept-reading').innerText(),/power limit/);
  await page.locator('[data-lesson-tab="interact"]').first().click();
  assert.equal(await page.locator('.lab-widget').count(),1,'Only one mini-lab appears at a time');
  assert.equal(await page.locator('.lab-illustration').count(),1);
