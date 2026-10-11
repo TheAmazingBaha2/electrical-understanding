@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {lessons} from '../lessons.js';
 import {labLessons} from '../lab-lessons.js';
+import {bookLessons} from '../book-lessons.js';
+import {dmmWidgetKinds} from '../dmm-widgets.js';
 import {catalog,catalogSubtrack,cetaGuideUnits,eimBasicExperiments} from '../course-catalog.js';
 import {v2Dashboard,v2Page} from '../v2-panels.js';
 import {lessonActivities,learningContent,renderLessonTabs,renderLearnSteps} from '../lesson-tabs.js';
@@ -11,7 +13,7 @@ import {lessonOverview} from '../lesson-overviews.js';
 
 function context(progress={}) {
  return {
-  lessons, labLessons, progress, reviews:0, banner:'',
+  lessons, labLessons, bookLessons, progress, reviews:0, banner:'',
   coreRows:'<p>Existing pilot cards</p>',
   hasPassed:l=>Boolean(progress[l.id]?.complete),
   unlocked:i=>i===0||Boolean(progress[lessons[i-1].id]?.complete)
@@ -126,7 +128,7 @@ test('lab prose and five visual activities are in separate focused lesson views'
 });
 test('dashboard pie and track rings use real published course denominators',()=>{
  const html=v2Dashboard(context({'EIM-BEC-PRELAB':{complete:true}}));
- assert.equal((html.match(/v2-frost-ring/g)||[]).length,3);
+ assert.equal((html.match(/v2-frost-ring/g)||[]).length,4);
  assert.equal((html.match(/v2-evidence-pie/g)||[]).length,1);
  assert.match(html,/All published lessons/);
  assert.match(html,/Virtual laboratories/);
@@ -189,4 +191,57 @@ test('dashboard prioritizes active virtual laboratories, not archived pilot less
  assert.match(html,/0% of active lab companions completed/);
  assert.match(html,/data-lesson="EIM-BEC-PRELAB"/);
  assert.ok(!html.includes('data-goto="lesson" data-lesson="L01"'));
+});
+
+
+test('Geier book companions have page attribution, ten graded checks and five usable visual activities',()=>{
+ assert.deepEqual(bookLessons.map(l=>l.id),['BDMM-01','BDMM-02']);
+ assert.equal(dmmWidgetKinds.length,10);
+ const widgetKinds=new Set(dmmWidgetKinds);
+ for (const l of bookLessons){
+  assert.equal(l.questions.length,10);
+  assert.ok(l.questions.some(q=>q.safety===true));
+  assert.equal(lessonActivities(l).length,5);
+  assert.equal((l.html.match(/data-lab-kind=/g)||[]).length,5);
+  assert.ok(lessonActivities(l).every(a=>widgetKinds.has(a.kind)));
+  assert.ok(l.module.includes('pp. '));
+  assert.ok(!learningContent(l).includes('class="lab-widget"'));
+ }
+ assert.match(lessonOverview(bookLessons[0]),/5.04 V/);
+ assert.match(lessonOverview(bookLessons[1]),/black probe/);
+});
+test('DMM book track launches first lesson and locks second until first passes',()=>{
+ const c=context();
+ let html=v2Page('subtrack',c,'geier');
+ assert.match(html,/data-lesson="BDMM-01"/);
+ assert.doesNotMatch(html,/data-lesson="BDMM-02"/);
+ assert.match(html,/BDMM-07/);
+ assert.match(html,/Planned/);
+ c.progress['BDMM-01']={complete:true,answers:{},updatedAt:Date.now()};
+ html=v2Page('subtrack',c,'geier');
+ assert.match(html,/data-lesson="BDMM-02"/);
+ assert.match(v2Page('subtrack',c,'basic'),/EIM/);
+});
+test('DMM published scope contributes to overall charts without changing saved CETa or lab IDs',()=>{
+ const c=context({'BDMM-01':{complete:true,answers:{b101:{correct:true},b102:{correct:false}},updatedAt:Date.now()}});
+ const html=v2Dashboard(c);
+ assert.match(html,/DMM textbook/);
+ assert.match(html,/1 \/ 2 DMM companions passed/);
+ assert.match(html,/All published lessons/);
+ assert.match(html,/correct, 1 needs review/);
+ assert.match(html,/Legacy CETa/);
+ assert.match(html,/Virtual laboratories/);
+});
+test('DMM activities reuse five top tabs with one live question and review returning to correct textbook track',()=>{
+ const l=bookLessons[0];
+ const html=tabbedLesson({lesson:l,isPilot:false,idx:-1,tab:'interact',activityIndex:0,quizIndex:0,
+  score:{correct:0,total:10},passed:false,nextLesson:bookLessons[1],answers:{},questionHtml:()=>'<article class="quiz-card"></article>'});
+ assert.match(html,/dmm-signal/);
+ assert.equal((html.match(/data-lab-kind=/g)||[]).length,1);
+ const quiz=tabbedLesson({lesson:l,isPilot:false,idx:-1,tab:'quiz',activityIndex:0,quizIndex:0,
+  score:{correct:0,total:10},passed:false,nextLesson:bookLessons[1],answers:{},questionHtml:()=>'<article class="quiz-card"></article>'});
+ assert.equal((quiz.match(/class="quiz-card"/g)||[]).length,1);
+ const review=tabbedLesson({lesson:l,isPilot:false,idx:-1,tab:'review',activityIndex:0,quizIndex:0,
+  score:{correct:0,total:10},passed:false,nextLesson:bookLessons[1],answers:{},questionHtml:()=>''});
+ assert.match(review,/data-lesson="geier"/);
 });
