@@ -11,6 +11,12 @@
 
 **Important source boundary:** This draft uses only the student's kit titles and described learning context. **No EIM manual pages or exercise indexes have been supplied or checked yet.** Every project idea below is a *proposed enhancement or possible project theme*, not a claim that a particular manual contains it, that all necessary parts are in the kit, or that specific I/O connections are safe.
 
+## First kit manual inventory received
+
+The table of contents of **Basic Electric Circuits** has now been reviewed: one PreLab component-basics section, **DC 01–14**, **AC 15–19**, and an answer-sheet appendix. Actual experiment pages, equipment ratings and inventory have **not** been reviewed yet; priorities and suggested cross-experiment upgrades remain provisional.
+
+See **[Basic Electric Circuits — project index and first-pass priorities](./EIM_BASIC_ELECTRIC_CIRCUITS_INDEX.md)** for all official section titles and starting pages, and an initial selection of especially valuable experiments for this learner.
+
 ## Position in the three-track course
 
 1. **CETa Core:** Knowledge, calculations, instrumentation, troubleshooting, and exam readiness.
