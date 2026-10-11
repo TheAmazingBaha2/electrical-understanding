@@ -1,4 +1,5 @@
 import {lessonTabs, renderLessonTabs, renderActivitySelector, renderLearnSteps, lessonActivities} from "./lesson-tabs.js";
+import {lessonOverview} from "./lesson-overviews.js";
 // Five focused stages. Only one quiz question and one interactive challenge are rendered at a time.
 const e=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function quizPanel(ctx){
@@ -28,7 +29,7 @@ function reviewPanel(ctx){
   return '<button type="button" class="lesson-review-item" data-quiz-jump="'+i+'"><span><b>'+e("Question "+(i+1))+'</b> '+e(q.prompt)+'</span><small>'+label+' →</small></button>';
  }).join("")+'</div><div class="actions"><button class="outline" data-lesson-tab="quiz">Return to quiz</button>'+
  (passed&&nextLesson?'<button class="primary" data-goto="lesson" data-lesson="'+e(nextLesson.id)+'">Next lesson →</button>':'')+
- '<button class="outline" data-goto="'+(isPilot?'curriculum':'subtrack')+'" '+(isPilot?'':'data-lesson="basic"')+'>'+(isPilot?'Pilot lesson list':'Back to lab manual')+'</button></div></section>';
+ '<button class="outline" data-goto="'+(isPilot?'legacy':'subtrack')+'" '+(isPilot?'':'data-lesson="basic"')+'>'+(isPilot?'Legacy lesson library':'Back to lab manual')+'</button></div></section>';
 }
 export function tabbedLesson(ctx) {
  const {lesson,isPilot,idx,score,passed,tab,activityIndex}=ctx;
@@ -38,14 +39,7 @@ export function tabbedLesson(ctx) {
  const sections=lessonActivities(lesson).length;
  let contents="";
  if(active==="overview"){
-  contents='<section class="lesson-overview"><span class="v2-kicker">YOUR LEARNING ROUTE</span><h3>What you will learn</h3><p>'+e(lesson.description)+'</p>'+
-  '<div class="lesson-journey">'+
-  '<article><span class="journey-number">01</span><h4>Learn</h4><p>Understand one idea at a time with plain-language explanations.</p></article>'+
-  '<article><span class="journey-number">02</span><h4>Interact</h4><p>Explore '+sections+' visual circuit '+(sections===1?'challenge':'challenges')+' and predict what happens.</p></article>'+
-  '<article><span class="journey-number">03</span><h4>Quiz</h4><p>Complete '+lesson.questions.length+' scored checks without a long scrolling wall of questions.</p></article>'+
-  '<article><span class="journey-number">04</span><h4>Review</h4><p>See your results, revisit weak areas, and decide what to do next.</p></article></div>'+
-  '<div class="lesson-focus"><strong>Safety first</strong><p class="muted sm">All circuit visuals are educational simulations. Verify equipment ratings and disconnect sources for actual resistance measurements.</p></div>'+
-  '<button class="primary" data-lesson-tab="learn">Start learning →</button></section>';
+  contents=lessonOverview(lesson);
  } else if (active==="learn"){
   contents='<section class="panel reading lesson-reading"><p class="v2-kicker">THE CONCEPTS</p>'+renderLearnSteps(lesson,ctx.learnIndex||0)+(isPilot?'<p class="muted sm">Pilot Unit 1 is self-contained. Textbook-specific study is in the companion sub-tracks.</p>':'')+'</section>'+
   '<div class="lesson-step-footer"><span class="muted sm">Read at your own pace</span><button class="primary" data-lesson-tab="interact">Try the circuits →</button></div>';
