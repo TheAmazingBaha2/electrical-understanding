@@ -16,7 +16,7 @@ const commitSha = process.env.WORKERS_CI_COMMIT_SHA || process.env.GITHUB_SHA ||
 const output = "dist";
 const publicFiles = [
   "index.html",
-  "app.js",
+  "app.js", "persistence.js",
   "lessons.js",
   "course-catalog.js",
   "v2-panels.js",
@@ -43,9 +43,15 @@ const stagingConfig = await (await import("node:fs/promises")).readFile("config.
 if(!stagingConfig.includes("hkwmtjhgrskidaizamwy.supabase.co") || !stagingConfig.includes("SUPABASE_ENVIRONMENT = 'staging'") || stagingConfig.includes("wwvpzyqcgwlwcetwlime")){
  throw new Error("Staging build rejected: missing isolated Supabase project configuration");
 }
+const config = await import('../config.js');
+if (config.SUPABASE_URL !== 'https://hkwmtjhgrskidaizamwy.supabase.co' || config.SUPABASE_ENVIRONMENT !== 'staging' || !/^sb_publishable_[A-Za-z0-9_-]+$/.test(config.SUPABASE_PUBLISHABLE_KEY)) {
+ throw new Error('Staging requires its exact isolated project URL and a public publishable key.');
+}
 for (const file of publicFiles) {
   const info = await stat(file);
   if (!info.isFile()) throw new Error("Expected web file: " + file);
+  const source = await (await import('node:fs/promises')).readFile(file, 'utf8');
+  if (/wwvpzyqcgwlwcetwlime|sb_secret_[A-Za-z0-9_-]+/.test(source)) throw new Error('Production or secret configuration in public asset: ' + file);
   await copyFile(file, join(output, file));
 }
 await writeFile(join(output, "build-info.json"), JSON.stringify({

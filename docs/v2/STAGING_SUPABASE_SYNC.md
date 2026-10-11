@@ -35,3 +35,7 @@ The staging Supabase project has separate Auth users and redirect rules from pro
 - Cloudflare Access protection must be configured separately; this database separation does not itself make the staging site private.
 - Browser smoke tests cannot prove email delivery or live OAuth/session round trips; complete the manual acceptance test before relying on staging sync.
 - Production `main`, production Supabase project `wwvpzyqcgwlwcetwlime`, and existing learner data have not been modified.
+
+## Durable storage update (2026-10-11)
+
+The timestamp / last-write-wins description above is historical. The draft now uses schema-3 documents, atomic cloud revisions, non-destructive conflict review, scoped local recovery points, and append-only cloud history. Read [DURABLE_PROGRESS.md](DURABLE_PROGRESS.md) for the implemented protections, limitations, test procedure, recovery and eventual production approval requirements. The staging migration is applied; no production migration or deployment was performed.

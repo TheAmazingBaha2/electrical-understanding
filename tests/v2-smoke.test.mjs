@@ -290,5 +290,5 @@ test('staging Supabase uses separate preview project and cannot target productio
  assert.match(config,/hkwmtjhgrskidaizamwy\.supabase\.co/);
  assert.doesNotMatch(config,/wwvpzyqcgwlwcetwlime/);
  assert.match(app,/stagingPreview && stagingBackend/);
- assert.match(app,/eu_staging_progress_v1_/);
+ assert.match(readFileSync(new URL('../persistence.js',import.meta.url),'utf8'),/eu_staging_progress_v1_/);
 });
