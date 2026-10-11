@@ -46,7 +46,7 @@ test('analog stays paused while FPGA and RP2040 wait',()=>{
 test('empty progress produces true zeros, not imaginary completion',()=>{
  const html=v2Dashboard(context());
  assert.match(html,/0 \/ 5/);
- assert.match(html,/0% of pilot lessons mastered/);
+ assert.match(html,/0% of active lab companions completed/);
  assert.match(html,/No checks recorded yet/);
 });
 test('persisted lesson IDs count in the dashboard without renaming records',()=>{
@@ -160,6 +160,7 @@ test('Legacy Lessons library preserves L01–L05 IDs, index, completion and link
  assert.match(html,/1 \/ 5 completed/);
  assert.match(html,/Back to CETa preparation/);
  assert.equal(catalogSubtrack('core').status,'planned');
+ assert.match(html,/Archived lesson library/);
 });
 test('Overview is a topic-specific mission, not copies of existing Learn/Interact/Quiz tabs',()=>{
  for(const lesson of [...lessons,...labLessons]){
@@ -173,4 +174,19 @@ test('Overview is a topic-specific mission, not copies of existing Learn/Interac
  }
  assert.match(lessonOverview(labLessons[0]),/1,080/);
  assert.match(lessonOverview(labLessons[1]),/15 mA/);
+});
+
+test('CETa cards show actual source inventory and label exam plans without claiming completion',()=>{
+ const html=v2Page('ceta',context());
+ assert.match(html,/09<\/strong><span>Units indexed/);
+ assert.match(html,/22<\/strong><span>Chapters mapped/);
+ assert.match(html,/0<\/strong><span>Published lessons/);
+ assert.match(html,/Fault diagnosis/);
+ assert.ok(!html.includes('data-goto="lesson" data-lesson="L01"'));
+});
+test('dashboard prioritizes active virtual laboratories, not archived pilot lessons',()=>{
+ const html=v2Dashboard(context());
+ assert.match(html,/0% of active lab companions completed/);
+ assert.match(html,/data-lesson="EIM-BEC-PRELAB"/);
+ assert.ok(!html.includes('data-goto="lesson" data-lesson="L01"'));
 });
