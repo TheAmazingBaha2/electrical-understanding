@@ -32,7 +32,7 @@ export const catalog = [
     {id:'exam',title:'Competency & Exam Practice',status:'planned',summary:'Mixed-topic assessments, diagnosis-based review and spaced retrieval.',units:[]}
   ]},
   {id:'textbooks',title:'Textbook Companions',tagline:'One private study path for each book.',subtracks:[
-    {id:'geier',title:'How to Diagnose and Fix Everything Electronic',status:'drafted',summary:'Third edition. Chapter 6 DMM, pp. 97–103, reviewed; seven lesson designs drafted.',units:[{id:'geier-dmm',title:'Chapter 6 — Digital Multimeter',summary:'Detailed companion plans; interactive lessons not published.'}]},
+    {id:'geier',title:'How to Diagnose and Fix Everything Electronic',status:'active',summary:'Third edition, Chapter 6 DMM, pp. 97–103. First two interactive lessons are published; five additional companion designs are staged.',units:[{id:'geier-dmm',title:'Chapter 6 — Digital Multimeter',summary:'BDMM-01 and BDMM-02 live; BDMM-03 through BDMM-07 are planned, not yet released.'}]},
     {id:'teach',title:'Teach Yourself Electricity and Electronics',status:'awaiting-book',summary:'Seventh edition; awaiting the book and contextual chapter scans.',units:[]},
     {id:'principles',title:'Electronics: Principles and Applications',status:'awaiting-book',summary:'Awaiting your copy and edition confirmation.',units:[]},
     {id:'cabling',title:'Cabling: The Complete Guide to Copper and Fiber-Optic Networking',status:'awaiting-book',summary:'Awaiting your copy and edition confirmation.',units:[]}
