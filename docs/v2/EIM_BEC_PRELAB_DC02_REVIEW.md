@@ -2,14 +2,15 @@
 
 **Draft status:** Detailed planning based on supplied photographs; **not implemented in site**.  
 **Source:** User-provided 36-page PDF scan of the *Basic Electric Circuits* manual, **"PreLab — Component Basics"** and **"DC Experiment 2 — Series & Parallel Circuits."** This source is not a machine-readable PDF; details below were read from rendered scanned pages.  
-**Important coverage:** Scan begins at printed **p. 2**, omitting the start of PreLab printed p. 1; several facing-page margins are cut off, and the final **DC 02 exercise text continues beyond / is cropped at the scan's end**. Some intermediate photographs show partial adjacent pages. Do not claim the entire exercises or the full kit inventory have been captured.  
+**Coverage clarification (confirmed by the book owner):** The original 36-page scan starts with printed p. 2; an additional photograph now supplies **PreLab p. 1**. The owner confirms that **DC 02 ends on p. 27** and **p. 28 is intentionally blank**. Some individual photographs have cropped margins, but there is no missing introductory page or additional DC 02 section to request. A complete inventory of all four kits has still not been supplied.  
 **Reference approach:** Quote only brief labels and refer to printed pages; do not publish the user's scanned manual pages in the public repository.
 
 ## 1. What the scans actually establish
 
-### PreLab: Component Basics (printed pp. 2–12 clearly represented; p. 1 not supplied)
+### PreLab: Component Basics (printed pp. 1–12; opening p. 1 supplied separately)
 
 From supplied images:
+- Printed **p. 1** opens the PreLab with *Component Basics*, states the goal of learning resistor values/color codes and power ratings, and introduces jumper wires, breadboards, power supplies, and multimeters; it begins the section on resistor types. The separately supplied image completes the PreLab opening.
 - A resistor has a **nominal value**, **measured value**, and **tolerance**; example uses 1 kΩ ±5%, and resistor color coding, 4-band vs 5-band codes (printed pp. 2–4).
 - Resistor **power rating** matters; illustrations show several component sizes / wattages and a burnt resistor. Material says most early labs use **1/4 W** components, with higher wattage in Watt's Law experiments (printed pp. 4–5). The specific user's inventory and component labels still need checking.
 - Jumper-wire conductivity, metal material, insulation; **breadboard internal connectivity** and power/ground rails explained (printed pp. 6–8). A board's markings and rail breaks must be verified; pictured layout is not a universal wiring rule.
@@ -19,7 +20,7 @@ From supplied images:
 
 **Educational value:** Essential safety/bench-readiness micro-module. Some passive component-definition reading can be combined; breadboard connectivity, resistance measurements, meter-jack selection and power ratings must be checked actively.
 
-### DC 02: Series & Parallel Circuits (printed pp. 21–27 represented; last page partly cropped)
+### DC 02: Series & Parallel Circuits (printed pp. 21–27; p. 28 blank, confirmed)
 
 **Equipment explicitly pictured/listed at the start of this experiment (printed p. 21):** MEGO portable power supply, VEGO digital multimeter, breadboard, conducting wires, **three resistors (the procedure says each is 1 kΩ)**. This is an **experiment equipment list**, not a proven inventory of everything in the four kits.
 
@@ -39,7 +40,7 @@ From supplied images:
 3. Build the powered version and set the supply to **5 V**.
 4. Measure voltage and current, compute resistance from Ohm's law, and compare equivalent resistance methods.
 5. Printed exercises ask whether different methods agree closely and whether taking an **ohmmeter reading while supply remains connected and on** is valid. Correct instructional conclusion for safety: **no**—do not attempt energized resistance measurements.
-6. The scan cuts off the bottom/continuation of the exercise pages: request the printed final page (around p. 28) if necessary before claiming the full exercise is documented.
+6. **Page coverage confirmed by the owner:** the exercise concludes on printed p. 27. Printed p. 28 is blank, so no further DC 02 chapter page needs to be scanned. Some text at the edges of photographs may still require a clearer close-up only if an individual detail is needed.
 
 **Illustrative readings visible in the book's completed tables**:
 - Series: R_total(calc) 3 kΩ, R_total(measured) 3 kΩ, Vs 5 V, Is 1.67 mA, R = Vs/Is ≈ **2.99 kΩ**.
@@ -91,7 +92,7 @@ The original diagnostic revealed errors around Ohm's law arrangement, selecting 
 ## 3. Proposed v2 lab companion: PreLab Bench Readiness
 
 **ID:** EIM-BEC-PRELAB.  
-**Source:** PreLab p. 2 onward; p. 1 not yet supplied.  
+**Source:** PreLab pp. 1–12, including the separately supplied opening p. 1 photograph.  
 **Teach–Interact–Predict–Debrief** at every concept point:
 1. **Resistor tolerance:** Value/tolerance sliders and acceptable-range indicator; predict whether 1030 Ω is plausible for 1 kΩ ±5%.
 2. **Color codes:** Rotate/select bands and decode / encode values.
@@ -156,8 +157,7 @@ This file is a **reviewed-source design draft** on \`draft/v2-dmm-companion\`, n
 
 ## 7. Additional documentation to request
 
-The scan covers enough to start designing this lab, but before final publication / real hardware instructions ask for:
-1. **PreLab printed p. 1** (not in provided scan) to complete introductory source coverage.
-2. **The final page of DC 02** (likely p. 28), including any exercises cropped by the end of the scan.
-3. Actual MEGO and VEGO **model labels/rating screens** and kit component inventory *only if the published project needs precise instrument setup or special component choices*. The visible official experiment list already confirms MEGO, VEGO, breadboard, jumpers and three nominal 1 kΩ resistors.
+**None of the PreLab/DC 02 section pages are missing.** PreLab p. 1 was supplied separately; DC 02 ends on p. 27 and p. 28 is blank. No need to re-request them.
+
+For **specific real-hardware connection instructions**, request actual MEGO and VEGO **model labels/rating screens** and an inventory or photograph of available resistors and jumpers only if their precise ratings are needed. The experiment list already confirms MEGO, VEGO, breadboard, jumpers, and three nominal 1 kΩ resistors. Ask for a clearer close-up only if a particular cropped value or instruction must be verified.
 
