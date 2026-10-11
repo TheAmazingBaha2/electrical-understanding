@@ -257,7 +257,7 @@ test('CETa study-guide first lesson has 5 meaningful activities and 10 graded ch
  assert.equal(l.questions.filter(q=>q.safety===true).length,1);
  assert.equal(lessonActivities(l).length,5);
  assert.deepEqual(lessonActivities(l).map(x=>x.kind),cetaWidgetKinds);
- assert.match(l.html,/chapter's actual pages/);
+ assert.match(l.html,/chapter's teaching pages/);
  assert.match(lessonOverview(l),/5 A/);
  assert.equal(catalogSubtrack('guide').status,'active');
 });
