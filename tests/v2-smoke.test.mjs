@@ -7,6 +7,7 @@ import {catalog,catalogSubtrack,cetaGuideUnits,eimBasicExperiments} from '../cou
 import {v2Dashboard,v2Page} from '../v2-panels.js';
 import {lessonActivities,learningContent,renderLessonTabs,renderLearnSteps} from '../lesson-tabs.js';
 import {tabbedLesson} from '../lesson-view.js';
+import {lessonOverview} from '../lesson-overviews.js';
 
 function context(progress={}) {
  return {
@@ -56,7 +57,7 @@ test('persisted lesson IDs count in the dashboard without renaming records',()=>
 });
 test('guide, lab, catalog and Scan Inbox views are renderable',()=>{
  const c=context();
- for(const name of ['ceta','textbooks','labs','scan-inbox','curriculum'])assert.ok(v2Page(name,c).length>150);
+ for(const name of ['ceta','textbooks','labs','scan-inbox','legacy'])assert.ok(v2Page(name,c).length>150);
  assert.match(v2Page('subtrack',c,'guide'),/Chapter 22/);
  assert.match(v2Page('subtrack',c,'basic'),/DC 02/);
  assert.match(v2Page('subtrack',c,'analog'),/Paused/);
@@ -64,7 +65,7 @@ test('guide, lab, catalog and Scan Inbox views are renderable',()=>{
 test('navigation and script imports are wired up',()=>{
  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
  const app=readFileSync(new URL('../app.js',import.meta.url),'utf8');
- for(const name of ['ceta','textbooks','labs','scan-inbox','curriculum','reviews'])assert.ok(html.includes('data-view="'+name+'"'));
+ for(const name of ['ceta','textbooks','labs','scan-inbox','reviews'])assert.ok(html.includes('data-view="'+name+'"'));
  assert.ok(app.includes("from './v2-panels.js'"));
  assert.ok(app.includes('v2Page(view,v2Context(),activeLesson)'));
  assert.ok(!app.includes('Find this in your books'));
@@ -139,4 +140,35 @@ test('source-backed Learn sections display a single teaching concept at a time',
  assert.equal((first.match(/class="concept-step/g)||[]).length,5); // five concept buttons
  assert.match(third,/power limit/);
  assert.doesNotMatch(third,/data-lab-kind/);
+});
+
+test('CETa main track has no dedicated original pilot card; Legacy link is at the bottom',()=>{
+ const html=v2Page('ceta',context());
+ assert.ok(html.includes('data-goto="legacy"'));
+ assert.ok(!html.includes('data-lesson="core"'));
+ assert.ok(!html.includes('Core CETa Course</h3>'));
+ assert.ok(html.indexOf('Legacy lessons')>html.indexOf('Competency & Exam Practice'));
+ const menu=v2Dashboard(context());
+ assert.ok(!menu.includes('data-lesson="core"'));
+});
+test('Legacy Lessons library preserves L01–L05 IDs, index, completion and link behavior',()=>{
+ const p={L01:{complete:true,answers:{u1:{correct:true}},updatedAt:1760000000000}};
+ const html=v2Page('legacy',context(p));
+ for(const id of ['L01','L02','L03','L04','L05'])assert.ok(html.includes('data-lesson="'+id+'"'));
+ assert.match(html,/1 \/ 5 completed/);
+ assert.match(html,/Back to CETa preparation/);
+ assert.equal(catalogSubtrack('core').status,'planned');
+});
+test('Overview is a topic-specific mission, not copies of existing Learn/Interact/Quiz tabs',()=>{
+ for(const lesson of [...lessons,...labLessons]){
+  const html=lessonOverview(lesson);
+  assert.match(html,/data-reveal-insight/);
+  assert.match(html,/class="briefing-facts"/);
+  assert.match(html,/class="overview-figure"/);
+  assert.match(html,/data-lesson-tab="learn"/);
+  assert.ok(!html.includes('class="lesson-journey"'));
+  assert.ok(!html.includes('Explore 5 visual circuit challenges'));
+ }
+ assert.match(lessonOverview(labLessons[0]),/1,080/);
+ assert.match(lessonOverview(labLessons[1]),/15 mA/);
 });
