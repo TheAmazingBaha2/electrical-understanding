@@ -6,6 +6,32 @@ const select=(label,name,options)=>'<label class="lab-control">'+label+'<select 
 const output=()=>'<div class="lab-output" aria-live="polite"></div>';
 const val=(el,name)=>el.querySelector('[data-x="'+name+'"]')?.value;
 const chosen=(el,name)=>Number(val(el,name));
+
+const predictionChallenges={
+  series:{question:"If R3 increases with the supply fixed at 5 V, will total current increase or decrease?",correct:"decrease",reason:"Series resistance grows, so 5 V drives less current through the shared path."},
+  divider:{question:"If the middle resistor gets larger, will its own share of the 5 V become larger or smaller?",correct:"increase",reason:"The middle resistor becomes a larger fraction of the series total, so its fraction of the 5 V drop increases."},
+  parallel3:{question:"When the third parallel branch's resistance increases, does source current go up or down?",correct:"decrease",reason:"The first two branches still draw 5 mA each, but the third draws less, so total source current falls."},
+  fault:{question:"Opening the third parallel branch changes total source current in which direction?",correct:"decrease",reason:"The open branch draws 0 mA while the two remaining 5 mA currents stay the same."}
+};
+function setupPrediction(el,kind){
+ const challenge=predictionChallenges[kind];
+ if(!challenge)return;
+ const html='<div class="prediction-challenge"><div class="prediction-title"><span aria-hidden="true">✧</span> Prediction checkpoint <small>ungraded</small></div><p>'+challenge.question+'</p><div class="prediction-choices">'+
+ '<button type="button" data-predict="increase">Increase / larger ↑</button>'+
+ '<button type="button" data-predict="decrease">Decrease / smaller ↓</button>'+
+ '</div><div class="prediction-feedback" aria-live="polite" hidden></div></div>';
+ el.querySelector('.lab-graphic')?.insertAdjacentHTML("afterend",html);
+ for(const button of el.querySelectorAll('[data-predict]')){
+  button.addEventListener("click",()=>{
+   const correct=button.dataset.predict===challenge.correct;
+   for(const b of el.querySelectorAll('[data-predict]'))b.classList.toggle('chosen',b===button);
+   const feedback=el.querySelector('.prediction-feedback');feedback.hidden=false;
+   feedback.classList.toggle('correct',correct);
+   feedback.textContent=(correct?"That's the expected direction. ":"Not quite—compare the branch/path resistance again. ")+challenge.reason;
+  });
+ }
+}
+
 function setup(el) {
  const kind=el.dataset.labKind;
  let content='',update=()=>{};
@@ -65,6 +91,7 @@ function setup(el) {
  if(!content)return;
  el.innerHTML=content;
  el.querySelector('.lab-prompt')?.insertAdjacentHTML('afterend','<div class="lab-graphic" aria-label="Visual circuit simulation"></div>');
+ setupPrediction(el,kind);
  const first=el.querySelector('[data-x="d1"]');if(first)first.value='1';
  const second=el.querySelector('[data-x="d2"]');if(second)second.value='0';
  const multiplier=el.querySelector('[data-x="mul"]');if(multiplier)multiplier.value='100';
