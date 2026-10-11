@@ -3,7 +3,7 @@
 **Updated:** 2026-10-11 (two implementation milestones)  
 **Branch:** draft/v2-dmm-companion  
 **PR:** https://github.com/TheAmazingBaha2/electrical-understanding/pull/1  
-**Deployment status:** **Not deployed**. Production GitHub Pages still uses main. All implementation below is on the draft branch.
+**Deployment status:** Published to the development branch and expected to deploy automatically via the separate Cloudflare staging Worker, subject to the Cloudflare build completing. Production GitHub Pages still uses main. All implementation below is on the draft branch.
 
 ## First foundation milestone — implemented on branch
 
@@ -66,3 +66,13 @@
 - \`config.js\` is unchanged; no service-role or model API secrets may be committed.
 - Planned six-hour checks do **not** run yet. Avoid any user-facing claim that AI grading, autonomous generation, private uploads or email reminders are active.
 - Development branch is not a production replacement until approved tests and deployment occur.
+
+
+## Fourth milestone — Associate CET Study Guide study track begins (2026-10-11)
+- First original, source-bound introductory module **CETA-G03-01 — Engineering Prefixes: Think in Powers of Ten** under CETa → Associate CET Study Guide → Unit 2 Chapter 3. This corresponds only to the **powers of ten** topic listed in the user-provided study-guide table of contents (printed p. 16). **No unreviewed chapter details are claimed.**
+- Five separately paginated explanations and five responsive SVG exercises for prefix scales, scientific notation, real-world unit conversion and identifying thousandfold scale mistakes. Ten scored checks, including an explicit physical-equipment ratings caution.
+- Course Guide page retains all **nine units / 22 chapters** as a read-only outline; other topics are **not** automatically marked as published. Legacy pilot and Core CETa planned track remain separate.
+- Added a dedicated **CETa Guide** dashboard progress donut and independent answer records under \`CETA-G03-01\`. Labs and textbook answers remain unaffected.
+- New JS modules are explicitly allowlisted in the Workers staging asset build and covered by Node and Chromium desktop/mobile regression tests; latest GitHub Actions result must be inspected separately.
+- **No additional scans requested**, no changes to production Supabase data or branch, and Cloudflare staging remains browser-local. Chapter specifics can be requested just-in-time if the user elects to expand to source-faithful coverage.
+- Source and implementation specification: \`docs/v2/CETA_GUIDE_FIRST_LESSON.md\`.
