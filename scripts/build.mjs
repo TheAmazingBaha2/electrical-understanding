@@ -1,7 +1,17 @@
 // Cloudflare Workers Static Assets deployment. Intentionally publish ONLY this allowlist.
 // Never deploy docs, GitHub workflows, tests, environment files or secrets as web assets.
-import { mkdir, copyFile, rm, stat } from "node:fs/promises";
+import { mkdir, copyFile, rm, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+
+// Workers Builds exposes its Git branch through WORKERS_CI_BRANCH.
+// Do not let a misconfigured auto-build deploy main to the dedicated staging Worker.
+const sourceBranch = process.env.WORKERS_CI_BRANCH || process.env.GITHUB_REF_NAME || "local";
+const isWorkersBuild = process.env.WORKERS_CI === "1";
+const allowedCloudflareBranch = sourceBranch === "draft/v2-dmm-companion" || sourceBranch.startsWith("preview/");
+if (isWorkersBuild && !allowedCloudflareBranch) {
+  throw new Error(`Refusing to build eu-v2-staging from unexpected Cloudflare branch: ${sourceBranch}. Set its production branch to draft/v2-dmm-companion, or use an intentional preview/* branch.`);
+}
+const commitSha = process.env.WORKERS_CI_COMMIT_SHA || process.env.GITHUB_SHA || "local";
 
 const output = "dist";
 const publicFiles = [
@@ -25,4 +35,13 @@ for (const file of publicFiles) {
   if (!info.isFile()) throw new Error("Expected web file: " + file);
   await copyFile(file, join(output, file));
 }
+await writeFile(join(output, "build-info.json"), JSON.stringify({
+  site: "Electrical Understanding v2 staging",
+  worker: "eu-v2-staging",
+  branch: sourceBranch,
+  commit: commitSha,
+  builtAt: new Date().toISOString(),
+  mode: "Cloudflare staging — production Supabase sync disabled on workers.dev"
+}, null, 2) + "\n");
 console.log("Workers staging build ready: " + publicFiles.length + " public assets copied to ./dist");
+console.log("Build source: " + sourceBranch + " @ " + commitSha);
