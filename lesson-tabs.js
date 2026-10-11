@@ -59,7 +59,12 @@ const activityDescriptions={
   "dmm-reference":"Choose a verified common point rather than assuming metal parts share ground.",
   "dmm-fault":"Locate an open switch by comparing upstream and downstream DC voltage readings.",
   "dmm-range":"Choose voltage mode and a sufficient range for a known-safe modeled 5 V circuit.",
-  "dmm-dropout":"See a brief voltage interruption on a time trace that may not appear in a DMM snapshot."
+  "dmm-dropout":"See a brief voltage interruption on a time trace that may not appear in a DMM snapshot.",
+  "ceta-ladder":"See which factor kilo, milli, micro and mega apply without changing the base electrical unit.",
+  "ceta-powers":"Move through powers of ten, predicting the decimal equivalent before revealing it.",
+  "ceta-notation":"Express one electronics number in scientific notation and in prefixed units.",
+  "ceta-convert":"Convert common current, resistance, capacitance and frequency labels to base SI units.",
+  "ceta-sanity":"Use current and resistance to diagnose a thousandfold prefix error in a virtual low-voltage circuit."
 };
 export function renderLessonTabs(active,answersCount,questionCount) {
   return '<nav class="lesson-tabs" role="tablist" aria-label="Lesson sections">'+lessonTabs.map(t=>
