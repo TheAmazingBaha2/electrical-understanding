@@ -54,7 +54,7 @@ Electrical Understanding
 
 ## Study automation and progress visualizations
 
-- **[Lesson progression / hourly reconciliation / Scan Inbox specification](./AUTOMATION_SCAN_INTAKE.md)**: completion check immediately after successful answer submission; **hourly server-side follow-up** for missed events and queued content. AI generation is opt-in, backend-driven, source-verified and gated by validation. This is planned behavior, not a running automation.
+- **[Lesson progression / six-hour reconciliation / Scan Inbox specification](./AUTOMATION_SCAN_INTAKE.md)**: completion check immediately after successful answer submission; **six-hour server-side follow-up** for missed events and queued content. AI generation is opt-in, backend-driven, source-verified and gated by validation. This is planned behavior, not a running automation.
 - **[Dashboard and visual theme specification](./DASHBOARD_DESIGN.md)**: ice/sky blue and cyan controls and charts, accessible dark-navies, three yellow lightning bolts as brand artwork, progress per track and sub-track, actionable review/scan queue, sources-of-evidence matrix. Exclude staged and waiting manuals from misleading completion denominators.
 - The user designated the two CET Guide TOC photographs as the **last scan for v2 planning**. Only contextually needed *lesson-specific* scans should be requested as later content work advances.
 
