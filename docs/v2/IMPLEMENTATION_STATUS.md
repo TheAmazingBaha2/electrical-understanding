@@ -42,6 +42,14 @@
 - Browser QA workflow added with Chromium desktop and mobile navigation/screenshot steps. Browser job outcome still requires checking after run.
 - The DMM textbook companion's seven lessons, the complete future CETa curriculum, dynamic generation and six-hour backend reconciler remain **planned, not deployed**.
 
+## Third milestone — interactive textbook DMM companions
+
+- Built original Geier Chapter 6 source-guided lessons **BDMM-01** (what a DMM reading proves) and **BDMM-02** (measuring two-node DC voltage); ten graded questions and five interactive experiments per lesson.
+- Added ten reactive SVG measurement simulations, safety notes and DMM-specific overviews; both lessons use the approved slow Overview → Learn → Interact → Quiz → Review pacing.
+- Enabled the independent Textbooks → Geier sub-track, with BDMM-02 unlocking only after BDMM-01. **BDMM-03–07 remain planned**, not clickable placeholder lessons.
+- Dashboard now includes published textbook progress and its graded answers. Test code asserts the records remain separate from original L01–L05 and EIM lab IDs.
+- Workers staging environment still disallows writes to production Supabase. New scans were not requested; future chapters are paused until relevant source is needed.
+
 ## Next implementation milestones
 
 1. **P2 continued — User acceptance preview:** Arrange a non-production preview/testing method, verify interactive navigation/layout in real browsers, fix issues. No automatic PR merge.
