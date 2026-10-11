@@ -5,6 +5,8 @@ import {lessons} from '../lessons.js';
 import {labLessons} from '../lab-lessons.js';
 import {catalog,catalogSubtrack,cetaGuideUnits,eimBasicExperiments} from '../course-catalog.js';
 import {v2Dashboard,v2Page} from '../v2-panels.js';
+import {lessonActivities,learningContent,renderLessonTabs} from '../lesson-tabs.js';
+import {tabbedLesson} from '../lesson-view.js';
 
 function context(progress={}) {
  return {
@@ -98,4 +100,34 @@ test('lab progress is counted separately from Pilot Unit 1',()=>{
  assert.match(html,/1 \/ 2/);
  assert.match(html,/0 \/ 5/);
  assert.match(html,/physical/i);
+});
+
+test('course paths expands without leaving the dashboard and exposes all sub-tracks',()=>{
+ const html=v2Dashboard(context());
+ assert.match(html,/id="course-paths-menu" hidden/);
+ assert.match(html,/data-toggle-paths/);
+ assert.equal((html.match(/class="course-menu-group"/g)||[]).length,3);
+ assert.ok(html.includes('data-goto="subtrack" data-lesson="guide"'));
+ assert.ok(html.includes('data-goto="subtrack" data-lesson="basic"'));
+});
+test('lab prose and five visual activities are in separate focused lesson views',()=>{
+ const lesson=labLessons[0],activities=lessonActivities(lesson);
+ assert.equal(activities.length,5);
+ assert.ok(!learningContent(lesson).includes('class="lab-widget"'));
+ const ctx={lesson,idx:-1,isPilot:false,score:{correct:0,total:10},passed:false,tab:'interact',activityIndex:0,quizIndex:0,answers:{},questionHtml:()=>'<article class="quiz-card"></article>'};
+ const interactive=tabbedLesson(ctx);
+ assert.equal((interactive.match(/data-lab-kind=/g)||[]).length,1);
+ assert.match(interactive,/role="tablist"/);
+ assert.equal((renderLessonTabs('quiz',0,10).match(/role="tab"/g)||[]).length,5);
+ const assessment=tabbedLesson({...ctx,tab:'quiz'});
+ assert.equal((assessment.match(/class="quiz-card"/g)||[]).length,1);
+ assert.equal((assessment.match(/class="quiz-step/g)||[]).length,11); // ten steps plus list class
+});
+test('dashboard pie and track rings use real published course denominators',()=>{
+ const html=v2Dashboard(context({'EIM-BEC-PRELAB':{complete:true}}));
+ assert.equal((html.match(/v2-frost-ring/g)||[]).length,3);
+ assert.equal((html.match(/v2-evidence-pie/g)||[]).length,1);
+ assert.match(html,/All published lessons/);
+ assert.match(html,/Virtual laboratories/);
+ assert.match(html,/1 of 2 published lessons complete/);
 });
