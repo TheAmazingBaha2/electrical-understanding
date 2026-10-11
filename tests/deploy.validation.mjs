@@ -31,7 +31,10 @@ assert.equal(wrangler.assets.directory, "./dist");
 assert.equal(wrangler.workers_dev, true);
 const app = await readFile("dist/app.js", "utf8");
 assert.ok(app.includes("(?:pages|workers)"), "Workers staging hostname recognized");
-assert.ok(app.includes("configured = !stagingPreview"), "Supabase remains disabled on staging");
+assert.ok(app.includes("configured = stagingPreview && stagingBackend"), "Cloudflare staging connects only to its isolated Supabase project");
+const publicConfig = await readFile("dist/config.js", "utf8");
+assert.match(publicConfig, /hkwmtjhgrskidaizamwy\.supabase\.co/);
+assert.doesNotMatch(publicConfig, /wwvpzyqcgwlwcetwlime/);
 const index = await readFile("dist/index.html", "utf8");
 for (const file of ["./app.js", "./icon.svg", "./manifest.webmanifest", "./styles.css"]) {
   assert.ok(index.includes(file), "Required asset linked: " + file);
