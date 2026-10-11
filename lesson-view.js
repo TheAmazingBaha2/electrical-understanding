@@ -1,4 +1,4 @@
-import {lessonTabs, renderLessonTabs, renderActivitySelector, learningContent, lessonActivities} from "./lesson-tabs.js";
+import {lessonTabs, renderLessonTabs, renderActivitySelector, renderLearnSteps, lessonActivities} from "./lesson-tabs.js";
 // Five focused stages. Only one quiz question and one interactive challenge are rendered at a time.
 const e=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 function quizPanel(ctx){
@@ -47,7 +47,7 @@ export function tabbedLesson(ctx) {
   '<div class="lesson-focus"><strong>Safety first</strong><p class="muted sm">All circuit visuals are educational simulations. Verify equipment ratings and disconnect sources for actual resistance measurements.</p></div>'+
   '<button class="primary" data-lesson-tab="learn">Start learning →</button></section>';
  } else if (active==="learn"){
-  contents='<section class="panel reading lesson-reading"><p class="v2-kicker">THE CONCEPTS</p>'+learningContent(lesson)+(isPilot?'<p class="muted sm">Pilot Unit 1 is self-contained. Textbook-specific study is in the companion sub-tracks.</p>':'')+'</section>'+
+  contents='<section class="panel reading lesson-reading"><p class="v2-kicker">THE CONCEPTS</p>'+renderLearnSteps(lesson,ctx.learnIndex||0)+(isPilot?'<p class="muted sm">Pilot Unit 1 is self-contained. Textbook-specific study is in the companion sub-tracks.</p>':'')+'</section>'+
   '<div class="lesson-step-footer"><span class="muted sm">Read at your own pace</span><button class="primary" data-lesson-tab="interact">Try the circuits →</button></div>';
  } else if (active==="interact"){
   contents=renderActivitySelector(lesson,activityIndex);
