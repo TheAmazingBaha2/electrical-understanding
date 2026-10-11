@@ -350,3 +350,16 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;
  background:rgba(116,80,56,.17);color:#FCE0B9;font-size:12px}
 .prediction-feedback.correct{background:rgba(42,115,111,.23);border-color:#84F5DE;color:#B5FFED}
 .prediction-feedback[hidden]{display:none}
+
+
+/* Smaller consecutive concept cards inside the Learn tab */
+.learning-concept{display:grid;gap:12px}
+.learning-intro{padding:6px 10px;color:#D8F2FD;border-left:2px solid #9AEDFD}
+.learning-concept-steps{display:flex;align-items:center;gap:9px;margin:7px 0;overflow:auto;padding:8px 2px}
+.concept-step{border:1px solid #4F88A4;background:#20455F;color:#B6E6F6;
+ border-radius:10px;min-width:43px;height:41px;font-weight:750}
+.concept-step.selected,.concept-step:hover{border-color:#D2FCFF;background:#8DE8F9;color:#10304A;box-shadow:0 4px 16px rgba(99,221,245,.23)}
+.learning-concept-reading{background:rgba(147,219,243,.055);border:1px solid rgba(154,226,245,.2);
+ border-radius:13px;padding:clamp(14px,2.5vw,23px);min-height:170px}
+.learning-concept-reading h3{color:#E2F9FF;margin:0 0 17px;font-size:1.23rem}
+.learning-concept-reading p{max-width:800px;color:#DCF3FC;line-height:1.76}
