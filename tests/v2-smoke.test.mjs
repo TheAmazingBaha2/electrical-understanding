@@ -4,6 +4,8 @@ import {readFileSync} from 'node:fs';
 import {lessons} from '../lessons.js';
 import {labLessons} from '../lab-lessons.js';
 import {bookLessons} from '../book-lessons.js';
+import {cetaLessons} from '../ceta-lessons.js';
+import {cetaWidgetKinds} from '../ceta-widgets.js';
 import {dmmWidgetKinds} from '../dmm-widgets.js';
 import {catalog,catalogSubtrack,cetaGuideUnits,eimBasicExperiments} from '../course-catalog.js';
 import {v2Dashboard,v2Page} from '../v2-panels.js';
@@ -13,7 +15,7 @@ import {lessonOverview} from '../lesson-overviews.js';
 
 function context(progress={}) {
  return {
-  lessons, labLessons, bookLessons, progress, reviews:0, banner:'',
+  lessons, labLessons, bookLessons, cetaLessons, progress, reviews:0, banner:'',
   coreRows:'<p>Existing pilot cards</p>',
   hasPassed:l=>Boolean(progress[l.id]?.complete),
   unlocked:i=>i===0||Boolean(progress[lessons[i-1].id]?.complete)
@@ -128,7 +130,7 @@ test('lab prose and five visual activities are in separate focused lesson views'
 });
 test('dashboard pie and track rings use real published course denominators',()=>{
  const html=v2Dashboard(context({'EIM-BEC-PRELAB':{complete:true}}));
- assert.equal((html.match(/v2-frost-ring/g)||[]).length,4);
+ assert.equal((html.match(/v2-frost-ring/g)||[]).length,5);
  assert.equal((html.match(/v2-evidence-pie/g)||[]).length,1);
  assert.match(html,/All published lessons/);
  assert.match(html,/Virtual laboratories/);
@@ -182,7 +184,7 @@ test('CETa cards show actual source inventory and label exam plans without claim
  const html=v2Page('ceta',context());
  assert.match(html,/09<\/strong><span>Units indexed/);
  assert.match(html,/22<\/strong><span>Chapters mapped/);
- assert.match(html,/0<\/strong><span>Published lessons/);
+ assert.match(html,/1<\/strong><span>Published lesson/);
  assert.match(html,/Fault diagnosis/);
  assert.ok(!html.includes('data-goto="lesson" data-lesson="L01"'));
 });
@@ -244,4 +246,39 @@ test('DMM activities reuse five top tabs with one live question and review retur
  const review=tabbedLesson({lesson:l,isPilot:false,idx:-1,tab:'review',activityIndex:0,quizIndex:0,
   score:{correct:0,total:10},passed:false,nextLesson:bookLessons[1],answers:{},questionHtml:()=>''});
  assert.match(review,/data-lesson="geier"/);
+});
+
+
+test('CETa study-guide first lesson has 5 meaningful activities and 10 graded checks with independent IDs',()=>{
+ assert.equal(cetaLessons.length,1);
+ const l=cetaLessons[0];
+ assert.equal(l.id,'CETA-G03-01');
+ assert.equal(l.questions.length,10);
+ assert.equal(l.questions.filter(q=>q.safety===true).length,1);
+ assert.equal(lessonActivities(l).length,5);
+ assert.deepEqual(lessonActivities(l).map(x=>x.kind),cetaWidgetKinds);
+ assert.match(l.html,/chapter's actual pages/);
+ assert.match(lessonOverview(l),/5 A/);
+ assert.equal(catalogSubtrack('guide').status,'active');
+});
+test('CETa guide index publishes only one original topic and preserves all 22 source chapter headings',()=>{
+ const c=context();
+ const html=v2Page('subtrack',c,'guide');
+ assert.match(html,/CETA-G03-01/);
+ assert.match(html,/data-goto="lesson" data-lesson="CETA-G03-01"/);
+ assert.match(html,/Chapter 22/);
+ assert.match(html,/printed p\. 16|P\. 16/);
+ assert.match(html,/chapter pages themselves have not been reviewed/);
+ assert.equal((html.match(/class="v2-chapter"/g)||[]).length,22);
+ assert.ok(!html.includes('data-lesson="L01"'));
+});
+test('CETa progress is independent of lab, textbook and archived lessons in dashboard metrics',()=>{
+ const c=context({'CETA-G03-01':{complete:true,updatedAt:Date.now(),answers:{c30101:{correct:true},c30102:{correct:false}}}});
+ const html=v2Dashboard(c);
+ assert.match(html,/CETa Guide/);
+ assert.match(html,/1 \/ 1 guide companions passed/);
+ assert.match(html,/1 of 1 published lessons complete/);
+ assert.match(html,/correct, 1 needs review/);
+ assert.match(html,/0 \/ 2 virtual companions passed/);
+ assert.match(html,/0 \/ 2 DMM companions passed/);
 });
