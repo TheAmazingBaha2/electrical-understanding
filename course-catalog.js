@@ -27,7 +27,7 @@ export const eimBasicExperiments = [
 ];
 export const catalog = [
   {id:'ceta',title:'CETa Preparation',tagline:'Master the theory, then verify what you know.',subtracks:[
-    {id:'core',title:'Core CETa Course',status:'active',summary:'Pilot Unit 1: five original sequential lessons, with progress retained.',units:[{id:'pilot',title:'Pilot Unit 1 — Electrical Foundations',summary:'L01–L05; current working lessons and interactive experiments.'}]},
+    {id:'core',title:'Core CETa Course',status:'planned',summary:'Rebuilding the new CETa core; earlier L01–L05 lessons are preserved separately in Legacy Lessons.',units:[{id:'pilot',title:'Pilot Unit 1 — Electrical Foundations',summary:'L01–L05; current working lessons and interactive experiments.'}]},
     {id:'guide',title:'Associate CET Study Guide',status:'indexed',summary:'9 units · 22 chapters · table of contents verified; detailed chapters requested only when needed.',units:cetaGuideUnits},
     {id:'exam',title:'Competency & Exam Practice',status:'planned',summary:'Mixed-topic assessments, diagnosis-based review and spaced retrieval.',units:[]}
   ]},
