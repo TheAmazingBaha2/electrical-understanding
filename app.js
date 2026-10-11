@@ -14,7 +14,7 @@ const allLessons=[...lessons,...labLessons];
 const findLesson=id=>allLessons.find(l=>l.id===id);
 const labUnlocked=l=>l?.id===labLessons[0].id || Boolean(labLessons.length && hasPassed(labLessons[0]));
 let supabase=null, user=null, view='dashboard', activeLesson=null, focusQuestion=null, progress={}, busy=false;
-let lessonTab='overview', activityIndex=0, quizIndex=0;
+let lessonTab='overview', activityIndex=0, quizIndex=0, learnIndex=0;
 // Treat every Cloudflare-hosted preview as local-only; never write to production Supabase.
 const stagingPreview = /(^|\.)(?:pages|workers)\.dev$/i.test(window.location.hostname);
 // Cloudflare staging is isolated from production Supabase progress by design.
@@ -76,7 +76,7 @@ async function saveCloud(lessonId,state){
 async function saveLesson(lessonId){const s=getState(lessonId);s.complete=s.complete===true || hasPassed(findLesson(lessonId));s.updatedAt=now();progress[lessonId]=s;persistLocal();if(user)await saveCloud(lessonId,s);else syncLabel(configured?'Sign in to sync · local only':'Local only · cloud not configured');}
 function switchTo(next,id=null,qid=null){
  const startingLesson=next==='lesson'&&(view!=='lesson'||activeLesson!==id);
- if(startingLesson){lessonTab=qid?'quiz':'overview';activityIndex=0;quizIndex=Math.max(0,findLesson(id)?.questions.findIndex(q=>q.id===qid)||0);}
+ if(startingLesson){lessonTab=qid?'quiz':'overview';activityIndex=0;learnIndex=0;quizIndex=Math.max(0,findLesson(id)?.questions.findIndex(q=>q.id===qid)||0);}
  view=next;activeLesson=id;focusQuestion=qid;
  $('.sidebar').classList.remove('open');render();window.scrollTo({top:0,behavior:'instant'});
  if(qid)setTimeout(()=>document.getElementById('question-'+qid)?.scrollIntoView({behavior:'smooth',block:'center'}),70);
@@ -97,6 +97,7 @@ function render(){setNav();const names={dashboard:'Your learning dashboard',ceta
  main.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>switchTo(b.dataset.goto,b.dataset.lesson||null,b.dataset.question||null)));
  main.querySelectorAll('[data-lesson-tab]').forEach(b=>b.addEventListener('click',()=>{lessonTab=b.dataset.lessonTab;render()}));
  main.querySelectorAll('[data-activity-index]').forEach(b=>b.addEventListener('click',()=>{activityIndex=Number(b.dataset.activityIndex);render()}));
+ main.querySelectorAll('[data-learn-index]').forEach(b=>b.addEventListener('click',()=>{learnIndex=Number(b.dataset.learnIndex);render()}));
  main.querySelectorAll('[data-quiz-index]').forEach(b=>b.addEventListener('click',()=>{quizIndex=Number(b.dataset.quizIndex);render()}));
  main.querySelectorAll('[data-quiz-jump]').forEach(b=>b.addEventListener('click',()=>{quizIndex=Number(b.dataset.quizJump);lessonTab='quiz';render()}));
  const pathToggle=main.querySelector('[data-toggle-paths]');const courseMenu=main.querySelector('#course-paths-menu');
@@ -129,7 +130,7 @@ function renderLesson(){const lesson=findLesson(activeLesson);if(!lesson)return 
  const idx=lessons.indexOf(lesson),isPilot=idx>=0;
  if((isPilot&&!unlocked(idx))||(!isPilot&&!labUnlocked(lesson)))return '<div class="panel"><h2>Lesson locked</h2><p>Complete the previous lesson’s checks before continuing.</p><button class="primary" data-goto="'+(isPilot?'curriculum':'subtrack')+'" '+(isPilot?'':'data-lesson="basic"')+'>Back</button></div>';
  const score=getAccuracy(lesson),passed=hasPassed(lesson),nextLesson=isPilot?lessons[idx+1]:labLessons[labLessons.indexOf(lesson)+1];
- return tabbedLesson({lesson,isPilot,idx,score,passed,nextLesson,tab:lessonTab,activityIndex,quizIndex,answers:getState(lesson.id).answers||{},questionHtml});
+ return tabbedLesson({lesson,isPilot,idx,score,passed,nextLesson,tab:lessonTab,activityIndex,learnIndex,quizIndex,answers:getState(lesson.id).answers||{},questionHtml});
 }
 function questionHtml(lesson,q,i){const a=getState(lesson.id).answers?.[q.id];const valid=typeof a?.correct==='boolean';const cls=valid?(a.correct?'good':'needs'):'';const val=a?.value||'';
  let input=q.type==='choice'?`<div class="options">${q.choices.map((c,j)=>`<label class="option"><input type="radio" name="${q.id}" value="${j}" ${String(val)===String(j)?'checked':''}>${esc(c)}</label>`).join('')}</div>`:q.type==='number'?`<input class="question-input" inputmode="decimal" type="text" aria-label="Numerical answer" placeholder="Enter number in ${esc(q.unit)}" value="${esc(val)}"> <span class="muted sm">${esc(q.unit)}</span>`:`<textarea class="short-answer" aria-label="Your explanation" placeholder="Explain your reasoning in your own words…">${esc(val)}</textarea>`;
