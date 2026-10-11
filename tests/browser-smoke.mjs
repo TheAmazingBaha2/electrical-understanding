@@ -22,7 +22,7 @@ try {
  await page.locator('[data-goto="lesson"][data-lesson="EIM-BEC-PRELAB"]').click();
  assert.equal(await page.locator('.lesson-tab').count(),5);
  assert.equal(await page.locator('.quiz-card').count(),0);
- await page.locator('[data-lesson-tab="learn"]').click();
+ await page.locator('.lesson-tabs [data-lesson-tab="learn"]').click();
  assert.equal(await page.locator('.lab-widget').count(),0,'Learn separates prose from interactive widgets');
  await page.locator('[data-lesson-tab="interact"]').first().click();
  assert.equal(await page.locator('.lab-widget').count(),1,'Only one mini-lab appears at a time');
