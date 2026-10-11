@@ -9,6 +9,7 @@
 3. Add a separate, optional **Textbook Companion Library** with selectable books, chapter, subsection, lesson, and capstone. Completing a companion lesson can provide evidence toward shared skills but **must not gate progress in the CETa core**.
 4. Current book available: *How to Diagnose and Fix Everything Electronic, Third Edition* (Michael Jay Geier). Other books are **not required or cited in lessons yet**.
 5. Record textbook edition, chapter/page ranges, study status, and source notes. Do not publish photographed book pages or large copyrighted excerpts as site assets.
+6. Add an independent **Hands-On Lab / EIM Lab-on-the-Go** track built around four user-owned kit manuals: **Basic Electric Circuits**, **Fundamental Digital Design with FPGA**, **Fundamental Analog Circuits and Semiconductors**, and **Introduction to Microcontroller with RP2040**. Rank projects by educational value, measurement and troubleshooting practice, skill novelty, transfer, and redundancy. Keep mandatory first-time safety exercises even if mechanically simple. See [Hands-On Lab Track draft](./HANDS_ON_LAB_TRACK.md). Exact manuals, experiment names, and supplied parts still require review; do not invent project-to-manual references.
 
 ## Teaching standard for each future lesson
 
@@ -39,6 +40,12 @@ Proposed lessons:
 - `BDMM-07`: Capstone: troubleshoot a safe battery-powered device using virtual measurements (original synthesis; not a separate book subsection)
 
 Each lesson should have **at least one interaction per concept point and 10 graded questions**. See [DMM companion lesson draft](./DMM_COMPANION.md).
+
+## Three-track progress model
+
+- **Core CETa**: sequential competency-based theory and exam preparation.
+- **Textbook Companion**: optional reading-aligned lessons and simulations.
+- **Hands-On Lab**: curated build/measure/debug projects selected from scanned EIM kit manuals, with dedicated evidence, rubric, and progress. The same underlying skills can be reinforced across all tracks, but progress in one track does not forcibly unlock or block unrelated activities. Preserve stable lesson/project IDs and existing authenticated Supabase progress; test device sync on implementation.
 
 ## Book content vs. modern practices
 
