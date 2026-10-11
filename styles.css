@@ -467,3 +467,22 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;
  .dmm-lesson-entry button{grid-column:2;justify-self:start}
  .dmm-upcoming-row{grid-template-columns:78px 1fr}.dmm-upcoming-row>.v2-pill{grid-column:2;justify-self:start}
 }
+
+
+/* CETa Guide: a single meaningful unit-study card above the full chapter index */
+.guide-feature{display:grid;gap:14px;margin-bottom:25px;border:1px solid #83CFE5;border-radius:16px;padding:clamp(17px,2.6vw,24px);
+ background:radial-gradient(ellipse at 95% 0%,rgba(110,215,244,.17),transparent 60%),linear-gradient(148deg,rgba(52,127,166,.24),rgba(16,48,74,.24));
+ box-shadow:inset 0 1px 0 rgba(214,249,255,.20)}
+.guide-feature-top{display:flex;align-items:center;flex-wrap:wrap;gap:10px;justify-content:space-between}
+.guide-feature h3{font-size:clamp(19px,2.5vw,25px);line-height:1.25;color:#EFFBFF;margin:0}
+.guide-feature p{max-width:760px;margin:0;color:#CEE9F5;line-height:1.7}
+.guide-feature>.primary{justify-self:start}
+.guide-feature-numbers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.guide-feature-numbers>div{display:grid;gap:4px;border:1px solid rgba(171,239,251,.26);padding:15px 13px;border-radius:11px;background:rgba(107,207,231,.08)}
+.guide-feature-numbers strong{font-size:25px;color:#A7F3FF}
+.guide-feature-numbers span{font-size:11px;color:#B9DFEE;line-height:1.35}
+.guide-index-intro{padding-top:10px;border-top:1px solid rgba(148,214,238,.21);margin-bottom:13px}
+.guide-index-intro h3{font-size:16px;color:#E8FAFF;margin:7px 0}
+.guide-index-intro p{font-size:12px;max-width:770px}
+.ceta-illustration text{font-family:ui-sans-serif,system-ui,sans-serif}
+@media(max-width:480px){.guide-feature-numbers{gap:7px}.guide-feature-numbers>div{padding:10px 7px}.guide-feature-numbers strong{font-size:20px}}
