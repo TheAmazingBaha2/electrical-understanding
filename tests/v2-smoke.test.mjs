@@ -2,12 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {lessons} from '../lessons.js';
+import {labLessons} from '../lab-lessons.js';
 import {catalog,catalogSubtrack,cetaGuideUnits,eimBasicExperiments} from '../course-catalog.js';
 import {v2Dashboard,v2Page} from '../v2-panels.js';
 
 function context(progress={}) {
  return {
-  lessons, progress, reviews:0, banner:'',
+  lessons, labLessons, progress, reviews:0, banner:'',
   coreRows:'<p>Existing pilot cards</p>',
   hasPassed:l=>Boolean(progress[l.id]?.complete),
   unlocked:i=>i===0||Boolean(progress[lessons[i-1].id]?.complete)
@@ -71,4 +72,30 @@ test('colors and site icon match approved branding',()=>{
  const css=readFileSync(new URL('../styles.css',import.meta.url),'utf8');
  for(const color of ['#FFF0A6','#FFD84D','#F5AF27'])assert.ok(icon.includes(color));
  for(const color of ['#83CFFF','#35E0F2'])assert.ok(css.includes(color));
+});
+
+test('each source-backed lab has five concept interactions and ten assessed questions',()=>{
+ assert.equal(labLessons.length,2);
+ for(const l of labLessons){
+  assert.equal(l.questions.length,10);
+  assert.ok((l.html.match(/data-lab-kind=/g)||[]).length>=5);
+  assert.ok(l.questions.some(q=>q.safety===true));
+  assert.ok(l.id.startsWith('EIM-BEC-'));
+ }
+});
+test('PreLab is available first and DC 02 unlocks after its prerequisite',()=>{
+ const c=context();
+ let html=v2Page('subtrack',c,'basic');
+ assert.match(html,/data-lesson="EIM-BEC-PRELAB"/);
+ assert.doesNotMatch(html,/data-lesson="EIM-BEC-DC02"/);
+ c.progress['EIM-BEC-PRELAB']={complete:true};
+ html=v2Page('subtrack',c,'basic');
+ assert.match(html,/data-lesson="EIM-BEC-DC02"/);
+});
+test('lab progress is counted separately from Pilot Unit 1',()=>{
+ const c=context({'EIM-BEC-PRELAB':{complete:true}});
+ const html=v2Dashboard(c);
+ assert.match(html,/1 \/ 2/);
+ assert.match(html,/0 \/ 5/);
+ assert.match(html,/physical/i);
 });
