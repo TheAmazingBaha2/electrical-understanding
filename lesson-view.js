@@ -29,7 +29,7 @@ function reviewPanel(ctx){
   return '<button type="button" class="lesson-review-item" data-quiz-jump="'+i+'"><span><b>'+e("Question "+(i+1))+'</b> '+e(q.prompt)+'</span><small>'+label+' →</small></button>';
  }).join("")+'</div><div class="actions"><button class="outline" data-lesson-tab="quiz">Return to quiz</button>'+
  (passed&&nextLesson?'<button class="primary" data-goto="lesson" data-lesson="'+e(nextLesson.id)+'">Next lesson →</button>':'')+
- '<button class="outline" data-goto="'+(isPilot?'legacy':'subtrack')+'" '+(isPilot?'':'data-lesson="basic"')+'>'+(isPilot?'Legacy lesson library':'Back to lab manual')+'</button></div></section>';
+ '<button class="outline" data-goto="'+(isPilot?'legacy':'subtrack')+'" '+(isPilot?'':'data-lesson="'+e(lesson.subtrack||'basic')+'"')+'>'+(isPilot?'Legacy lesson library':lesson.subtrack==='geier'?'Back to DMM companion':'Back to lab manual')+'</button></div></section>';
 }
 export function tabbedLesson(ctx) {
  const {lesson,isPilot,idx,score,passed,tab,activityIndex}=ctx;
@@ -42,7 +42,7 @@ export function tabbedLesson(ctx) {
   contents=lessonOverview(lesson);
  } else if (active==="learn"){
   contents='<section class="panel reading lesson-reading"><p class="v2-kicker">THE CONCEPTS</p>'+renderLearnSteps(lesson,ctx.learnIndex||0)+(isPilot?'<p class="muted sm">Pilot Unit 1 is self-contained. Textbook-specific study is in the companion sub-tracks.</p>':'')+'</section>'+
-  '<div class="lesson-step-footer"><span class="muted sm">Read at your own pace</span><button class="primary" data-lesson-tab="interact">Try the circuits →</button></div>';
+  '<div class="lesson-step-footer"><span class="muted sm">Read at your own pace</span><button class="primary" data-lesson-tab="interact">Try the interactive example →</button></div>';
  } else if (active==="interact"){
   contents=renderActivitySelector(lesson,activityIndex);
  } else if (active==="quiz"){
@@ -50,7 +50,7 @@ export function tabbedLesson(ctx) {
  } else {
   contents=reviewPanel(ctx);
  }
- return '<div class="learning learning-tabbed"><div class="bread">'+e(lesson.module)+' / '+(isPilot?'PILOT LESSON '+(idx+1)+' OF 5':'EIM LAB COMPANION')+'</div>'+
+ return '<div class="learning learning-tabbed"><div class="bread">'+e(lesson.module)+' / '+(isPilot?'LEGACY LESSON '+(idx+1)+' OF 5':lesson.subtrack==='geier'?'TEXTBOOK · DMM COMPANION':'EIM LAB COMPANION')+'</div>'+
  '<div class="lesson-header"><h2>'+e(lesson.title)+'</h2><p class="muted">'+e(lesson.description)+'</p><span class="chip">About '+lesson.minutes+' minutes · '+graded+'/'+score.total+' graded</span></div>'+
  renderLessonTabs(active,graded,score.total)+
  '<div class="lesson-stage" id="lesson-panel" role="tabpanel" tabindex="-1" aria-labelledby="lesson-tab-'+active+'">'+contents+'</div></div>';
