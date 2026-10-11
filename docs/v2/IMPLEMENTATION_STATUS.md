@@ -1,6 +1,6 @@
 # Electrical Understanding v2 — Implementation Status
 
-**Updated:** 2026-10-11  
+**Updated:** 2026-10-11 (two implementation milestones)  
 **Branch:** draft/v2-dmm-companion  
 **PR:** https://github.com/TheAmazingBaha2/electrical-understanding/pull/1  
 **Deployment status:** **Not deployed**. Production GitHub Pages still uses main. All implementation below is on the draft branch.
@@ -27,15 +27,26 @@
 - Executed rendering smoke tests for dashboard and guide/lab/index pages, including an empty progress state.
 - Confirmed catalog contains three tracks, the guide contains 22 chapters and Basic lab index has PreLab plus 19 numbered experiments.
 - Added Node 22 test suite and GitHub Actions workflow for automatic validation.
-- Initial GitHub Actions run: **success** (see workflow runs under repository Actions tab).
+- Node GitHub Actions check runs observed: **success** (see workflow runs under repository Actions tab).
 
 **What these tests do NOT prove:** actual phone/desktop browser rendering, Supabase sign-in/session behavior in the new branch, accessibility of all controls, long-running stability, or correctness of future AI/cloud content services. Live branch-preview/browser QA and cross-device testing are still required before merging.
+
+## Second milestone — functional EIM Basic companion lessons
+
+- `lab-lessons.js`: original, source-informed **PreLab Bench Readiness** and **DC 02 Three-Resistor Challenge**, each with **10 graded questions** and multiple safety-critical items.
+- `lab-widgets.js`: nine reusable interactive behavior types covering resistor tolerances, color bands, wattage, typical breadboard connectivity, correct DMM modes, series/parallel resistors, voltage division, and an open-branch fault. Each published companion has **five embedded interactive teaching points**.
+- The first lab is initially available; the DC 02 site companion unlocks only after PreLab has passed the required question checks. Completion and answers use the existing Supabase `lesson_progress` table with stable **EIM-BEC-** IDs and do not overwrite the five pilot IDs.
+- Lab pages distinguish **virtual assessment completion** from actual breadboard assembly, measurements and independent fault diagnosis. Physical lab evidence uploads are **not yet implemented**.
+- Dashboard now counts virtual lab lesson results separately from Core Pilot Unit 1 evidence.
+- Simulated app rendering was tested for both lab pages and the prerequisite lock. Unit tests cover 10-question counts, five interactions each and progression states.
+- Browser QA workflow added with Chromium desktop and mobile navigation/screenshot steps. Browser job outcome still requires checking after run.
+- The DMM textbook companion's seven lessons, the complete future CETa curriculum, dynamic generation and six-hour backend reconciler remain **planned, not deployed**.
 
 ## Next implementation milestones
 
 1. **P2 continued — User acceptance preview:** Arrange a non-production preview/testing method, verify interactive navigation/layout in real browsers, fix issues. No automatic PR merge.
-2. **P3 — Interactive lesson engine:** Explain → Interact → Predict → Debrief components, validated 10-question new lessons, source-specific mini-labs, calculator aids and coherent explanations.
-3. **P4 — Curated initial content:** EIM Basic PreLab and DC 02 interactive builds, Geier Chapter 6 DMM source-specific lessons and CETa Guide chapter skeleton.
+2. **P3 — Expand the interactive lesson engine:** First two 10-question EIM lab companions and five teaching-point interactions each are now on the branch. Improve prediction-before-reveal, guided project measurement logs, reusable templates, and instructional feedback.
+3. **P4 — More curated content:** EIM Basic PreLab and DC 02 *virtual* companions are authored; add physical measurement logs/evidence, Geier Chapter 6 DMM lesson implementation and CETa Guide companion activity skeleton.
 4. **P5 — Backend infrastructure:** Private source registry, upload authorization, Scan Inbox, immediate unlock/event checks and six-hour background state reconciliation. Do not call paid AI when idle.
 5. **P6 — Optional AI services:** Secure server-side written answer grading and quality-gated lesson preparation, billing/cost caps approved first.
 6. **P7 — Release validation:** Real browser QA, accessibility, database backups/migrations, multi-device sync, production deploy and post-deploy smoke test.
