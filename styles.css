@@ -300,3 +300,36 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;
 @media(max-width:420px){.v2-scope-chart-grid{grid-template-columns:1fr 1fr}.v2-evidence-card{flex-direction:column}
  .v2-pie-legend{width:100%}.lesson-summary-stats{gap:6px}.lesson-review-item{flex-direction:column;align-items:start}}
 @media(prefers-reduced-motion:reduce){.v2-frost-ring,.lesson-tab,.course-menu{animation:none;transition:none}}
+
+
+/* Interactive vector circuit equipment: visual changes follow controls immediately */
+.lab-graphic{border-radius:14px;border:1px solid rgba(122,223,249,.37);overflow:hidden;
+ background:radial-gradient(ellipse at 40% 8%,rgba(155,235,255,.15),transparent 74%),linear-gradient(130deg,#183E58,#102E45);
+ min-height:164px;padding:8px 11px;box-shadow:inset 0 1px rgba(223,251,255,.19)}
+.lab-illustration{display:block;width:100%;max-height:320px}
+.lab-wire{stroke:#97D5EA;stroke-width:5;fill:none;stroke-linejoin:round;stroke-linecap:round}
+.lab-path{stroke:#88EEFF;stroke-dasharray:13 9;animation:lab-flow 3s linear infinite}
+@keyframes lab-flow {to {stroke-dashoffset:-44}}
+.lab-battery{fill:#214E64;stroke:#D9F7FF;stroke-width:4}
+.lab-resistor{fill:#D4EEFA;stroke:#7B9BAF;stroke-width:3}
+.lab-svg-info{font-family:inherit;fill:#BCEDFD;font-size:16px;font-weight:600}
+.lab-svg-label{font-family:inherit;fill:#E9FAFF;font-size:19px;font-weight:750}
+.lab-svg-strong{font-family:inherit;fill:#92F7FF;font-size:19px;font-weight:800}
+.lab-svg-warn{font-family:inherit;fill:#FFDFB8;font-size:15px;font-weight:800}
+.lab-meter-body{fill:#5DBAD1;stroke:#DBFBFF;stroke-width:3}
+.lab-meter-screen{fill:#143B51;stroke:#B0F7FF;stroke-width:3}
+.lab-svg-meter-reading{fill:#C6FBFE;font-size:19px;font-weight:800}
+.lab-meter-dial{fill:#DDF8FF;stroke:#0B425C;stroke-width:3}
+.lab-probe-wire{fill:none;stroke:#64F1DB;stroke-width:4;stroke-linecap:round}
+.lab-probe-wire.danger{stroke:#FFB77D;stroke-dasharray:6 6}
+.lab-warning-shape{fill:#733D38;stroke:#F4B792;stroke-width:2}
+.lab-board-body{fill:#DAF4FB;stroke:#8FD0E7;stroke-width:5}
+.lab-board-trench{fill:#628CA7}
+.lab-hole{fill:#284A61;stroke:#7297AC;stroke-width:3;cursor:pointer;transition:fill .1s,stroke .1s}
+.lab-hole:hover,.lab-hole:focus{fill:#67B8D9;stroke:#FFFFFF;outline:none}
+.lab-hole.probe-a{fill:#FFDF8D;stroke:#B76555;stroke-width:5}
+.lab-hole.probe-b{fill:#73E8FC;stroke:#116C86;stroke-width:5}
+.lab-svg-hole-label{font-family:inherit;fill:#F5FFFF;font-size:12px;font-weight:800;pointer-events:none}
+.lab-resistor-picture{fill:url(#resGlow);stroke:#99D8E7;stroke-width:4}
+.lab-graphic+.lab-control{margin-top:7px}
+@media(prefers-reduced-motion:reduce){.lab-path{animation:none}}
