@@ -363,3 +363,60 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;
  border-radius:13px;padding:clamp(14px,2.5vw,23px);min-height:170px}
 .learning-concept-reading h3{color:#E2F9FF;margin:0 0 17px;font-size:1.23rem}
 .learning-concept-reading p{max-width:800px;color:#DCF3FC;line-height:1.76}
+
+
+/* Lesson-specific mission briefs: content, not a second set of navigation tabs */
+.lesson-briefing{display:grid;gap:19px}
+.briefing-top{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(210px,.75fr);gap:21px;align-items:center}
+.briefing-top h3{font-size:clamp(1.25rem,2.4vw,1.9rem);margin:8px 0 14px;color:#EAFBFF;line-height:1.25}
+.briefing-top p{font-size:clamp(.95rem,1.5vw,1.08rem);line-height:1.65;color:#D7F3FF;margin:0}
+.briefing-figure{padding:14px 9px;background:linear-gradient(135deg,rgba(90,188,222,.18),rgba(30,71,100,.38));
+ border:1px solid rgba(163,231,249,.38);border-radius:17px;box-shadow:inset 0 1px rgba(210,247,255,.12)}
+.overview-figure{display:block;width:100%;max-height:155px}
+.briefing-reveal{display:grid;justify-items:start;gap:10px}
+.briefing-reveal button{border-color:#85CCE6;color:#D9F9FF}
+.briefing-reveal button:hover{background:rgba(113,208,238,.17)}
+.briefing-insight{border-left:3px solid #99ECF6;border-radius:7px;padding:12px 16px;background:rgba(92,171,198,.13);
+ color:#DDF8FE;margin:0;max-width:830px}
+.briefing-insight[hidden]{display:none}
+.briefing-section-name{font-size:12px;letter-spacing:.11em;text-transform:uppercase;color:#98E9FA;margin:7px 0 -8px}
+.briefing-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px}
+.briefing-facts article{display:flex;flex-direction:column;gap:9px;padding:18px 16px;border-radius:14px;
+ border:1px solid rgba(167,228,246,.31);background:linear-gradient(145deg,rgba(93,170,201,.15),rgba(29,79,107,.22))}
+.briefing-facts article span{font-size:10px;color:#93E4F4;font-weight:800;letter-spacing:.12em}
+.briefing-facts article b{font-size:clamp(15px,1.9vw,22px);color:#E5FDFF;line-height:1.15}
+.briefing-facts article p{font-size:12px;color:#BADDEC;margin:0;line-height:1.58}
+.briefing-outcome{display:grid;grid-template-columns:1fr 1fr;gap:12px;border-top:1px solid rgba(160,230,246,.23);padding-top:18px}
+.briefing-outcome>div{border-left:3px solid #78DFEA;padding:6px 14px}
+.briefing-outcome>div:last-child{border-left-color:#E5C087}
+.briefing-outcome strong{color:#D8F5FF;font-size:13px}
+.briefing-outcome p{font-size:12px;color:#C1DFEE;line-height:1.64;margin:6px 0 0}
+.lesson-briefing>.primary{justify-self:start;margin-top:4px}
+
+/* Legacy material remains available but doesn't compete with current paths */
+.legacy-footnote{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;justify-content:flex-start;
+ margin-top:28px;padding:17px 2px 5px;border-top:1px solid rgba(159,223,243,.19);
+ font-size:12px;color:#A7C9DA}
+.legacy-footnote .legacy-minilink{font-size:12px;background:none;border:0;border-bottom:1px solid rgba(155,229,245,.52);
+ padding:2px 1px;color:#A8E7F2;font-weight:650}
+.legacy-footnote .legacy-minilink:hover{color:#F3FCFF;border-color:#E0F9FF}
+.legacy-footnote small{display:block;flex-basis:100%;font-size:11px;color:#789EB5;margin-top:0}
+.legacy-heading{max-width:780px;margin:0 0 25px}
+.legacy-heading h2{font-size:clamp(1.55rem,3vw,2.15rem);margin:9px 0 11px}
+.legacy-heading .muted{font-size:14px}
+.legacy-back{background:transparent;color:#A0DEF2;border:0;border-bottom:1px solid rgba(158,227,248,.48);
+ padding:6px 0;margin-top:7px;font-size:12px}
+.legacy-back:hover{color:#F0FDFF}
+.legacy-listing{padding-bottom:0}
+.legacy-listing>.v2-meter{margin-bottom:12px}
+.legacy-listing .legacy-list{margin:10px -23px 0}
+.legacy-listing .legacy-list .lesson-row{background:transparent}
+.legacy-archive-note{font-size:11px;color:#8EBDCE;margin-top:15px}
+@media(max-width:720px){
+ .briefing-top{grid-template-columns:1fr;gap:13px}
+ .briefing-figure{max-width:450px;width:100%}
+ .briefing-facts{grid-template-columns:1fr 1fr}
+ .briefing-outcome{grid-template-columns:1fr}
+ .legacy-listing .legacy-list{margin:10px -17px 0}
+}
+@media(max-width:430px){.briefing-facts{grid-template-columns:1fr}.briefing-facts article{padding:14px}}
