@@ -22,6 +22,8 @@ const publicFiles = [
   "v2-panels.js",
   "lab-lessons.js",
   "book-lessons.js",
+  "ceta-lessons.js",
+  "ceta-widgets.js",
   "dmm-widgets.js",
   "lab-widgets.js",
   "lab-visuals.js",
