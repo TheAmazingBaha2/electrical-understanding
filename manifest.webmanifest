@@ -1,1 +1,17 @@
-{"name":"Electrical Understanding CETa Workbench","short_name":"Electrical","description":"Sequential electrical lessons and reviews","start_url":"./","display":"standalone","background_color":"#0e1623","theme_color":"#121d2d","icons":[{"src":"./icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}
+{
+  "name": "Electrical Understanding — Electronics Learning Center",
+  "short_name": "Electrical",
+  "description": "CETa study, interactive circuits, textbook companions and hands-on labs",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#101B2A",
+  "theme_color": "#101B2A",
+  "icons": [
+    {
+      "src": "./icon.svg?v=2",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
