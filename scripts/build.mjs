@@ -38,6 +38,11 @@ const publicFiles = [
 
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
+// Fail safe: staging must never bundle the production Supabase URL.
+const stagingConfig = await (await import("node:fs/promises")).readFile("config.js","utf8");
+if(!stagingConfig.includes("hkwmtjhgrskidaizamwy.supabase.co") || !stagingConfig.includes("SUPABASE_ENVIRONMENT = 'staging'") || stagingConfig.includes("wwvpzyqcgwlwcetwlime")){
+ throw new Error("Staging build rejected: missing isolated Supabase project configuration");
+}
 for (const file of publicFiles) {
   const info = await stat(file);
   if (!info.isFile()) throw new Error("Expected web file: " + file);
