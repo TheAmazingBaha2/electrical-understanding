@@ -5,6 +5,16 @@
 **Available source:** User-uploaded photograph of the manual's table of contents (2026-10-10).  
 **Caution:** The table of contents establishes **titles and starting pages**, not procedures, components, diagrams, power levels, safety conditions, or actual educational value. Recommendations below are **provisional**; confirm after reviewing original experiment pages.
 
+## Source-backed review received: PreLab and DC 02
+
+The learner has provided a **36-image PDF scan** covering PreLab (component basics, values/tolerance, resistor bands/power, breadboards and jumper wires, MEGO supply, VEGO DMM) and DC 02 (actual series and parallel three-1-kΩ-resistor measurements with a 5 V source).
+
+This permits upgrading the **PreLab** from "provisional required" to a confirmed useful **bench-readiness / measurement-safety module**, and **DC 02** from provisional to a confirmed **essential hands-on measurement lab**. The recommended enhancement uses real resistor measurements, computed and observed equivalent resistance, an original virtual breadboard/probe trainer, and an original introduced-fault challenge. It specifically reinforces the learner's prior DC-circuit diagnostic gaps.
+
+**Read [full source-backed PreLab + DC 02 review, original lesson drafts and 10-question assessments](./EIM_BEC_PRELAB_DC02_REVIEW.md).**
+
+The scan appears to omit printed PreLab p. 1 and the completion of DC 02's final exercises; the remaining 17 experiments have only their table-of-contents titles reviewed, so keep their priorities **provisional**.
+
 ## Inventory: 1 PreLab, 19 numbered experiments, appendix
 
 | Manual entry | Starts page | Provisional treatment | Why / what to examine when pages arrive |
