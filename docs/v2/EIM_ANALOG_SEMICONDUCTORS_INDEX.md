@@ -1,8 +1,8 @@
 # EIM Lab-on-the-Go — Fundamental Analog Circuits and Semiconductors
 
-**Status:** Contents-only intake and provisional project-curation plan; no individual lab procedures or equipment lists have been scanned for this manual yet. This is a planning document, **not a published or implemented lesson**.
+**Status:** Table-of-contents and **§2.1 pp. 81–93 instrument overview** reviewed; still only a curriculum/planning document, **not a published or implemented lesson**. No individual experiment build procedures or full small-component inventories have been reviewed.
 
-**Source:** Student's photographed first table-of-contents page for *Fundamental Analog Circuits and Semiconductors* (EIM Technology). This page lists Chapters 1–6 and subsections. It does **not** establish whether additional chapters appear on subsequent contents pages. All page numbers below are **starting pages printed in the supplied contents**, not confirmed end pages.
+**Source:** Student's photographed first table-of-contents page for *Fundamental Analog Circuits and Semiconductors* (EIM Technology), plus a subsequent **13-page PDF scan covering all of §2.1 (printed pp. 81–93)**. This TOC page lists Chapters 1–6 and subsections, without establishing whether additional chapters appear on following contents pages. The table's numbers are **starting pages**.
 
 **Active-kit policy:** For the current phase, **only** (A) *Basic Electric Circuits* and (B) *Fundamental Analog Circuits and Semiconductors* are actively reviewed, expanded, or studied within the EIM Hands-On Lab track. The FPGA and RP2040 kits are **on hold** until these two active manuals have been worked through as agreed, or the student explicitly changes the active pair. Do **not** design projects requiring parts from inactive kits. Each active kit has its own isolated parts/tools/power inventory, source references, lab progress, and build checklists. Cross-linking conceptual skills across tracks is appropriate; cross-kit physical wiring is **not presumed**.
 
@@ -31,7 +31,7 @@ Provisional treatment: **concept-and-prerequisite checks**, skipping unnecessary
 | 2.4 | Grounding | 112 |
 | 2.5 | Datasheets | 118 |
 
-Provisional treatment: **essential bench-readiness and hardware-specific safety**; must precede recommending real build voltages and connections. Cross-link common principles to the existing DMM book companion but use the **analog kit's own** supply and component specifications.
+**Source reviewed for §2.1 pp. 81–93:** The section covers power-supply options (including split positive/negative rails), DMM accuracy/precision/resolution, oscilloscope specifications, and function generator waveform/amplitude/offset/frequency settings. It does **not** enumerate all small kit parts or verify the student's actual instrument models and ratings. Our proposed interactive lessons cover source/rail selection and choosing/setting up test instruments while **reusing** rather than duplicating the DMM textbook companion. **[See complete §2.1 review and lesson design](./EIM_ANALOG_SECTION_2_1_REVIEW.md).** The safety-critical physical equipment setup still requires §2.2 and the actual device ratings.
 
 ### Chapter 3 — Op-amp Experiments (starts p. 129)
 
@@ -103,11 +103,12 @@ Chapter 2 is a suggested starting point because power rails, reference points, D
 ## 5. What to scan next
 
 For this manual, request first:
-- **Chapter 2, §2.1 "A List of Equipment and Tools" (starts p. 81)**, especially the *actual kit inventory, bench equipment, part numbers, and diagrams*.
-- **§2.2 "Familiarize Your Power Supply" (starts p. 94)**, showing its model and limits. Ask for subsections as convenient rather than requiring all pages at once.
-- If a supplied table of contents has a second page, that image to establish whether chapters follow Chapter 6.
+- **Completed:** The user supplied all of **§2.1 pp. 81–93**. This section mainly compares instrument categories, options and their capabilities; it does **not** contain a full list of individual resistors/capacitors/semiconductors. Don't re-request such an inventory from §2.1.
+- **Next:** **§2.2 "Familiarize Your Power Supply" (starts p. 94)**, particularly the actual supply operation, possible rails and safety details. Ask for it only as convenient.
+- **Later:** §2.3 measurement techniques / §2.4 grounding, or a candidate experiment from 3.1 / 4.1. Determine exact component values and ratings from the **chosen experiment's diagrams and parts list**, not an imagined complete inventory.
+- If there is another page of the table of contents, it can establish whether more chapters follow Chapter 6.
 
-These let us build an accurate analog-kit inventory and not mistakenly substitute parts from *Basic Electric Circuits*. Next, ask for a particularly promising **actual experiment** (suggest 3.1 or 4.1, based on the learner's current gaps) and score its individual tasks with evidence.
+This keeps the analog kit's real inventory separate from *Basic Electric Circuits*, while permitting worthwhile project selection without cataloguing each small part upfront.
 
 ## 6. Planned v2.0 UI behavior and release checks
 
