@@ -17,6 +17,10 @@ jobs:
           node-version: '22'
       - name: Check module syntax
         run: npm run check
+      - name: Verify Cloudflare staging build
+        run: |
+          npm run build
+          node tests/deploy.validation.mjs
       - name: Run source and UI smoke tests
         run: npm test
 
@@ -33,9 +37,11 @@ jobs:
         run: |
           npm install --no-save playwright@1.55.0
           npx playwright install --with-deps chromium
+      - name: Build Cloudflare static assets
+        run: npm run build
       - name: Start static site
         run: |
-          python3 -m http.server 8080 > /tmp/eu-site.log 2>&1 &
+          python3 -m http.server 8080 --directory dist > /tmp/eu-site.log 2>&1 &
           sleep 2
       - name: Run real desktop and mobile smoke tests
         run: node tests/browser-smoke.mjs
