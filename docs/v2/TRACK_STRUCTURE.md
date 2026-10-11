@@ -7,7 +7,7 @@
 ### Track 1 — CETa Preparation (primary learning / exam pathway)
 
 1. **Core CETa Course** — competency-led instructional units, including the existing five lessons reorganized into **Pilot Unit 1**. Retain stable `L01`–`L05` IDs and protect all existing progress; each later lesson aims for plain-language explanations, purposeful interactions at each major teaching point, and **10 varied assessment questions**.
-2. **Associate CET Study Guide Companion** — a distinct *sub-track nested under Track 1*, NOT duplicated in generic Textbook Companions. It will be divided into guide chapter → section → original companion lesson / interactive exercise → review. The user owns this printed study guide; **exact edition, table of contents, chapter contents and page numbers have not yet been provided in this development pass**. Never invent its chapters or paraphrase unread sections as though sourced. Await scanned contents or chosen pages before mapping guide-specific units.
+2. **Associate CET Study Guide Companion** — a distinct *sub-track nested under Track 1*, NOT duplicated in generic Textbook Companions. It will be divided into guide chapter → section → original companion lesson / interactive exercise → review. The user owns this printed guide; its photographed **table of contents has been supplied** and establishes **nine units, Chapters 1–22 plus appendices** in **[the guide index](./CETA_GUIDE_CONTENTS.md)**. The exact edition and detailed chapter body remain unverified; use chapter titles/page starts only as supported. Never invent detailed text or pretend to have read unscanned chapters. Request small pertinent pages only later through the Scan Inbox.
 3. **CETa Competency & Exam Practice** — independent mixed-topic checks, review of areas missed in the 40-question informal diagnostic, spaced retention, and exam-style practice. This is not a claim to reproduce official exam questions.
 
 The Guide sub-track and Core Course can link to the same competency tags, but each stores **distinct completion/progress records**: completing a guide page does not automatically mark the core lesson as complete and vice versa. Guide exercises may inform a separate skill mastery panel.
@@ -51,6 +51,12 @@ Electrical Understanding
    ├─ Fundamental Digital Design with FPGA [Waiting]
    └─ Introduction to Microcontroller with RP2040 [Waiting]
 ```
+
+## Study automation and progress visualizations
+
+- **[Lesson progression / hourly reconciliation / Scan Inbox specification](./AUTOMATION_SCAN_INTAKE.md)**: completion check immediately after successful answer submission; **hourly server-side follow-up** for missed events and queued content. AI generation is opt-in, backend-driven, source-verified and gated by validation. This is planned behavior, not a running automation.
+- **[Dashboard and visual theme specification](./DASHBOARD_DESIGN.md)**: ice/sky blue and cyan controls and charts, accessible dark-navies, three yellow lightning bolts as brand artwork, progress per track and sub-track, actionable review/scan queue, sources-of-evidence matrix. Exclude staged and waiting manuals from misleading completion denominators.
+- The user designated the two CET Guide TOC photographs as the **last scan for v2 planning**. Only contextually needed *lesson-specific* scans should be requested as later content work advances.
 
 ## Tracking model and publishing acceptance criteria
 
