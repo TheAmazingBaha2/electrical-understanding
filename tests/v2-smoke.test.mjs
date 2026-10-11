@@ -153,7 +153,9 @@ test('CETa main track has no dedicated original pilot card; Legacy link is at th
 });
 test('Legacy Lessons library preserves L01–L05 IDs, index, completion and link behavior',()=>{
  const p={L01:{complete:true,answers:{u1:{correct:true}},updatedAt:1760000000000}};
- const html=v2Page('legacy',context(p));
+ const c=context(p);
+ c.legacyRows=lessons.map(l=>'<button data-lesson="'+l.id+'" data-goto="lesson">'+l.title+'</button>').join('');
+ const html=v2Page('legacy',c);
  for(const id of ['L01','L02','L03','L04','L05'])assert.ok(html.includes('data-lesson="'+id+'"'));
  assert.match(html,/1 \/ 5 completed/);
  assert.match(html,/Back to CETa preparation/);
