@@ -12,7 +12,7 @@ try {
  await page.goto('http://127.0.0.1:8080/',{waitUntil:'domcontentloaded'});
  await page.locator('.v2-hero').waitFor({timeout:30000});
  assert.equal(await page.locator('.workspace-top-tabs .workspace-tab').count(),6);
- assert.equal(await page.locator('.v2-frost-ring').count(),3);
+ assert.equal(await page.locator('.v2-frost-ring').count(),4);
  assert.equal(await page.locator('.v2-evidence-pie').count(),1);
  // Main CETa view is for current/future paths; the originals are in a quiet footer archive.
  await page.locator('.workspace-top-tabs [data-view="ceta"]').click();
@@ -76,6 +76,40 @@ try {
  await page.locator('.workspace-top-tabs [data-view="dashboard"]').click();
  await page.screenshot({path:'test-artifacts/desktop-aurora.png',fullPage:true});
 
+ // The textbook companion is an independent lesson sequence with five real DMM interactions.
+ await page.locator('.workspace-top-tabs [data-view="textbooks"]').click();
+ await page.locator('[data-goto="subtrack"][data-lesson="geier"]').first().click();
+ assert.match(await page.locator('main').innerText(),/Digital multimeter study companion/);
+ assert.equal(await page.locator('[data-goto="lesson"][data-lesson="BDMM-01"]').count(),1);
+ assert.equal(await page.locator('[data-goto="lesson"][data-lesson="BDMM-02"]').count(),0,'Second DMM lesson is gated independently');
+ await page.locator('[data-goto="lesson"][data-lesson="BDMM-01"]').click();
+ assert.match(await page.locator('.lesson-overview').innerText(),/5.04 V/);
+ await page.locator('.lesson-tabs [data-lesson-tab="learn"]').click();
+ assert.equal(await page.locator('.concept-step').count(),5);
+ await page.locator('.lesson-tabs [data-lesson-tab="interact"]').click();
+ assert.equal(await page.locator('.activity-step').count(),5);
+ assert.equal(await page.locator('.lab-widget[data-lab-kind="dmm-signal"]').count(),1);
+ assert.equal(await page.locator('.dmm-illustration').count(),1);
+ await page.locator('.lab-widget select[data-x="signal"]').selectOption('pulse');
+ assert.match(await page.locator('.lab-output').innerText(),/time-domain trace/);
+ await page.locator('.activity-step[data-activity-index="1"]').click();
+ assert.equal(await page.locator('.lab-widget[data-lab-kind="dmm-tolerance"]').count(),1);
+ await page.locator('.lab-widget input[data-x="reading"]').fill('5.40');
+ assert.match(await page.locator('.lab-output').innerText(),/beyond this example/);
+ await page.locator('.lesson-tabs [data-lesson-tab="quiz"]').click();
+ assert.equal(await page.locator('.quiz-card').count(),1);
+ assert.equal(await page.locator('.quiz-step').count(),10);
+ await page.locator('.quiz-card input[type="radio"][value="0"]').check();
+ await page.locator('[data-submit="b101"]').click();
+ const bookSaved=await page.evaluate(()=>JSON.parse(localStorage.getItem('eu_demo_v1')||'{}'));
+ assert.equal(bookSaved['BDMM-01']?.answers?.b101?.correct,true);
+ assert.equal(bookSaved['EIM-BEC-PRELAB']?.answers?.p01?.correct,true,'Lab answer not replaced by textbook save');
+ await page.locator('.lesson-tabs [data-lesson-tab="review"]').click();
+ assert.match(await page.locator('main').innerText(),/Back to DMM companion/);
+ await page.screenshot({path:'test-artifacts/dmm-desktop.png',fullPage:true});
+ await page.locator('.workspace-top-tabs [data-view="dashboard"]').click();
+
+
  const phone=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1});
  const mobileErrors=[];phone.on('pageerror',e=>mobileErrors.push(e.message));
  await phone.route('https://esm.sh/**',route=>route.abort());
@@ -87,6 +121,12 @@ try {
  await phone.locator('[data-goto="lesson"][data-lesson="EIM-BEC-PRELAB"]').click();
  await phone.locator('[data-lesson-tab="interact"]').first().click();
  assert.equal(await phone.locator('.lab-illustration').count(),1);
+ await phone.locator('.workspace-top-tabs [data-view="textbooks"]').click();
+ await phone.locator('[data-goto="subtrack"][data-lesson="geier"]').first().click();
+ await phone.locator('[data-goto="lesson"][data-lesson="BDMM-01"]').click();
+ await phone.locator('.lesson-tabs [data-lesson-tab="interact"]').click();
+ assert.equal(await phone.locator('.dmm-illustration').count(),1);
+
  const width=await phone.evaluate(()=>({document:document.documentElement.scrollWidth,view:window.innerWidth}));
  assert.ok(width.document<=width.view+2,'Mobile layout overflow: '+JSON.stringify(width));
  assert.deepEqual(errors,[],'Desktop JavaScript runtime errors');
