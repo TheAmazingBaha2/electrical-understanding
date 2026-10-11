@@ -1,0 +1,9 @@
+{
+  "name": "electrical-understanding",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "check": "node --check app.js && node --check lessons.js && node --check course-catalog.js && node --check v2-panels.js && node --check lab-lessons.js && node --check lab-widgets.js"
+  }
+}

@@ -1,0 +1,48 @@
+name: Verify Electrical Understanding v2
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - draft/v2-dmm-companion
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check module syntax
+        run: npm run check
+      - name: Run source and UI smoke tests
+        run: npm test
+
+  browser-smoke:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium test runner
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Start static site
+        run: |
+          python3 -m http.server 8080 > /tmp/eu-site.log 2>&1 &
+          sleep 2
+      - name: Run real desktop and mobile smoke tests
+        run: node tests/browser-smoke.mjs
+      - name: Save visual QA screenshots
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v2-visual-qa
+          path: test-artifacts/
+          if-no-files-found: ignore

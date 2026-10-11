@@ -3,10 +3,10 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#121d2d">
-  <meta name="description" content="Electrical Understanding — CETa prep, circuit concepts, practical problems and spaced reviews.">
-  <title>Electrical Understanding · CETa Workbench</title>
-  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#101B2A">
+  <meta name="description" content="Electrical Understanding — CETa course, textbook companions, hands-on laboratory, study progress and interactive circuits.">
+  <title>Electrical Understanding · Electronics Learning Center</title>
+  <link rel="icon" href="./icon.svg?v=2" type="image/svg+xml">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="stylesheet" href="./styles.css">
 </head>
@@ -14,18 +14,21 @@
   <a class="skip" href="#main">Skip to content</a>
   <div class="shell">
     <aside class="sidebar">
-      <div class="brand"><div class="brand-icon">⏚</div><div><b>Electrical<br>Understanding</b><small>CETa Learning Workbench</small></div></div>
+      <div class="brand"><div class="brand-icon"><img src="./icon.svg" width="41" height="41" alt="Three yellow lightning bolts"></div><div><b>Electrical<br>Understanding</b><small>CETa Learning Workbench</small></div></div>
       <nav aria-label="Main navigation">
-        <button class="nav-link active" data-view="dashboard">▦ <span>Dashboard</span></button>
-        <button class="nav-link" data-view="curriculum">▤ <span>Course lessons</span></button>
-        <button class="nav-link" data-view="reviews">◷ <span>Review queue</span></button>
-        <button class="nav-link" data-view="library">▣ <span>Book references</span></button>
-        <button class="nav-link" data-view="account">⚙ <span>Account & sync</span></button>
+        <button class="nav-link active" data-view="dashboard"><span class="nav-symbol" aria-hidden="true">▦</span><span>Dashboard</span></button>
+        <button class="nav-link" data-view="ceta"><span class="nav-symbol" aria-hidden="true">◇</span><span>CETa preparation</span></button>
+        <button class="nav-link" data-view="curriculum"><span class="nav-symbol" aria-hidden="true">▤</span><span>Pilot Unit 1</span></button>
+        <button class="nav-link" data-view="textbooks"><span class="nav-symbol" aria-hidden="true">▣</span><span>Textbook companions</span></button>
+        <button class="nav-link" data-view="labs"><span class="nav-symbol" aria-hidden="true">⌁</span><span>Hands-on laboratory</span></button>
+        <button class="nav-link" data-view="reviews"><span class="nav-symbol" aria-hidden="true">◷</span><span>Review queue</span></button>
+        <button class="nav-link" data-view="scan-inbox"><span class="nav-symbol" aria-hidden="true">▧</span><span>Scan Inbox</span></button>
+        <button class="nav-link" data-view="account"><span class="nav-symbol" aria-hidden="true">⚙</span><span>Account & sync</span></button>
       </nav>
       <div class="sidebar-bottom"><span class="status-dot" id="status-dot"></span><span id="sync-status">Checking connection…</span></div>
     </aside>
     <div class="workspace">
-      <header class="topbar"><button class="mobile-menu" id="menu-toggle" aria-label="Open navigation">☰</button><div><p class="eyebrow">CETa • ELECTRONICS EDUCATION</p><h1 id="page-title">Your learning dashboard</h1></div><button id="account-pill" class="account-pill">Study account</button></header>
+      <header class="topbar"><button class="mobile-menu" id="menu-toggle" aria-label="Open navigation">☰</button><div><p class="eyebrow">ELECTRONICS • CETa • HANDS-ON LEARNING</p><h1 id="page-title">Your learning dashboard</h1></div><button id="account-pill" class="account-pill">Study account</button></header>
       <main id="main" tabindex="-1"><noscript>Enable JavaScript to use the interactive lessons and progress tracking.</noscript></main>
       <footer>Electrical Understanding · Educational circuits are for low-voltage learning only. Do not experiment with live mains.</footer>
     </div>
