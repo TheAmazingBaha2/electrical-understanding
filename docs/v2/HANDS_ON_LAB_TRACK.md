@@ -13,14 +13,20 @@
 
 ## Two-active-manual rule (user preference)
 
-Only two EIM kit manuals are **active at any one time**. The current pair is:
+At most two EIM kit manuals are **allocated for study at any one time**, but the user now wants **Basic Electric Circuits established before resuming analog work**. The current pair is:
 
 1. **Basic Electric Circuits** — TOC and actual PreLab/DC 02 reviewed; continue manual and selected projects.
-2. **Fundamental Analog Circuits and Semiconductors** — first contents page and §2.1 tools/instrument selection reviewed; see **[analog manual index](./EIM_ANALOG_SEMICONDUCTORS_INDEX.md)** and **[§2.1 equipment review](./EIM_ANALOG_SECTION_2_1_REVIEW.md)**.
+2. **Fundamental Analog Circuits and Semiconductors** — **STAGED / PAUSED after §2.1** (no more scan requests or experiment development for now); first contents page and §2.1 tools/instrument selection reviewed; see **[analog manual index](./EIM_ANALOG_SEMICONDUCTORS_INDEX.md)** and **[§2.1 equipment review](./EIM_ANALOG_SECTION_2_1_REVIEW.md)**.
 
 **Fundamental Digital Design with FPGA** and **Introduction to Microcontroller with RP2040** must stay **on hold**: do not request or review their manuals or build exercises for them until the active pair is completed or the learner explicitly changes that plan. Each kit has separate parts, power, experiment IDs and physical build records. A link to shared theory is fine, but **do not assume a part can be borrowed or a voltage rail safely shared across kits**. Disable/avoid physical cross-kit projects by default; original cross-kit project ideas are only a future backlog and not assigned work.
 
 Completion is based on covering the manuals' meaningful skills and finishing the chosen worthwhile lab experiments / capstones, rather than forcing unnecessary duplicate measurements. The user decides when a manual is considered finished and which waiting kit is activated next.
+
+## Focus and staging update
+
+**The learner's latest preference supersedes the earlier interpretation that both kits should be developed simultaneously.** There are **two allocated lab manuals maximum**, but **only Basic Electric Circuits is the active lesson/project development focus right now**. The Analog manual's first contents page and §2.1 (pp. 81–93) have been documented; **pause all new analog requests, chapter review and project implementation after §2.1** until the student explicitly resumes it. FPGA and RP2040 remain queued, not developed. Sub-track hierarchy and this state are specified in **[Track Structure](./TRACK_STRUCTURE.md)**.
+
+Each physical manual has its **own sub-track** and independent experiment progress; shared electrical theory skills do not mean hardware parts are interchangeable. Do not request an exhaustive components list when a manual doesn't itemize it; source individual part requirements from selected project instructions.
 
 ## First kit manual inventory received
 
