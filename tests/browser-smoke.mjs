@@ -12,14 +12,43 @@ try {
  await page.goto('http://127.0.0.1:8080/',{waitUntil:'domcontentloaded'});
  await page.locator('.v2-hero').waitFor({timeout:30000});
  assert.equal(await page.locator('.workspace-top-tabs .workspace-tab').count(),6);
- assert.equal(await page.locator('.v2-frost-ring').count(),4);
+ assert.equal(await page.locator('.v2-frost-ring').count(),5);
  assert.equal(await page.locator('.v2-evidence-pie').count(),1);
  // Main CETa view is for current/future paths; the originals are in a quiet footer archive.
  await page.locator('.workspace-top-tabs [data-view="ceta"]').click();
  assert.equal(await page.locator('.v2-subcard').count(),2);
  assert.equal(await page.locator('.legacy-minilink').count(),1);
  assert.equal(await page.locator('.v2-subcard h3:has-text("Core CETa Course")').count(),0);
- await page.locator('.legacy-minilink').click();
+ 
+ // CETa guide has a focused original Chapter 3 companion, with independent progress keys.
+ await page.locator('[data-goto="subtrack"][data-lesson="guide"]').first().click();
+ assert.equal(await page.locator('.guide-feature').count(),1);
+ assert.equal(await page.locator('.v2-chapter').count(),22);
+ await page.locator('[data-goto="lesson"][data-lesson="CETA-G03-01"]').click();
+ assert.match(await page.locator('.lesson-overview').innerText(),/5 A/);
+ await page.locator('.lesson-tabs [data-lesson-tab="learn"]').click();
+ assert.equal(await page.locator('.concept-step').count(),5);
+ await page.locator('.lesson-tabs [data-lesson-tab="interact"]').click();
+ assert.equal(await page.locator('.lab-widget[data-lab-kind="ceta-ladder"]').count(),1);
+ assert.equal(await page.locator('.ceta-illustration').count(),1);
+ await page.locator('[data-x="p"]').selectOption('kilo');
+ assert.match(await page.locator('.lab-output').innerText(),/10\^3/);
+ await page.locator('.activity-step[data-activity-index="3"]').click();
+ assert.equal(await page.locator('.lab-widget[data-lab-kind="ceta-convert"]').count(),1);
+ await page.locator('[data-x="example"]').selectOption('farad');
+ assert.match(await page.locator('.ceta-illustration').getAttribute('aria-label'),/quantity conversion/);
+ await page.locator('.lesson-tabs [data-lesson-tab="quiz"]').click();
+ assert.equal(await page.locator('.quiz-card').count(),1);
+ await page.locator('.question-input').fill('1000');
+ await page.locator('[data-submit="c30101"]').click();
+ const cetaSaved=await page.evaluate(()=>JSON.parse(localStorage.getItem('eu_demo_v1')||'{}'));
+ assert.equal(cetaSaved['CETA-G03-01']?.answers?.c30101?.correct,true);
+ await page.locator('.lesson-tabs [data-lesson-tab="review"]').click();
+ assert.match(await page.locator('main').innerText(),/Back to CETa Study Guide/);
+ await page.locator('[data-goto="subtrack"][data-lesson="guide"]').last().click();
+ await page.locator('.workspace-top-tabs [data-view="ceta"]').click();
+
+await page.locator('.legacy-minilink').click();
  assert.equal(await page.locator('[data-goto="lesson"][data-lesson="L01"]').count(),1);
  assert.equal(await page.locator('[data-goto="lesson"][data-lesson="L05"]').count(),1);
  await page.locator('[data-goto="lesson"][data-lesson="L01"]').click();
@@ -127,6 +156,11 @@ try {
  await phone.locator('.lesson-tabs [data-lesson-tab="interact"]').click();
  assert.equal(await phone.locator('.dmm-illustration').count(),1);
 
+ await phone.locator('.workspace-top-tabs [data-view="ceta"]').click();
+ await phone.locator('[data-goto="subtrack"][data-lesson="guide"]').first().click();
+ await phone.locator('[data-goto="lesson"][data-lesson="CETA-G03-01"]').click();
+ await phone.locator('.lesson-tabs [data-lesson-tab="interact"]').click();
+ assert.equal(await phone.locator('.ceta-illustration').count(),1);
  const width=await phone.evaluate(()=>({document:document.documentElement.scrollWidth,view:window.innerWidth}));
  assert.ok(width.document<=width.view+2,'Mobile layout overflow: '+JSON.stringify(width));
  assert.deepEqual(errors,[],'Desktop JavaScript runtime errors');
