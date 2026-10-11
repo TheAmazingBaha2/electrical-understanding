@@ -13,7 +13,8 @@ const allLessons=[...lessons,...labLessons];
 const findLesson=id=>allLessons.find(l=>l.id===id);
 const labUnlocked=l=>l?.id===labLessons[0].id || Boolean(labLessons.length && hasPassed(labLessons[0]));
 let supabase=null, user=null, view='dashboard', activeLesson=null, focusQuestion=null, progress={}, busy=false;
-const stagingPreview = /(^|\.)pages\.dev$/i.test(window.location.hostname);
+// Treat every Cloudflare-hosted preview as local-only; never write to production Supabase.
+const stagingPreview = /(^|\.)(?:pages|workers)\.dev$/i.test(window.location.hostname);
 // Cloudflare staging is isolated from production Supabase progress by design.
 const configured = !stagingPreview && Boolean(SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY);
 let toastTimer;
