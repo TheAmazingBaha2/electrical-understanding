@@ -5,7 +5,7 @@ import {lessons} from '../lessons.js';
 import {labLessons} from '../lab-lessons.js';
 import {catalog,catalogSubtrack,cetaGuideUnits,eimBasicExperiments} from '../course-catalog.js';
 import {v2Dashboard,v2Page} from '../v2-panels.js';
-import {lessonActivities,learningContent,renderLessonTabs} from '../lesson-tabs.js';
+import {lessonActivities,learningContent,renderLessonTabs,renderLearnSteps} from '../lesson-tabs.js';
 import {tabbedLesson} from '../lesson-view.js';
 
 function context(progress={}) {
@@ -130,4 +130,13 @@ test('dashboard pie and track rings use real published course denominators',()=>
  assert.match(html,/All published lessons/);
  assert.match(html,/Virtual laboratories/);
  assert.match(html,/1 of 2 published lessons complete/);
+});
+
+test('source-backed Learn sections display a single teaching concept at a time',()=>{
+ const lesson=labLessons[0];
+ const first=renderLearnSteps(lesson,0),third=renderLearnSteps(lesson,2);
+ assert.equal((first.match(/class="learning-concept-reading"/g)||[]).length,1);
+ assert.equal((first.match(/class="concept-step/g)||[]).length,6); // five buttons and container
+ assert.match(third,/power limit/);
+ assert.doesNotMatch(third,/data-lab-kind/);
 });
