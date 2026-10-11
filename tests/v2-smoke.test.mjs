@@ -282,3 +282,13 @@ test('CETa progress is independent of lab, textbook and archived lessons in dash
  assert.match(html,/0 \/ 2 virtual companions passed/);
  assert.match(html,/0 \/ 2 DMM companions passed/);
 });
+
+test('staging Supabase uses separate preview project and cannot target production',()=>{
+ const config=readFileSync(new URL('../config.js',import.meta.url),'utf8');
+ const app=readFileSync(new URL('../app.js',import.meta.url),'utf8');
+ assert.match(config,/SUPABASE_ENVIRONMENT = 'staging'/);
+ assert.match(config,/hkwmtjhgrskidaizamwy\.supabase\.co/);
+ assert.doesNotMatch(config,/wwvpzyqcgwlwcetwlime/);
+ assert.match(app,/stagingPreview && stagingBackend/);
+ assert.match(app,/eu_staging_progress_v1_/);
+});
