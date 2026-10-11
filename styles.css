@@ -41,7 +41,7 @@ a:hover {color:#E6F7FF}
 .v2-ring-num {fill:#E6F7FF;font-size:29px;font-weight:800}
 .v2-ring-desc {fill:#83CFFF;font-size:9px;font-weight:800;letter-spacing:1px}
 .v2-donut-box .muted {font-size:11px;margin:2px 0 0}
-.v2-stats {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}
+.v2-stats {display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:13px}
 .v2-stat {border:1px solid #304C66;background:linear-gradient(150deg,#1D3148,#18293E);border-radius:15px;padding:19px;min-height:126px}
 .v2-stat strong {font-size:clamp(1.35rem,2.6vw,2.05rem);color:#E6F7FF;letter-spacing:-.045em;display:block;line-height:1.2}
 .v2-stat .muted {font-size:11px;margin:10px 0 0}
@@ -137,3 +137,5 @@ a:hover {color:#E6F7FF}
 .learning .reading>.lab-widget+ h3 {margin-top:32px}
 .learning .reading h3 {scroll-margin-top:30px}
 @media(max-width:650px){.v2-lab-lesson {flex-direction:column;align-items:stretch;gap:10px}.v2-lab-lesson button {width:100%}.lab-widget {padding:13px}}
+
+.v2-lab-subheading {margin:24px 0 16px;padding-top:16px;border-top:1px solid #30465E;color:#B9EEFF;font-size:1rem}
