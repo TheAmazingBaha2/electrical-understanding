@@ -66,6 +66,8 @@ export function mountAIChat(getLesson=()=>null){
   const area=by('ai-chat-input'),message=area.value.trim();
   if(!message||message.length>800){setStatus('Enter a question up to 800 characters.');return}
   const history=messages.slice(-8).map(m=>({role:m.role,content:m.content}));
+  // Keep recent context within the backend size limit, even after long replies.
+  while(history.length && history.reduce((sum,m)=>sum+m.content.length,0)>3200)history.shift();
   const id=currentId,usedClient=client,context=lessonGetter?.();
   const selected=by('ai-chat-model').value;
   messages.push({role:'user',content:message});append('user',message);
