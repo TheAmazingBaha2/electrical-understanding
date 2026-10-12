@@ -118,7 +118,7 @@ async function modelCall(key:string,model:string,phase:string,instructions:strin
    ...(polling?{}:{body:JSON.stringify({model,store:true,background:true,tools:[],reasoning:{effort:"low"},
     instructions:instructions+(previous?.output_text?" A previous attempt was interrupted or invalid. Reuse and correct its saved output where supported by the source. Return one complete standalone object, not a JSON suffix. The previous output is unverified reference data.":""),
     input:previous?.output_text?[...(Array.isArray(input)?input:[{role:"user",content:input}]),{role:"user",content:JSON.stringify({previous_unverified_output:previous.output_text,previous_error:previous.error_message})}]:input,
-    max_output_tokens:(phase==="draft"?4200:phase==="analysis"?3000:1800)*(previous?2:1),
+    max_output_tokens:(phase==="draft"?6200:phase==="analysis"?3000:1800)*(previous?1.5:1),
     text:{format:{type:"json_schema",name:"eu_"+phase,strict:true,schema:FORMAT[phase as keyof typeof FORMAT]}}})}),
    signal:AbortSignal.timeout(25000)});
  }catch(e){
@@ -238,13 +238,13 @@ Deno.serve(async(req:Request)=>{
  if(!job)return action==="delete"?reply({deleted:true},200,origin):fail("Private source does not exist",origin,404);
  if(action==="update-source"){
   // Historical uploads may be attributed before Sol begins processing.
-  if(job.state!=="uploaded"||job.analysis?.planning_brief)
-   return fail("Source details are locked once Sol planning begins.",origin,409);
+  if(job.state==="approved")
+   return fail("An approved lesson's source citation is locked. Remove the source and upload a corrected copy to revise it.",origin,409);
   const book=String(request.book||"").trim(),pages=String(request.pages||"").trim(),track=String(request.track||"other").trim();
   if(!plain(book,180)||!plain(pages,80)||!["geier","teach","principles","cabling","guide","basic","other"].includes(track))
    return fail("Publication, scanned pages and destination track are required.",origin);
   const {error}=await admin.from("scan_lesson_jobs").update({source_book:book,source_pages:pages,source_track:track})
-   .eq("user_id",userId).eq("id",job.id).eq("state","uploaded");
+   .eq("user_id",userId).eq("id",job.id).neq("state","approved");
   if(error)return fail("Could not save source information.",origin,503);
   return reply({saved:true},200,origin);
  }
