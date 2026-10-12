@@ -28,7 +28,7 @@ const findLesson=id=>allLessons.find(l=>l.id===id);
 const labUnlocked=l=>l?.id===labLessons[0].id || Boolean(labLessons.length && hasPassed(labLessons[0]));
 const bookUnlocked=l=>l?.id===bookLessons[0].id || Boolean(bookLessons.length && hasPassed(bookLessons[0]));
 const guideUnlocked=l=>l?.id===cetaLessons[0].id || Boolean(cetaLessons.length && hasPassed(cetaLessons[cetaLessons.indexOf(l)-1]));
-const canOpenLesson=(l,i)=>!l?false:l?.subtrack==='math'?mathAvailability(l,sourceLessons,s=>canOpenLesson(s,sourceLessons.indexOf(s))):i<lessons.length?unlocked(i):l?.subtrack==='geier'?bookUnlocked(l):l?.subtrack==='guide'?guideUnlocked(l):labUnlocked(l);
+const canOpenLesson=(l,i)=>!l?false:l?.subtrack==='math'?true:i<lessons.length?unlocked(i):l?.subtrack==='geier'?bookUnlocked(l):l?.subtrack==='guide'?guideUnlocked(l):labUnlocked(l);
 let supabase=null, user=null, view='dashboard', activeLesson=null, focusQuestion=null, progress={}, busy=false;
 let lessonTab='overview', activityIndex=0, quizIndex=0, learnIndex=0;
 // Only Cloudflare preview hosts may connect to the isolated staging project.
