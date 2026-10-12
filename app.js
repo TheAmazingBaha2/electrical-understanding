@@ -1,6 +1,7 @@
 import { ProgressStore, cloudTransport } from './persistence.js';
 import { renderAIModelLab, attachAIModelLab } from './ai-model-lab.js';
 import { renderScanInbox, attachScanInbox, scanInboxAutoUpdatesPaused } from './scan-inbox.js';
+import { generatedLibrarySlot, attachGeneratedLibrary } from './generated-library.js';
 import { mountAIChat, updateAIChatSession, refreshAIChatContext } from './ai-chat-widget.js';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_ENVIRONMENT } from './config.js';
 import { lessons, books } from './lessons.js';
@@ -83,7 +84,7 @@ async function loadCloud(){
    syncLabel(count?`${count} sync conflict(s) · review Account`:'Cloud synced',!count);
    if(count)notify('Both copies are safe. Open Account to review sync conflicts.');
   }catch(error){if(store===currentStore){syncLabel('Sync paused · local copy retained');notify(error.message)}}
-  finally {if(store===currentStore&&!['lesson','scan-inbox'].includes(view)&&!document.activeElement?.matches('input,textarea,select'))render()}
+  finally {if(store===currentStore&&!['lesson','scan-inbox','reviews','textbooks','subtrack','ceta','labs'].includes(view)&&!document.activeElement?.matches('input,textarea,select'))render()}
  })();
  try{await syncTask}finally{syncTask=null;if(syncAgain){syncAgain=false;void loadCloud()}}
 }
@@ -115,7 +116,7 @@ function bindNavigation(){document.querySelectorAll('[data-view]').forEach(b=>b.
  $('#account-pill').addEventListener('click',()=>switchTo('account'));
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&user&&supabase&&allowAutomaticCloudSync())void loadCloud()});
  window.addEventListener('online',()=>{if(user&&allowAutomaticCloudSync())void loadCloud()});
- window.addEventListener('storage',event=>{if(event.key===store.key){try{progress=store.read().progress;if(!['lesson','scan-inbox'].includes(view)&&!document.activeElement?.matches('input,textarea,select'))render()}catch(error){storageError=error.message;notify(error.message)}}});
+ window.addEventListener('storage',event=>{if(event.key===store.key){try{progress=store.read().progress;if(!['lesson','scan-inbox','reviews','textbooks','subtrack','ceta','labs'].includes(view)&&!document.activeElement?.matches('input,textarea,select'))render()}catch(error){storageError=error.message;notify(error.message)}}});
  setInterval(()=>{if(user&&navigator.onLine&&document.visibilityState==='visible'&&allowAutomaticCloudSync())void loadCloud()},30000);
 }
 function v2Context(){return {lessons,progress,hasPassed,unlocked,reviews:reviewQueue().length,banner:cloudBanner(),coreRows:lessonRows(lessons),legacyRows:lessonRows(lessons.filter(l=>l.legacy===true||/^L\d{2,}$/.test(l.id))),labLessons,bookLessons,cetaLessons,mathLessons,sourceLessons,mathIsAvailable:l=>canOpenLesson(l,allLessons.indexOf(l)),sourceIsAvailable:l=>canOpenLesson(l,sourceLessons.indexOf(l))};}
@@ -125,6 +126,9 @@ function render(){setNav();refreshAIChatContext();const names={dashboard:'Your l
  $('#page-title').textContent=names[view]||names.dashboard;
  const main=$('#main');
  main.innerHTML=view==='dashboard'?renderDashboard():view==='lesson'?renderLesson():view==='reviews'?renderReviews():view==='account'?renderAccount():view==='scan-inbox'?renderScanInbox(user):view==='ai-lab'?renderAIModelLab(user):view==='library'?renderLibrary():v2Page(view,v2Context(),activeLesson);
+ const approvedFilter=view==='reviews'?'review':view==='textbooks'?'textbooks':view==='ceta'?'ceta':view==='labs'?'labs':
+  view==='subtrack'?(['guide','core','exam'].includes(activeLesson)?'ceta':activeLesson):null;
+ if(approvedFilter&&user)main.insertAdjacentHTML('beforeend',generatedLibrarySlot(approvedFilter));
  main.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>switchTo(b.dataset.goto,b.dataset.lesson||null,b.dataset.question||null)));
  main.querySelectorAll('[data-lesson-tab]').forEach(b=>b.addEventListener('click',()=>{lessonTab=b.dataset.lessonTab;render()}));
  main.querySelectorAll('[data-reveal-insight]').forEach(b=>b.addEventListener('click',()=>{const p=main.querySelector('#starting-insight');if(!p)return;p.hidden=!p.hidden;b.setAttribute('aria-expanded',String(!p.hidden));b.innerHTML=p.hidden?'Reveal the starting insight <span aria-hidden="true">⌄</span>':'Hide the starting insight <span aria-hidden="true">⌃</span>'; }));
@@ -150,6 +154,7 @@ function render(){setNav();refreshAIChatContext();const names={dashboard:'Your l
  if(view==='account')attachAuth();
  if(view==='ai-lab'&&user)attachAIModelLab(supabase,notify);
  if(view==='scan-inbox'&&user)attachScanInbox(supabase,user,notify);
+ if(approvedFilter&&user)attachGeneratedLibrary(supabase,user,notify);
 }
 function cloudBanner(){if(user)return `<div class="success sm">Signed in. Answers save on this device first. Check the sync status; resolve any differences in Account.</div>`;
   if(stagingPreview)return `<div class="flash sm"><b>Staging sync enabled:</b> Sign in to the separate preview Supabase project to sync trial answers between devices. Production progress is never used by this preview. <button class="outline small-button" data-goto="account">Sign in →</button></div>`;
