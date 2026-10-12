@@ -3,7 +3,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 
 const allowed = [
-  "app.js", "persistence.js", "ai-model-lab.js", "ai-chat-widget.js", "scan-inbox.js", "config.js", "course-catalog.js", "icon.svg", "index.html",
+  "app.js", "persistence.js", "ai-model-lab.js", "ai-chat-widget.js", "scan-inbox.js", "math-lessons.js", "math-widgets.js", "math-track.js", "config.js", "course-catalog.js", "icon.svg", "index.html",
   "lab-lessons.js", "book-lessons.js", "ceta-lessons.js", "ceta-widgets.js", "dmm-widgets.js", "lab-widgets.js", "lab-visuals.js", "lesson-tabs.js", "lesson-view.js", "lesson-overviews.js", "lessons.js",
   "manifest.webmanifest", "styles.css", "v2-panels.js", "build-info.json"
 ];
