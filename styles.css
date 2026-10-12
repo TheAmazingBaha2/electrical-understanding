@@ -502,3 +502,64 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;
 .ai-result-text{white-space:pre-wrap;overflow-wrap:anywhere;font:inherit;font-size:13px;line-height:1.65;padding:14px;
  border:1px solid rgba(147,228,244,.19);border-radius:9px;color:#D9F3FC;background:rgba(13,35,53,.35)}
 @media(max-width:740px){.ai-lab-controls{grid-template-columns:1fr}.ai-lab-controls button{justify-self:start}}
+
+/* Readable model-testing dialogue, including narrow phone screens. */
+.ai-lab-panel,.ai-lab-panel *{min-width:0}
+.ai-lab-panel .ai-lab-controls{width:100%}
+.ai-lab-question-box{border:1px solid rgba(104,200,232,.45);background:rgba(14,48,70,.54);padding:16px;border-radius:13px}
+.ai-lab-question-box h3{font-size:14px;margin:0 0 8px;color:#B9F0FF}
+.ai-lab-question-box p{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7;color:#E7F7FF}
+.ai-lab-output{min-width:0;display:grid;gap:18px}
+.ai-result{min-width:0;max-width:100%;display:grid;gap:14px;scroll-margin-top:18px}
+.ai-result-head{min-width:0}
+.ai-result-head h3{overflow-wrap:anywhere;margin:0 0 8px}
+.ai-result-head p{overflow-wrap:anywhere;margin:0}
+.ai-dialogue{min-width:0;display:flex;flex-direction:column;gap:12px}
+.ai-dialogue-bubble{min-width:0;max-width:100%;border-radius:14px;padding:14px 16px;overflow-wrap:anywhere;line-height:1.65}
+.ai-dialogue-bubble strong{display:block;font-size:12px;letter-spacing:.04em;text-transform:uppercase;margin-bottom:7px}
+.ai-dialogue-question{background:rgba(101,173,210,.17);border:1px solid rgba(131,205,237,.42);color:#E9F7FC}
+.ai-dialogue-answer{background:rgba(26,73,102,.75);border:1px solid rgba(105,222,238,.38);color:#E8F8FF}
+.ai-dialogue-answer strong{color:#9DE9F6}
+.ai-dialogue-copy{white-space:pre-wrap;overflow-wrap:anywhere;word-break:normal;line-height:1.75;font-size:14px}
+.ai-lab-panel .ai-lab-controls .lab-control{min-width:0}
+.ai-lab-panel .ai-lab-controls .lab-control select{min-width:0;width:100%}
+
+/* Persistent, owner-only tutor. Kept outside #main so page changes don't erase it. */
+.ai-chat-root{position:relative;z-index:1100}
+.ai-chat-root [hidden]{display:none!important}
+.ai-chat-launch{position:fixed;bottom:calc(15px + env(safe-area-inset-bottom,0px));right:16px;z-index:1100;
+ border:1px solid rgba(145,237,255,.75);border-radius:999px;background:linear-gradient(140deg,#174969,#1A697F);
+ color:#F4FCFF;font-weight:750;box-shadow:0 6px 28px rgba(0,0,0,.42);padding:13px 18px;max-width:calc(100vw - 30px)}
+.ai-chat-launch:focus-visible,.ai-chat-root button:focus-visible,.ai-chat-root textarea:focus-visible,
+.ai-chat-root select:focus-visible{outline:3px solid #FFD84D;outline-offset:2px}
+.ai-chat-panel{position:fixed;right:14px;bottom:calc(75px + env(safe-area-inset-bottom,0px));
+ width:min(440px,calc(100vw - 28px));height:min(650px,calc(100dvh - 102px));max-height:calc(100dvh - 102px);
+ background:#10283A;color:#EFFAFF;border:1px solid rgba(137,218,242,.55);border-radius:18px;display:flex;flex-direction:column;
+ box-shadow:0 14px 50px rgba(0,0,0,.62);overflow:hidden;z-index:1101}
+.ai-chat-head{padding:13px 15px;display:flex;justify-content:space-between;align-items:center;gap:12px;
+ background:linear-gradient(120deg,#163E5A,#13465B);border-bottom:1px solid rgba(140,215,236,.25);flex-shrink:0}
+.ai-chat-head strong{display:block;font-size:15px}
+.ai-chat-head small{display:block;font-size:11px;margin-top:4px;color:#B8DBE7;overflow-wrap:anywhere}
+.ai-chat-actions{display:flex;align-items:center;gap:7px;flex-shrink:0}
+.ai-chat-actions button{border:1px solid rgba(205,238,250,.4);background:rgba(255,255,255,.08);border-radius:8px;color:#EDF9FF;padding:8px 10px;font-size:12px}
+.ai-chat-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:8px 14px;border-bottom:1px solid rgba(140,215,236,.18);flex-shrink:0}
+.ai-chat-toolbar label{font-size:12px;color:#BFDCE7}
+.ai-chat-toolbar select{min-width:0;max-width:75%;font-size:12px;padding:7px 10px;background:#173D56;color:#F3FBFF;border:1px solid #6397AF;border-radius:8px}
+.ai-chat-scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:12px;padding:15px 12px}
+.ai-chat-scroll .ai-dialogue-bubble{font-size:13px;flex-shrink:0}
+.ai-chat-scroll .ai-dialogue-question{max-width:93%;align-self:flex-end}
+.ai-chat-scroll .ai-dialogue-answer{max-width:97%;align-self:flex-start}
+.ai-chat-bubble-meta{display:block;color:#AFCFDB;margin-top:8px;font-size:10px;overflow-wrap:anywhere}
+.ai-chat-status{padding:8px 14px;font-size:11px;line-height:1.4;color:#C5E5EF;border-top:1px solid rgba(140,215,236,.18);flex-shrink:0}
+.ai-chat-form{padding:9px 12px 5px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px 10px;align-items:end;flex-shrink:0}
+.ai-chat-form label{grid-column:1/-1;font-size:12px;color:#DDEFF8}
+.ai-chat-form textarea{width:100%;min-width:0;max-height:120px;min-height:53px;resize:vertical;overflow-y:auto;
+ background:#1A3C53;border:1px solid #648CA4;border-radius:10px;color:#EDF9FF;padding:10px;font-size:14px}
+.ai-chat-form button{height:46px;min-width:70px;padding:10px 12px}
+.ai-chat-footnote{font-size:10px;line-height:1.35;padding:4px 12px 10px;margin:0;color:#AFCEDC;flex-shrink:0}
+@media(max-width:740px){
+ .ai-lab-panel .ai-lab-controls{grid-template-columns:minmax(0,1fr)}
+ .ai-dialogue-bubble{padding:12px}
+ .ai-chat-panel{width:calc(100vw - 18px);right:9px;bottom:calc(72px + env(safe-area-inset-bottom,0px));height:min(630px,calc(100dvh - 92px));max-height:calc(100dvh - 92px)}
+ .ai-chat-launch{right:10px;bottom:calc(11px + env(safe-area-inset-bottom,0px))}
+}
