@@ -437,12 +437,22 @@ Deno.serve(async(req:Request)=>{
  // Existing active/received requests are resumed without a second reservation.
  // The inventory is advisory context for new generation only.
  const sourceMetadata=sourceLabel(job);
+ const outline=job.analysis?.chapter_outline;
+ const completedUnits=Array.isArray(job.lesson?.lessons)?job.lesson.lessons:[];
+ const selectedUnit=outline?.units?.[completedUnits.length]||null;
+ if(action==="draft"&&outline&&!selectedUnit)return fail("No unfinished lesson is left in the chapter outline.",origin,409);
  const input=action==="plan"
   ?[{role:"user",content:[{type:"input_text",text:JSON.stringify({source_metadata:sourceMetadata,existing_lessons:existingLessons,learner_context:attempt.learner_context})},sourceInput]}]
   :action==="analyze"
   ?[{role:"user",content:[{type:"input_text",text:JSON.stringify({task:"Extract visible, verifiable electronics and mathematics concepts.",source_metadata:sourceMetadata,planning_brief:brief})},sourceInput]}]
+  :action==="outline"
+  ?JSON.stringify({source_metadata:sourceMetadata,existing_lessons:existingLessons,analysis:job.analysis})
   :action==="draft"
-  ?JSON.stringify({source_metadata:sourceMetadata,existing_lessons:existingLessons,planning_brief:brief,analysis:job.analysis,previous_review:job.state==="needs_revision"?job.review:null})
+  ?JSON.stringify({source_metadata:sourceMetadata,existing_lessons:existingLessons,planning_brief:brief,
+    analysis:job.analysis,selected_unit:selectedUnit,previous_review:job.state==="needs_revision"?job.review:null})
+  :outline
+  ?JSON.stringify({source_metadata:sourceMetadata,analysis:job.analysis,selected_unit:job.lesson?.current?.plan,
+    draft:job.lesson?.current})
   :[{role:"user",content:[{type:"input_text",text:JSON.stringify({source_metadata:sourceMetadata,existing_lessons:existingLessons,planning_brief:brief,analysis:job.analysis,draft:job.lesson})},sourceInput]}];
  let result:any;
  try{
@@ -461,7 +471,22 @@ Deno.serve(async(req:Request)=>{
    nextState="uploaded";patch={analysis:{planning_brief:{...payload,learner_context:attempt.learner_context}}};
   }
   if(action==="analyze"){payload=verifyAnalysis(payload);nextState="analyzed";patch={analysis:{...payload,planning_brief:brief}};}
-  if(action==="draft"){payload=verifyDraft(payload,job.analysis);nextState="drafted";patch={lesson:payload,review:null,approved_at:null};}
+  if(action==="outline"){
+   payload=verifyOutline(payload,job.analysis);nextState="outlined";
+   patch={analysis:{...job.analysis,chapter_outline:payload},lesson:{lessons:[],current:null},review:null};
+  }
+  if(action==="draft"){
+   payload=verifyDraft(payload,job.analysis);
+   if(outline&&selectedUnit){
+    // No accidental chapter-wide outputs are accepted as one scoped lesson.
+    if(selectedUnit.destination==="review"&&payload.review_lessons.length===0)
+     throw Error("This planned review unit needs at least one source-based reinforcement lesson.");
+    nextState="drafted";
+    patch={lesson:{lessons:completedUnits,current:{...payload,plan:selectedUnit}},review:null,approved_at:null};
+   }else{
+    nextState="drafted";patch={lesson:payload,review:null,approved_at:null};
+   }
+  }
   if(action==="review"){
    if(typeof payload?.ready!=="boolean"||!Array.isArray(payload.findings)||!plain(payload.summary,2000))throw Error("Invalid technical review");
    payload.ready=payload.ready&&!payload.findings.some((v:any)=>v.severity==="blocker");
