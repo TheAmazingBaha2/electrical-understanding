@@ -63,3 +63,18 @@ When preparing the V2 production release, make **Legacy Lessons** display two di
 - [ ] Check real provider billing against the site's estimates, including timeout/502 behavior and model-specific input/output rates; no code can guarantee a provider will never charge for incomplete work.
 - [ ] Verify that new book/page references and Review & Reinforcement routing survive the full approval pipeline.
 - [ ] Obtain explicit approval before publishing V2 to production.
+
+### Chapter curriculum upgrade (staging)
+
+- [x] Astra scans each source once and retains page-specific evidence as a reusable checkpoint.
+- [x] Sol proposes an independent chapter-wide lesson outline from saved evidence, with **no fixed target of 12 lessons** (bounded at 40 to prevent accidental excessive spending).
+- [x] Sol labels every unit as mathematical, conceptual or mixed; original source lesson or Review & Reinforcement; sequential or independent, with grounded prior lesson IDs where applicable.
+- [x] Pure mathematics is **always** self-paced. Existing original mathematics lesson IDs remain stable and freely accessible from Legacy Group 2.
+- [x] Generate and review **one planned lesson at a time**, saving approved units permanently before the next paid call. No chapter-wide oversized draft request.
+- [x] New lesson technical reviews reuse Astra's extracted facts and do not re-upload full images at every review stage. Human comparison with actual book pages is still required.
+- [x] Free local revalidation of existing completed but rejected model responses, without a new OpenAI request or quota reservation.
+- [ ] Confirm on-device that the earlier completed Astra response can be recovered for **zero additional API charges**.
+- [ ] Run a controlled end-to-end test using the saved extraction: Sol outline, one Sol unit draft, Astra evidence-based review, free human approval, and starting the next unit without losing the first.
+- [ ] Compare provider receipts to model cost estimates and verify zero duplicate paid attempts before production release.
+
+**Important:** Sequential unit labels describe educational dependencies, but newly generated reading companions currently use read-only self-checks rather than graded completion locks. Source-backed math companions appear in Mathematics and are never locked behind a different course's completion.
