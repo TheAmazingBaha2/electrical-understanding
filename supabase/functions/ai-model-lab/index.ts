@@ -5,7 +5,7 @@ import { CASES, MODELS } from "./cases.ts";
 
 const STAGING_PROJECT = "hkwmtjhgrskidaizamwy";
 const ALLOWED_ORIGIN = "https://eu-v2-staging.vanguardcorbett.workers.dev";
-const PRICE = {"gpt-6-luna":{input:0.10,output:0.50},"gpt-6.1-sol":{input:2,output:10}} as const;
+const PRICE = {"gpt-6-luna":{input:0.10,output:0.50},"gpt-6.1-sol":{input:2,output:10},"gpt-6-astra":{input:10,output:50}} as const;
 const cors = (origin:string|null) => origin === ALLOWED_ORIGIN ? {
  "Access-Control-Allow-Origin": ALLOWED_ORIGIN,
  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -48,7 +48,7 @@ Deno.serve(async (req:Request)=>{
   authorized:true,ready:apiKey.startsWith("sk-"),
   models:MODELS,
   cases:CASES.map(({id,topic,title})=>({id,topic,title})),
-  limits:{perMinute:2,perHour:6,per24Hours:24,maxOutputTokens:700},
+  limits:{perMinute:2,perHour:6,per24Hours:24,astraPer24Hours:2,maxOutputTokens:700},
   note:"Cost-bearing inference is disabled until an OpenAI API key is configured in staging Edge Function secrets."
  },200,origin);
  if(input.action!=="run")return response({error:"Unknown action"},400,origin);
@@ -59,7 +59,7 @@ Deno.serve(async (req:Request)=>{
  if(!scenario)return response({error:"Unknown test scenario"},400,origin);
  const {data:reserved,error:quotaError}=await client.rpc("ai_test_reserve",{p_model:input.model});
  if(quotaError)return response({error:"Unable to verify quota"},503,origin);
- if(!reserved)return response({error:"Not authorized or request limit reached (2/minute, 6/hour, 24/day)"},429,origin);
+ if(!reserved)return response({error:"Not authorized or request limit reached (2/minute, 6/hour, 24/day, Astra max 2/day)"},429,origin);
  const started=Date.now();
  try {
   const upstream=await fetch("https://api.openai.com/v1/responses",{
