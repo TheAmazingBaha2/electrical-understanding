@@ -73,29 +73,58 @@ export function v2Dashboard(c){
 }
 function trackView(t,c){
  const displayed=t.id==='ceta'?t.subtracks.filter(s=>s.id!=='core'):t.subtracks;
- const legacyFooter=t.id==='ceta'?'<div class="legacy-footnote"><span>Looking for the original CETa pilot?</span> <button type="button" class="legacy-minilink" data-goto="legacy">Legacy lessons <span aria-hidden="true">↗</span></button><small>Earlier lessons and any future archived material live here, with their progress preserved.</small></div>':'';
+ const legacyFooter=t.id==='ceta'?'<div class="legacy-footnote"><span>Original lessons are preserved in two groups.</span> <button type="button" class="legacy-minilink" data-goto="legacy">Open Legacy Lessons <span aria-hidden="true">↗</span></button><small>Group 1: CETa Pilot · Group 2: Original and unreferenced companions. All prior progress stays intact.</small></div>':'';
  return '<header class="v2-intro"><p class="v2-kicker">TRACK '+(catalog.indexOf(t)+1)+' OF 4</p><h2>'+safe(t.title)+'</h2><p>'+safe(t.tagline)+'</p></header>'+
  '<div class="v2-subcards">'+displayed.map(subcard).join('')+'</div>'+legacyFooter;
 }
+function unreferencedRows(c){
+ const lessons=c.archivedUnreferencedLessons||[];
+ if(!lessons.length)return '<p class="muted">No unreferenced companions are currently archived.</p>';
+ return lessons.map((lesson,i)=>{
+  const state=c.progress[lesson.id]||{},answers=state.answers||{};
+  const correct=lesson.questions.filter(q=>answers[q.id]?.correct===true).length;
+  const answered=lesson.questions.filter(q=>typeof answers[q.id]?.correct==='boolean').length;
+  const available=c.canOpenArchive?.(lesson)??true;
+  const mastered=c.hasPassed(lesson),reason=c.legacyReason?.(lesson)||'Original independent practice';
+  const origin=lesson.subtrack==='math'?'Mathematics Companion':lesson.subtrack==='guide'?'Exam Preparation · CETa Study Guide':'Other original instruction';
+  return '<article class="legacy-source-row"><div class="legacy-source-row-head"><span class="v2-pill">'+safe(lesson.subtrack==='math'?'MATHEMATICS':'EXAM PREPARATION')+'</span><span class="legacy-lesson-state">'+(mastered?'Mastered':available?'Available':'Prerequisite not yet reached')+'</span></div>'+
+   '<h3>'+safe(lesson.title)+'</h3><p class="muted sm">'+safe(lesson.description)+'</p>'+
+   '<p class="legacy-source-meta">'+safe(origin)+' · '+safe(lesson.minutes)+' min · '+answered+' / '+lesson.questions.length+' checks answered'+(answered?' · '+correct+' correct':'')+'</p>'+
+   '<p class="legacy-source-reason">'+safe(reason)+'</p>'+
+   '<button type="button" class="'+(mastered?'outline':'primary')+' small-button" data-goto="lesson" data-lesson="'+safe(lesson.id)+'" '+(available?'':'disabled')+'>'+
+   (mastered?'Revisit archived lesson →':available?'Open original lesson →':'Complete a linked topic first')+'</button></article>';
+ }).join('');
+}
 function legacyView(c){
- const archived=c.lessons.filter(l=>l.legacy===true||/^L\d{2,}$/.test(l.id));
- const done=archived.filter(c.hasPassed).length;
- return '<header class="legacy-heading"><p class="v2-kicker">CETa / EARLIER MATERIAL</p><h2>Legacy Lessons</h2><p class="muted">The original foundations course is available here whenever you want to revisit it. Existing lesson IDs, answers and review schedules are unchanged.</p>'+
- '<button class="legacy-back" type="button" data-goto="ceta">← Back to Exam Preparation</button></header>'+
- '<section class="v2-panel legacy-listing"><div class="v2-panel-heading"><h2>Archived lesson library</h2><span class="muted sm">'+done+' / '+archived.length+' completed</span></div>'+bar(percent(done,archived.length))+
- '<div class="legacy-list">'+(c.legacyRows||c.coreRows||'<p class="muted">No archived lesson cards are available yet.</p>')+'</div></section>'+
- '<p class="legacy-archive-note">Future retired lessons can join this library without replacing the material already here.</p>';
+ const pilot=c.archivedPilotLessons||c.lessons.filter(l=>l.legacy===true||/^L\d{2,}$/.test(l.id));
+ const unreferenced=c.archivedUnreferencedLessons||[];
+ const pilotDone=pilot.filter(c.hasPassed).length,unrefDone=unreferenced.filter(c.hasPassed).length;
+ return '<header class="legacy-heading"><p class="v2-kicker">PRESERVED STUDY MATERIAL</p><h2>Legacy Lessons</h2>'+
+  '<p class="muted">Original teaching stays available without being mistaken for verified textbook-derived material. Both groups retain the same lesson IDs, worked examples, scores and scheduled reviews.</p>'+
+  '<button class="legacy-back" type="button" data-goto="ceta">← Back to Exam Preparation</button></header>'+
+  '<div class="legacy-groups-grid" aria-label="Two legacy lesson groups">'+
+  '<section class="v2-panel legacy-listing legacy-group-panel" aria-labelledby="legacy-pilot-title">'+
+  '<div class="legacy-group-eyebrow"><span>01</span> ORIGINAL COURSE</div><h3 id="legacy-pilot-title">CETa Pilot Lessons</h3>'+
+  '<p class="muted sm">The five foundational lessons from the original learning workbench, preserved with their interactive activities.</p>'+
+  '<div class="legacy-group-summary"><strong>'+pilotDone+' / '+pilot.length+'</strong><span>lessons mastered</span></div>'+bar(percent(pilotDone,pilot.length))+
+  '<div class="legacy-list">'+(c.legacyRows||c.coreRows||'<p class="muted">No pilot lessons recorded.</p>')+'</div></section>'+
+  '<section class="v2-panel legacy-listing legacy-group-panel legacy-original-panel" aria-labelledby="legacy-original-title">'+
+  '<div class="legacy-group-eyebrow"><span>02</span> INDEPENDENT PRACTICE</div><h3 id="legacy-original-title">Original / Unreferenced Lessons</h3>'+
+  '<p class="muted sm">Lessons without verified supporting textbook chapter pages. These remain useful for learning, but are no longer presented as source-backed chapters.</p>'+
+  '<div class="legacy-group-summary"><strong>'+unrefDone+' / '+unreferenced.length+'</strong><span>lessons mastered</span></div>'+bar(percent(unrefDone,unreferenced.length))+
+  '<div class="legacy-list">'+unreferencedRows(c)+'</div></section></div>'+
+  '<p class="legacy-archive-note">Archiving changes organization only. No lesson, quiz result, achievement, or review schedule is erased or reset. Future source-grounded replacements can be built in the active tracks.</p>';
 }
 function guideView(c){
  const units=catalogSubtrack('guide').units;
- const first=(c.cetaLessons||[])[0],passed=first?c.hasPassed(first):false,st=first?(c.progress[first.id]||{}):{},answers=st.answers||{};
+ const first=(c.activeCetaLessons||[])[0],passed=first?c.hasPassed(first):false,st=first?(c.progress[first.id]||{}):{},answers=st.answers||{};
  const graded=Object.values(answers).filter(x=>typeof x.correct==="boolean").length;
  const launch=first?'<section class="guide-feature"><div class="guide-feature-top"><span class="v2-kicker">NEW / UNIT 2 · CHAPTER 3 · P. 16</span><span class="v2-pill">'+(passed?'Mastered':'Available now')+'</span></div><h3>'+safe(first.title)+'</h3>'+
  '<p>'+safe(first.description)+'</p><div class="guide-feature-numbers"><div><strong>05</strong><span>Guided concept simulations</span></div><div><strong>10</strong><span>Graded questions</span></div><div><strong>'+graded+'/10</strong><span>Answered on this device</span></div></div>'+
  '<p class="muted sm">Based on the chapter title and its listed powers-of-ten topic in your table of contents. The chapter pages themselves have not been reviewed; this is original teaching, not a chapter summary.</p>'+
  '<button class="primary" data-goto="lesson" data-lesson="'+safe(first.id)+'">'+(passed?'Revisit':'Start')+' foundation lesson →</button></section>':'';
- const tree='<div class="v2-unitlist">'+units.map(u=>'<details class="v2-unit" '+(u.id==='G02'?'open':'')+'><summary><strong>'+safe(u.title)+'</strong><span>'+u.chapters.length+' chapters · '+(u.id==='G02'?'one topic live':'indexed')+'</span></summary>'+u.chapters.map(ch=>'<div class="v2-chapter"><b>Chapter '+safe(ch[0])+'</b><span>'+safe(ch[1])+'</span><small>p. '+ch[2]+'</small></div>').join('')+'</details>').join('')+'</div>';
- return launch+'<div class="guide-index-intro"><h3>Study guide chapter map</h3><p class="muted">9 units and 22 chapter starting pages are verified from the contents scan. All chapters remain indexed; only the first Chapter 3 topic has a published companion lesson. Other chapter content will be developed from original teaching and additional source context when appropriate.</p></div>'+tree;
+ const tree='<div class="v2-unitlist">'+units.map(u=>'<details class="v2-unit" '+(u.id==='G02'?'open':'')+'><summary><strong>'+safe(u.title)+'</strong><span>'+u.chapters.length+' chapters · '+(u.id==='G02'?'original practice archived':'indexed')+'</span></summary>'+u.chapters.map(ch=>'<div class="v2-chapter"><b>Chapter '+safe(ch[0])+'</b><span>'+safe(ch[1])+'</span><small>p. '+ch[2]+'</small></div>').join('')+'</details>').join('')+'</div>';
+ return launch+'<div class="legacy-source-note"><strong>Original practice moved to Legacy Group 2.</strong><p>The engineering-prefixes lesson was based on a contents-page topic, not the full Chapter 3. Its original questions, widgets, and scores are still available.</p><button type="button" class="outline small-button" data-goto="legacy">Open archived CETa practice →</button></div><div class="guide-index-intro"><h3>Study guide chapter map</h3><p class="muted">9 units and 22 chapter starting pages are verified from the contents scan. All chapters remain indexed, but no chapter-specific lesson is active until the actual chapter pages are verified. The original Chapter 3 math companion is preserved in Legacy Group 2. Additional source-grounded lessons will appear here after reviewing the appropriate pages.</p></div>'+tree;
 }
 function basicView(c){const labs=c.labLessons||[];
  const launches=labs.map((l,i)=>{const passed=c.hasPassed(l),ready=i===0||c.hasPassed(labs[0]);return '<div class="v2-lab-lesson"><div><span class="v2-pill">'+(passed?'Completed':ready?'Available':'Prerequisite: PreLab')+'</span><h3>'+safe(l.title)+'</h3><p class="muted sm">'+safe(l.description)+'</p><small class="muted">10 graded questions · '+l.minutes+' min · original source-backed explanations</small></div><button class="'+(ready?'primary':'outline')+' small-button" '+(ready?'data-goto="lesson" data-lesson="'+safe(l.id)+'"':'disabled')+'>'+(passed?'Revisit →':ready?'Start interactive lesson →':'Locked')+'</button></div>'}).join('');
