@@ -237,7 +237,7 @@ Deno.serve(async(req:Request)=>{
  let request:any;
  try{request=await req.json()}catch{return fail("Malformed JSON",origin)}
  let action=request?.action;
- if(action==="status")return reply({authorized:true,bucket:BUCKET,pipeline:["analyze","draft","review","approve"],
+ if(action==="status")return reply({authorized:true,bucket:BUCKET,pipeline:["plan","analyze","outline","draft","review","approve"],
   models:{plan:"gpt-6.1-sol",analyze:"gpt-6-astra",outline:"gpt-6.1-sol",draft:"gpt-6.1-sol",review:"gpt-6-astra"},
   note:"Every paid stage requires a separate click; uploads are private and reviewed lessons are not inserted into graded study progress."},200,origin);
  if(action==="register"){
@@ -283,7 +283,7 @@ Deno.serve(async(req:Request)=>{
   const errors:string[]=[],notes:string[]=[];
   if(!plain(job.source_book,180)||!plain(job.source_pages,80))
    errors.push("Publication title and scanned printed-page reference are missing. Save them without AI charges.");
-  if(stage==="plan"||stage==="analyze"||stage==="review"){
+  if(stage==="plan"||stage==="analyze"||(stage==="review"&&!job.analysis?.chapter_outline)){
    try{await download(owner,job.source_path,job.source_kind)}
    catch(e){errors.push("Source file check failed: "+String(e));}
   }
