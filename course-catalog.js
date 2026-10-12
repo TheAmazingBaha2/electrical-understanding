@@ -42,7 +42,8 @@ export const catalog = [
     {id:'analog',title:'EIM — Fundamental Analog Circuits and Semiconductors',status:'paused',summary:'Paused after Chapter 2, Section 2.1 (pp. 81–93); no new scans or projects until you resume.',units:[{id:'an-2.1',title:'Chapter 2 §2.1 — Equipment and Tools',summary:'Source reviewed; interactive companion drafted, not live.'}]},
     {id:'fpga',title:'EIM — Fundamental Digital Design with FPGA',status:'waiting',summary:'Waiting until one of the two allocated manuals is finished or changed.',units:[]},
     {id:'rp2040',title:'EIM — Introduction to Microcontroller with RP2040',status:'waiting',summary:'Waiting; kit parts remain separate from active manuals.',units:[]}
-  ]}
+  ]},
+  {id:'math',title:'Mathematics Companion',tagline:'Learn the calculations behind each topic as you reach it in another track.',subtracks:[]}
 ];
 export const catalogTrack = id => catalog.find(t=>t.id===id);
 export const catalogSubtrack = id => catalog.flatMap(t=>t.subtracks.map(s=>({...s,trackId:t.id,trackTitle:t.title}))).find(s=>s.id===id);
