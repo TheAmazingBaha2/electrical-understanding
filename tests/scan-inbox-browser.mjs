@@ -29,7 +29,7 @@ try{
   const sampleReview={ready:true,summary:'No safety errors in this sample.',findings:[]};
   const client={
    from(table){
-    if(table==='study_books')return {select(){return {order(){return {limit(){return Promise.resolve({data:[{id:'book-one',title:'Test book',source_track:'guide'}],error:null})}}}}}};
+    if(table==='study_books'){const q={select(){return q},eq(){return q},order(){return q},limit(){return Promise.resolve({data:[{id:'book-one',title:'Test book',source_track:'guide'}],error:null})}};return q;}
     if(table==='scan_model_attempts')return {select(){return {order(){return {limit(){return Promise.resolve({data:window.__attempts,error:null})}}}}}};
     if(table!=='scan_lesson_jobs')throw new Error('Unauthorized table');
     return {select(){return{order(){return{limit(){return Promise.resolve({data:job?[job]:[],error:null})}}}}}};
@@ -53,7 +53,7 @@ try{
     if(body.action==='analyze'){job.state='analyzed';job.analysis=exampleAnalysis;}
     if(body.action==='draft'){job.state='drafted';job.lesson={lessons:[],current:{...lesson,plan:job.analysis.chapter_outline.units[0]}};}
     if(body.action==='review'){job.state='reviewed';job.review=sampleReview;}
-    if(body.action==='approve'){job.state='approved';job.draft_id='GEN-'+job.id.toUpperCase();job.lesson={...job.lesson,id:job.draft_id,source:{scanId:job.id,title:job.title,analysisRevision:3}};}
+    if(body.action==='approve'){job.state='approved';job.draft_id='GEN-'+job.id.toUpperCase();job.lesson={id:job.draft_id,lessons:[{...job.lesson.current,id:job.draft_id+'-U01'}],current:null};}
     return {data:{state:job.state,usage:{input:100,output:200,estimatedUSD:0.002}},error:null};
    }}
   };
