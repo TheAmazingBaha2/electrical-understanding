@@ -29,7 +29,7 @@ function reviewPanel(ctx){
   return '<button type="button" class="lesson-review-item" data-quiz-jump="'+i+'"><span><b>'+e("Question "+(i+1))+'</b> '+e(q.prompt)+'</span><small>'+label+' →</small></button>';
  }).join("")+'</div><div class="actions"><button class="outline" data-lesson-tab="quiz">Return to quiz</button>'+
  (passed&&nextLesson?'<button class="primary" data-goto="lesson" data-lesson="'+e(nextLesson.id)+'">Next lesson →</button>':'')+
- '<button class="outline" data-goto="'+(isPilot?'legacy':'subtrack')+'" '+(isPilot?'':'data-lesson="'+e(lesson.subtrack||'basic')+'"')+'>'+(isPilot?'Legacy lesson library':lesson.subtrack==='geier'?'Back to DMM companion':lesson.subtrack==='guide'?'Back to CETa Study Guide':'Back to lab manual')+'</button></div></section>';
+ '<button class="outline" data-goto="'+(lesson.subtrack==='math'?'math':isPilot?'legacy':'subtrack')+'" '+(lesson.subtrack==='math'||isPilot?'':'data-lesson="'+e(lesson.subtrack||'basic')+'"')+'>'+(lesson.subtrack==='math'?'Back to Mathematics Companion':isPilot?'Legacy lesson library':lesson.subtrack==='geier'?'Back to DMM companion':lesson.subtrack==='guide'?'Back to CETa Study Guide':'Back to lab manual')+'</button></div></section>';
 }
 export function tabbedLesson(ctx) {
  const {lesson,isPilot,idx,score,passed,tab,activityIndex}=ctx;
@@ -50,7 +50,7 @@ export function tabbedLesson(ctx) {
  } else {
   contents=reviewPanel(ctx);
  }
- return '<div class="learning learning-tabbed"><div class="bread">'+e(lesson.module)+' / '+(isPilot?'LEGACY LESSON '+(idx+1)+' OF 5':lesson.subtrack==='geier'?'TEXTBOOK · DMM COMPANION':lesson.subtrack==='guide'?'CETA · STUDY GUIDE COMPANION':'EIM LAB COMPANION')+'</div>'+
+ return '<div class="learning learning-tabbed"><div class="bread">'+e(lesson.module)+' / '+(isPilot?'LEGACY LESSON '+(idx+1)+' OF 5':lesson.subtrack==='geier'?'TEXTBOOK · DMM COMPANION':lesson.subtrack==='guide'?'CETA · STUDY GUIDE COMPANION':lesson.subtrack==='math'?'CROSS-TRACK MATHEMATICS':'EIM LAB COMPANION')+'</div>'+
  '<div class="lesson-header"><h2>'+e(lesson.title)+'</h2><p class="muted">'+e(lesson.description)+'</p><span class="chip">About '+lesson.minutes+' minutes · '+graded+'/'+score.total+' graded</span></div>'+
  renderLessonTabs(active,graded,score.total)+
  '<div class="lesson-stage" id="lesson-panel" role="tabpanel" tabindex="-1" aria-labelledby="lesson-tab-'+active+'">'+contents+'</div></div>';
