@@ -11,8 +11,8 @@ try {
  await page.route('https://esm.sh/**',route=>route.abort());
  await page.goto('http://127.0.0.1:8080/',{waitUntil:'domcontentloaded'});
  await page.locator('.v2-hero').waitFor({timeout:30000});
- assert.equal(await page.locator('.workspace-top-tabs .workspace-tab').count(),7);
- assert.equal(await page.locator('.v2-frost-ring').count(),6);
+ assert.equal(await page.locator('.workspace-top-tabs .workspace-tab').count(),8);
+ assert.equal(await page.locator('.v2-frost-ring').count(),7);
  assert.equal(await page.locator('.v2-evidence-pie').count(),1);
  // Main CETa view is for current/future paths; the originals are in a quiet footer archive.
  await page.locator('.workspace-top-tabs [data-view="ceta"]').click();
@@ -22,8 +22,9 @@ try {
  
  // CETa guide has a focused original Chapter 3 companion, with independent progress keys.
  await page.locator('[data-goto="subtrack"][data-lesson="guide"]').first().click();
- assert.equal(await page.locator('.guide-feature').count(),1);
+ assert.equal(await page.locator('.guide-feature').count(),0);
  assert.equal(await page.locator('.v2-chapter').count(),22);
+ await page.locator('.workspace-top-tabs [data-view="legacy"]').click();
  await page.locator('[data-goto="lesson"][data-lesson="CETA-G03-01"]').click();
  assert.match(await page.locator('.lesson-overview').innerText(),/5 A/);
  await page.locator('.lesson-tabs [data-lesson-tab="learn"]').click();
@@ -45,8 +46,8 @@ try {
  const cetaSaved=await page.evaluate(()=>(JSON.parse(localStorage.getItem('eu_progress:hkwmtjhgrskidaizamwy:anonymous')||'{}').progress||{}));
  assert.equal(cetaSaved['CETA-G03-01']?.answers?.c30101?.correct,true);
  await page.locator('.lesson-tabs [data-lesson-tab="review"]').click();
- assert.match(await page.locator('main').innerText(),/Back to CETa Study Guide/);
- await page.locator('[data-goto="subtrack"][data-lesson="guide"]').last().click();
+ assert.match(await page.locator('main').innerText(),/Back to Legacy Lessons/);
+ await page.locator('[data-goto="legacy"]').last().click();
  await page.locator('.workspace-top-tabs [data-view="ceta"]').click();
 
 await page.locator('.legacy-minilink').click();
@@ -161,6 +162,7 @@ await page.locator('.legacy-minilink').click();
 
  await phone.locator('.workspace-top-tabs [data-view="ceta"]').click();
  await phone.locator('[data-goto="subtrack"][data-lesson="guide"]').first().click();
+ await phone.locator('.workspace-top-tabs [data-view="legacy"]').click();
  await phone.locator('[data-goto="lesson"][data-lesson="CETA-G03-01"]').click();
  await phone.locator('.lesson-tabs [data-lesson-tab="interact"]').click();
  assert.equal(await phone.locator('.ceta-illustration').count(),1);

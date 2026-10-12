@@ -164,7 +164,7 @@ function explainReview(data){
 }
 export function buttonFor(job){
  const attempt=job.attempts?.find(a=>a.base_revision===job.revision);
- if(attempt&&["starting","running","received"].includes(attempt.status))return '<button class="primary" data-scan-action="resume">Resume / check saved request (no new AI call)</button>';
+ if(attempt&&["starting","running","received"].includes(attempt.status))return '<button class="primary" data-scan-action="check" data-scan-attempt="'+esc(attempt.id)+'">Resume / check saved request (no new AI call)</button>';
  if(attempt?.status==="invalid"&&attempt.output_text)
   return '<button class="primary" data-scan-action="recover" data-scan-attempt="'+esc(attempt.id)+'">Revalidate saved '+esc(attempt.phase)+' response (free · no AI call)</button>';
  if(attempt&&["failed","incomplete","invalid","unknown"].includes(attempt.status))
@@ -535,15 +535,16 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
    const button=e.currentTarget;button.disabled=true;
    status(action==='recover'?'Revalidating saved model output locally (free, no AI call)…':action==='approve'?'Saving your lesson approval (free)…':action==='analyze'?'Running Sol planning → Astra analysis (up to two paid requests)…':action==='outline'?'Sol is planning an adaptable chapter curriculum — one paid request…':'Running '+action+' — one paid AI request, please wait…');
    try{
-    let planningUsage=null;
+    let planningUsage=null,expectedRevision=job.revision;
     if(action==='analyze'&&!job.analysis?.planning_brief){
-     const planned=await runStage({action:'plan',jobId:job.id,learnerContext:div.querySelector('#scan-learner-context')?.value||''});
-     planningUsage=planned.usage;
+     const planned=await runStage({action:'plan',jobId:job.id,expectedRevision,learnerContext:div.querySelector('#scan-learner-context')?.value||''});
+     planningUsage=planned.usage;expectedRevision=job.revision+1;
      status('Sol brief saved. Running Astra source analysis…');
      updateLiveStage('analyze');
     }
-    const result=await runStage({action,jobId:job.id,retry,
-      ...(action==="recover"?{attemptId:button.dataset.scanAttempt}:{})});
+    const result=await runStage({action,jobId:job.id,retry,expectedRevision,
+      ...(retry?{retryOf:job.attempts?.find(a=>a.base_revision===job.revision)?.id}:{}),
+      ...(["recover","check"].includes(action)?{attemptId:button.dataset.scanAttempt}:{})});
     if(planningUsage&&result.usage)result.usage.estimatedUSD+=planningUsage.estimatedUSD;
     if(result.usage){lastUsage=result.usage;}
     await refresh(false);

@@ -1,0 +1,219 @@
+{
+  "safety_notes": [
+    {
+      "source_id": "S7",
+      "note": "The 120 V example is a written calculation, not a practical measurement procedure. No laboratory safety procedure is supplied here."
+    },
+    {
+      "source_id": "S11",
+      "note": "The 100 V RC examples are mathematical exercises; this extraction does not turn them into construction or testing instructions."
+    }
+  ],
+  "overview": "The nine images visibly map, in order, to printed pages 16–24. They cover notation, algebra, circuit laws, component combinations, sinusoidal quantities, capacitance, RC timing, inductance, reactance, impedance, resonance and units. The chapter heading and author attribution are visible. Selected readable concepts are extracted below; questionable source statements are separately flagged rather than repaired.",
+  "equations": [
+    {
+      "source_id": "S1",
+      "meaning": "Visible scientific-notation examples.",
+      "equation": "125000 = 1.25 × 10^5; 0.125 = 1.25 × 10^-1; 0.007 = 7 × 10^-3"
+    },
+    {
+      "source_id": "S2",
+      "meaning": "Visible prefix-conversion results; unit capitalization is normalized.",
+      "equation": "1000 pF = 0.001 µF; 700 kHz = 700000 Hz = 0.7 MHz"
+    },
+    {
+      "source_id": "S3",
+      "meaning": "Rearrangements and the unknown-value example shown on the page.",
+      "equation": "a = bc; b = a/c; c = a/b; 4y = 2; y = 2/4 = 0.5"
+    },
+    {
+      "source_id": "S4",
+      "meaning": "V is voltage, I current and R resistance.",
+      "equation": "V = IR; I = V/R; R = V/I"
+    },
+    {
+      "source_id": "S5",
+      "meaning": "Readable power relations; P is power in watts. Doubtful prose rearrangements are excluded.",
+      "equation": "P = IV; V = P/I; I = P/V; P = I²R; P = V²/R"
+    },
+    {
+      "source_id": "S6",
+      "meaning": "Battery example using external and internal series resistance.",
+      "equation": "I = EMF/(R_ext + r_int) = 1.5 V/6.25 Ω = 240 mA"
+    },
+    {
+      "source_id": "S7",
+      "meaning": "Printed rounded conversion factors specifically for a sine wave.",
+      "equation": "V_pp = 2.828 V_rms; V_p = 1.414 V_rms; V_rms = 0.707 V_p; V_pp = 2V_p"
+    },
+    {
+      "source_id": "S8",
+      "meaning": "Period T in seconds and frequency f in hertz are reciprocals; the source also uses capital F for frequency.",
+      "equation": "T = 1/f; f = 1/T"
+    },
+    {
+      "source_id": "S9",
+      "meaning": "Series and parallel resistor totals; R/n applies to n equal resistors.",
+      "equation": "R_T = R_1 + R_2 + … + R_n; R_T = 1/(1/R_1 + 1/R_2 + … + 1/R_n); R_T = R/n"
+    },
+    {
+      "source_id": "S10",
+      "meaning": "Q is charge in coulombs, C capacitance in farads, V voltage in volts and E energy in joules. These are the clear left-column formulas.",
+      "equation": "Q = CV; E = 0.5CV²; Q = (5 × 10^-6)(12) = 60 µC"
+    },
+    {
+      "source_id": "S11",
+      "meaning": "One RC time constant, with R in ohms and C in farads.",
+      "equation": "TC = RC; TC = 10^4 × 5 × 10^-6 s = 0.05 s"
+    },
+    {
+      "source_id": "S12",
+      "meaning": "Capacitor combinations: reciprocal total for series, additive total for parallel.",
+      "equation": "C_T(series) = 1/(1/C_1 + … + 1/C_n); C_T(two in series) = C_1C_2/(C_1 + C_2); C_T(equal series) = C/n; C_T(parallel) = C_1 + … + C_n"
+    },
+    {
+      "source_id": "S13",
+      "meaning": "Capacitive reactance in ohms; f is frequency in hertz and C capacitance in farads.",
+      "equation": "X_C = 1/(2πfC)"
+    },
+    {
+      "source_id": "S14",
+      "meaning": "Inductive reactance in ohms, with L in henrys and f in hertz.",
+      "equation": "X_L = 2πfL"
+    },
+    {
+      "source_id": "S16",
+      "meaning": "Printed series-RLC scalar impedance formula and worked result; Z here represents magnitude.",
+      "equation": "Z = √((X_C - X_L)² + R²); Z = √((20 - 16)² + 3²) Ω = 5 Ω"
+    },
+    {
+      "source_id": "S17",
+      "meaning": "Visible resonance equations; L is in henrys, C in farads and f_r in hertz.",
+      "equation": "X_C = X_L; 2πfL = 1/(2πfC); f_r = 1/(2π√(LC))"
+    }
+  ],
+  "facts": [
+    {
+      "id": "S1",
+      "claim": "Powers of ten compactly represent large and small numbers. The prefix table spans tera through pico, including kilo at 10³, micro at 10^-6 and pico at 10^-12.",
+      "confidence": "high",
+      "location": "Printed p. 16, scan 1/9, left column 'Powers of Ten' and right-column Table 1."
+    },
+    {
+      "id": "S2",
+      "claim": "Prefix conversions are illustrated by dividing a picofarad value by one million to obtain microfarads, multiplying kilohertz by one thousand for hertz, and dividing kilohertz by one thousand for megahertz.",
+      "confidence": "high",
+      "location": "Printed p. 16, scan 1/9, right-column conversion examples; printed p. 17, scan 2/9, upper left column."
+    },
+    {
+      "id": "S3",
+      "claim": "An equation expresses equality, and letters can represent numerical quantities or unknowns. The examples rearrange a product into quotients and solve 4y = 2.",
+      "confidence": "high",
+      "location": "Printed p. 17, scan 2/9, 'Equations' at lower left, continuing at upper right."
+    },
+    {
+      "id": "S4",
+      "claim": "Ohm’s law relates voltage, current and resistance so that two known quantities determine the third. Figure 1 places V above I and R as a memory aid.",
+      "confidence": "high",
+      "location": "Printed p. 17, scan 2/9, right column 'Ohm’s Law', equations and Fig. 1."
+    },
+    {
+      "id": "S5",
+      "claim": "The power section gives current times voltage and two resistance-based power expressions. Figure 3 collects twelve related voltage, current, resistance and power formulas.",
+      "confidence": "high",
+      "location": "Printed p. 18, scan 3/9, left column, continuation of 'Watt’s Law', Figs. 2–3."
+    },
+    {
+      "id": "S6",
+      "claim": "The battery model includes internal resistance in series with the load. Current causes an internal voltage drop, reducing terminal voltage below EMF.",
+      "confidence": "high",
+      "location": "Printed p. 18, scan 3/9, right column 'Internal Resistance', Fig. 4 and text beneath; printed p. 19, scan 4/9, upper-left worked example."
+    },
+    {
+      "id": "S7",
+      "claim": "Figure 5 shows one sinusoidal cycle from 0° to 360°, with positive and negative extrema at 90° and 270°. The associated conversions distinguish peak, peak-to-peak and RMS voltage.",
+      "confidence": "high",
+      "location": "Printed p. 19, scan 4/9, right column 'The Sine Wave', Fig. 5 and 'Amplitude Conversion'."
+    },
+    {
+      "id": "S8",
+      "claim": "Period and frequency are reciprocal quantities, measured in seconds and hertz respectively.",
+      "confidence": "high",
+      "location": "Printed p. 19, scan 4/9, right column 'Time and Frequency Conversion'."
+    },
+    {
+      "id": "S9",
+      "claim": "Series resistance is additive; parallel resistance uses the reciprocal of a sum of reciprocals. Equal parallel resistors have total resistance R/n.",
+      "confidence": "high",
+      "location": "Printed p. 19, scan 4/9, lower left column 'Resistors in Series and Parallel'."
+    },
+    {
+      "id": "S10",
+      "claim": "Capacitance is measured in farads and stored charge in coulombs. The source relates charge to capacitance and voltage, and stored electric-field energy to capacitance and voltage squared.",
+      "confidence": "high",
+      "location": "Printed p. 20, scan 5/9, left column 'Capacitance', charge example and energy definition at bottom."
+    },
+    {
+      "id": "S11",
+      "claim": "The RC section defines one time constant as resistance times capacitance and describes exponential charging and discharging. Its worked values give 0.05 s for 10 kΩ and 5 µF, and 63.2 V after one charging time constant with 100 V applied.",
+      "confidence": "high",
+      "location": "Printed p. 21, scan 6/9, left column 'Time Constants' and bottom example; upper-right continuation example."
+    },
+    {
+      "id": "S12",
+      "claim": "Capacitors add directly in parallel but combine by reciprocal sums in series. The examples give approximately 3.3 µF for three 10 µF capacitors in series and 20 µF for two in parallel.",
+      "confidence": "high",
+      "location": "Printed p. 20, scan 5/9, right column 'Capacitors in Series'; printed p. 21, scan 6/9, upper-left example."
+    },
+    {
+      "id": "S13",
+      "claim": "Capacitive reactance measures opposition to alternating current in ohms. Figure 7 shows capacitor current leading voltage by 90°, with the current phasor pointing right and voltage phasor downward.",
+      "confidence": "high",
+      "location": "Printed p. 21, scan 6/9, right column 'Capacitive Reactance', formula, explanatory text and Fig. 7A–C."
+    },
+    {
+      "id": "S14",
+      "claim": "Inductance opposes changes in current and is measured in henrys. The inductive-reactance section gives its frequency-dependent formula and shows voltage leading current.",
+      "confidence": "high",
+      "location": "Printed p. 22, scan 7/9, left-column 'Inductance'; right-column 'Inductive Reactance' and Fig. 9A–C."
+    },
+    {
+      "id": "S15",
+      "claim": "The series-inductor discussion distinguishes magnetic fields that reinforce from fields that oppose, introducing a mutual-inductance adjustment. Its simple examples give 12 mH for three 4 mH inductors in series and approximately 1.3 mH in parallel.",
+      "confidence": "high",
+      "location": "Printed p. 22, scan 7/9, left column 'Inductors in Series' and 'Inductors in Parallel', bottom-left solution and upper-right solution."
+    },
+    {
+      "id": "S16",
+      "claim": "The series-RLC example combines 3 Ω resistance, 16 Ω inductive reactance and 20 Ω capacitive reactance to obtain 5 Ω impedance. Its phasor sketch identifies the circuit as predominantly capacitive.",
+      "confidence": "high",
+      "location": "Printed p. 23, scan 8/9, left column 'Impedance', Fig. 11 and solution; upper-right phasor sketches."
+    },
+    {
+      "id": "S17",
+      "claim": "The resonance section sets inductive and capacitive reactance equal. Its series example uses 200 µH and 200 pF and reports approximately 795 kHz.",
+      "confidence": "high",
+      "location": "Printed p. 23, scan 8/9, right column 'Resonance' and example; printed p. 24, scan 9/9, upper-left solution."
+    },
+    {
+      "id": "S18",
+      "claim": "The units table distinguishes formula symbols from unit abbreviations: resistance, reactance and impedance use ohms; conductance, admittance and susceptance use siemens. A separate table pairs Greek uppercase and lowercase letters with their names.",
+      "confidence": "high",
+      "location": "Printed p. 24, scan 9/9, lower-left 'Units for Electronics Formulas' table and right-column 'Greek Symbols' table."
+    }
+  ],
+  "gaps": [
+    "The book title 'Associate CET Study Guide' is supplied metadata, not a visible title-page verification. The chapter title 'Math for Electronics' and p. 16 attribution to Fitz Herbert Reid, CET are visible.",
+    "Printed p. 18, left column above Fig. 3: prose assigns R to a square-root expression involving P/I, whereas the wheel gives R = P/I² and I = √(P/R). This visible discrepancy is not repaired or included among accepted equations. The prose expression for voltage also lacks a clearly delimited radical.",
+    "Printed p. 18, bottom-right solution: a hand obscures part of the last result and nearby material. Hidden characters are not reconstructed.",
+    "Printed p. 20: the left-column energy definition uses E = 0.5CV², but the right-column worked solution prints an expression using E both as the energy label and inside CE². The numerical substitution uses 12 × 12 and ends at 360 µJ; the conflicting notation remains unresolved.",
+    "Printed p. 20 reports 1/60 s as 16.6 ms without an approximation sign. Treat this as the source's displayed precision, not an exact equality.",
+    "Printed p. 21, Fig. 6: the discharge curve at the first time marker is labeled 63%, and the final time marker appears to repeat T1 after T4. The text and endpoints describe complete charge after five time constants without qualifying the approximation. These labels and completion claims are not adopted as verified timing data.",
+    "Printed p. 22: the mutual-inductance prose does not fully specify coupling assumptions for the parallel reciprocal formula or examples. No general coupled-inductor rule is inferred.",
+    "Printed p. 22, upper-right example and some right-margin text are cropped. The visible solution supports the extracted numerical result, but cropped wording is not reconstructed.",
+    "Printed p. 23 gives Z = RX/√(R² + X²) specifically for parallel R and X, but does not clearly define signed versus magnitude X there. It is not generalized to arbitrary parallel RLC networks.",
+    "Printed p. 23 resonance prose includes a maximum-current claim without clearly separating series and parallel conditions. Only the visible equality, frequency formula and explicitly series example are extracted.",
+    "The adjacent chapter fragment visible beside p. 24 is excluded. References to other chapters do not establish their unseen content."
+  ],
+  "source_title": "Math for Electronics — Chapter 3, by Fitz Herbert Reid, CET; visible printed pp. 16–24. Book label supplied by user: Associate CET Study Guide."
+}

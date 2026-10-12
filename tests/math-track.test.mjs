@@ -34,29 +34,29 @@ test('each authored math concept maps to existing stable source IDs and does not
  assert.equal(new Set(mathLessons.flatMap(l=>l.questions.map(q=>q.id))).size,36);
  assert.ok(relatedMath('BDMM-01').some(l=>l.id==='MATH-004'));
 });
-test('math topic unlock depends on source topic reachability, never on math itself',()=>{
+test('all math is accessible regardless of source or completion',()=>{
  assert.equal(active(mathById('MATH-001')),true);
  assert.equal(active(mathById('MATH-002')),true);
- assert.equal(active(mathById('MATH-003')),false);
+ assert.equal(active(mathById('MATH-003')),true);
  assert.equal(active(mathById('MATH-004')),true);
  assert.equal(active(mathById('MATH-005')),true);
- assert.equal(active(mathById('MATH-006')),false);
+ assert.equal(active(mathById('MATH-006')),true);
  const labAll=l=>canSource(l)||l.id==='EIM-BEC-DC02';
  assert.equal(mathAvailability(mathById('MATH-003'),sources,labAll),true);
  assert.equal(mathAvailability(mathById('MATH-006'),sources,l=>l.id==='L05'),true);
- assert.equal(mathAvailability(mathById('MATH-006'),sources,()=>false),false);
+ assert.equal(mathAvailability(mathById('MATH-006'),sources,()=>false),true);
 });
-test('a new companion unlocks automatically when its linked source is published and reachable',()=>{
+test('a new math companion needs no source completion gate',()=>{
  const future={...mathById('MATH-006'),sourceLessonIds:['NEW-SOURCE-2027']};
- assert.equal(mathAvailability(future,sources,()=>true),false);
+ assert.equal(mathAvailability(future,sources,()=>true),true);
  assert.equal(mathAvailability(future,[...sources,{id:'NEW-SOURCE-2027'}],x=>x.id==='NEW-SOURCE-2027'),true);
 });
-test('standalone math view separates available lessons and source-locked lessons, with no subtracks',()=>{
+test('standalone math view exposes all supplied math lessons without locks',()=>{
  const html=renderMathTrack({sourceLessons:sources,mathIsAvailable:active,sourceIsAvailable:canSource,hasPassed:()=>false,progress:{}});
  assert.match(html,/Mathematics Companion/);
- assert.match(html,/4 ready/);
+ assert.match(html,/6 ready/);
  assert.match(html,/MATH 01/);
- assert.match(html,/Waiting for a linked source lesson/);
+ assert.doesNotMatch(html,/Waiting for a linked source lesson/);
  assert.match(html,/data-lesson="MATH-001"/);
  assert.match(html,/data-lesson="CETA-G03-01"/);
  assert.doesNotMatch(html,/data-goto="subtrack"/);
@@ -64,7 +64,7 @@ test('standalone math view separates available lessons and source-locked lessons
 test('math progress counts separately and never implies other-track mastery',()=>{
  const p={'MATH-001':{complete:true,answers:{m001q01:{correct:true}}},L01:{complete:false}};
  const html=renderMathTrack({sourceLessons:sources,mathIsAvailable:active,sourceIsAvailable:canSource,hasPassed:l=>Boolean(p[l.id]?.complete),progress:p});
- assert.match(html,/1 \/ 4 reachable companions mastered/);
+ assert.match(html,/1 \/ 6 reachable companions mastered/);
  assert.match(html,/1 \/ 6 correct/);
  assert.doesNotMatch(html,/L01.*Mastered/);
 });

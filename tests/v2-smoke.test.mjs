@@ -4,6 +4,8 @@ import {readFileSync} from 'node:fs';
 import {lessons} from '../lessons.js';
 import {labLessons} from '../lab-lessons.js';
 import {bookLessons} from '../book-lessons.js';
+import {mathLessons} from '../math-lessons.js';
+import {legacyReason} from '../legacy-groups.js';
 import {cetaLessons} from '../ceta-lessons.js';
 import {cetaWidgetKinds} from '../ceta-widgets.js';
 import {dmmWidgetKinds} from '../dmm-widgets.js';
@@ -15,7 +17,7 @@ import {lessonOverview} from '../lesson-overviews.js';
 
 function context(progress={}) {
  return {
-  lessons, labLessons, bookLessons, cetaLessons, progress, reviews:0, banner:'',
+  lessons, labLessons, bookLessons, cetaLessons, activeCetaLessons:[], activeMathLessons:[], archivedPilotLessons:lessons, archivedUnreferencedLessons:[...cetaLessons,...mathLessons], legacyReason, progress, reviews:0, banner:'',
   coreRows:'<p>Existing pilot cards</p>',
   hasPassed:l=>Boolean(progress[l.id]?.complete),
   unlocked:i=>i===0||Boolean(progress[lessons[i-1].id]?.complete)
@@ -132,7 +134,7 @@ test('lab prose and five visual activities are in separate focused lesson views'
 });
 test('dashboard pie and track rings use real published course denominators',()=>{
  const html=v2Dashboard(context({'EIM-BEC-PRELAB':{complete:true}}));
- assert.equal((html.match(/v2-frost-ring/g)||[]).length,6);
+ assert.equal((html.match(/v2-frost-ring/g)||[]).length,7);
  assert.equal((html.match(/v2-evidence-pie/g)||[]).length,1);
  assert.match(html,/All published lessons/);
  assert.match(html,/Virtual laboratories/);
@@ -153,7 +155,7 @@ test('CETa main track has no dedicated original pilot card; Legacy link is at th
  assert.ok(html.includes('data-goto="legacy"'));
  assert.ok(!html.includes('data-lesson="core"'));
  assert.ok(!html.includes('Core CETa Course</h3>'));
- assert.ok(html.indexOf('Legacy lessons')>html.indexOf('Competency & Exam Practice'));
+ assert.ok(html.indexOf('Open Legacy Lessons')>html.indexOf('Competency & Exam Practice'));
  const menu=v2Dashboard(context());
  assert.ok(!menu.includes('data-lesson="core"'));
 });
@@ -163,10 +165,10 @@ test('Legacy Lessons library preserves L01–L05 IDs, index, completion and link
  c.legacyRows=lessons.map(l=>'<button data-lesson="'+l.id+'" data-goto="lesson">'+l.title+'</button>').join('');
  const html=v2Page('legacy',c);
  for(const id of ['L01','L02','L03','L04','L05'])assert.ok(html.includes('data-lesson="'+id+'"'));
- assert.match(html,/1 \/ 5 completed/);
- assert.match(html,/Back to CETa preparation/);
+ assert.match(html,/1 \/ 5<\/strong><span>lessons mastered/);
+ assert.match(html,/Back to Exam Preparation/);
  assert.equal(catalogSubtrack('core').status,'planned');
- assert.match(html,/Archived lesson library/);
+ assert.match(html,/Original \/ Unreferenced Lessons/);
 });
 test('Overview is a topic-specific mission, not copies of existing Learn/Interact/Quiz tabs',()=>{
  for(const lesson of [...lessons,...labLessons]){
@@ -261,16 +263,17 @@ test('CETa study-guide first lesson has 5 meaningful activities and 10 graded ch
  assert.deepEqual(lessonActivities(l).map(x=>x.kind),cetaWidgetKinds);
  assert.match(l.html,/chapter's teaching pages/);
  assert.match(lessonOverview(l),/5 A/);
- assert.equal(catalogSubtrack('guide').status,'active');
+ assert.equal(catalogSubtrack('guide').status,'indexed');
 });
-test('CETa guide index publishes only one original topic and preserves all 22 source chapter headings',()=>{
+test('CETa guide preserves 22 source headings and routes original practice to Legacy',()=>{
  const c=context();
  const html=v2Page('subtrack',c,'guide');
- assert.match(html,/CETA-G03-01/);
- assert.match(html,/data-goto="lesson" data-lesson="CETA-G03-01"/);
+ assert.match(html,/Legacy Group 2/);
+ assert.doesNotMatch(html,/data-goto="lesson" data-lesson="CETA-G03-01"/);
+ assert.match(v2Page("legacy",c),/data-goto="lesson" data-lesson="CETA-G03-01"/);
  assert.match(html,/Chapter 22/);
- assert.match(html,/printed p\. 16|P\. 16/);
- assert.match(html,/chapter pages themselves have not been reviewed/);
+ assert.match(html,/p\. 16/);
+ assert.match(html,/Legacy Group 2/);
  assert.equal((html.match(/class="v2-chapter"/g)||[]).length,22);
  assert.ok(!html.includes('data-lesson="L01"'));
 });
@@ -278,8 +281,8 @@ test('CETa progress is independent of lab, textbook and archived lessons in dash
  const c=context({'CETA-G03-01':{complete:true,updatedAt:Date.now(),answers:{c30101:{correct:true},c30102:{correct:false}}}});
  const html=v2Dashboard(c);
  assert.match(html,/CETa Guide/);
- assert.match(html,/1 \/ 1 guide companions passed/);
- assert.match(html,/1 of 1 published lessons complete/);
+ assert.match(html,/0 \/ 0 guide companions passed/);
+ assert.match(html,/1 of 7 published lessons complete/);
  assert.match(html,/correct, 1 needs review/);
  assert.match(html,/0 \/ 2 virtual companions passed/);
  assert.match(html,/0 \/ 2 DMM companions passed/);

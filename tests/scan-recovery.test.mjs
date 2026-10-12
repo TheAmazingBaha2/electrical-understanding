@@ -36,5 +36,5 @@ test('quota errors create persistent attempt records without a model call',async
 test('resume labels distinguish free retrieval, paid continuation, and saved Sol work',()=>{
  assert.match(buttonFor({state:'uploaded',analysis:{planning_brief:{}},revision:1}),/Resume Astra analysis/);
  assert.match(buttonFor({revision:1,attempts:[{base_revision:1,status:'running'}]}),/no new AI call/);
- assert.match(buttonFor({revision:1,attempts:[{base_revision:1,status:'invalid',output_text:'partial'}]}),/Continue from saved response.*paid call/);
+ assert.match(buttonFor({revision:1,attempts:[{base_revision:1,status:'invalid',output_text:'partial'}]}),/Revalidate saved .*free/);
 });

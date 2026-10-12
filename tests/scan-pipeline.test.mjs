@@ -38,11 +38,11 @@ test('backend only accepts private owner path and sniffs source format',()=>{
  assert.match(source,/sourceInput=.*job\.source_kind/);
 });
 test('models and steps are fixed, sequential, paid only through atomic quota',()=>{
- assert.match(source,/action==="plan"\|\|action==="draft"\?"gpt-6\.1-sol":"gpt-6-astra"/);
+ assert.match(source,/\["plan","outline","draft"\]\.includes\(action\)/);
  assert.match(source,/admin\.rpc\("scan_reserve_stage"/);
- assert.match(source,/\["analyze","draft","review","approve"\]/);
+ assert.match(source,/outline:"analyzed"/);
  assert.match(source,/if\(action==="approve"\)/);
- assert.match(source,/state:"approved"/);
+ assert.match(source,/nextState="approved"/);
  assert.match(source,/revision:job\.revision\+1/);
 });
 test('no automatic lesson publishing or graded progress writes',()=>{

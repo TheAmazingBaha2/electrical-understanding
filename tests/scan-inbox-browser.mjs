@@ -29,6 +29,7 @@ try{
   const sampleReview={ready:true,summary:'No safety errors in this sample.',findings:[]};
   const client={
    from(table){
+    if(table==='study_books')return {select(){return {order(){return {limit(){return Promise.resolve({data:[{id:'book-one',title:'Test book',source_track:'guide'}],error:null})}}}}}};
     if(table==='scan_model_attempts')return {select(){return {order(){return {limit(){return Promise.resolve({data:window.__attempts,error:null})}}}}}};
     if(table!=='scan_lesson_jobs')throw new Error('Unauthorized table');
     return {select(){return{order(){return{limit(){return Promise.resolve({data:job?[job]:[],error:null})}}}}}};
@@ -44,11 +45,13 @@ try{
     if(body.action==='register'){
       if(window.__failRegistration){window.__failRegistration=false;return {error:{message:'Simulated lost registration response'}};}
       job={id:'00000000-0000-4000-8000-000000000001',title:body.title,source_path:body.path,
-        source_bytes:1024,created_at:new Date().toISOString(),state:'uploaded',analysis:null,lesson:null,review:null,draft_id:null};
+        source_book:body.book,source_pages:body.pages,source_track:body.track,revision:0,source_bytes:1024,created_at:new Date().toISOString(),state:'uploaded',analysis:null,lesson:null,review:null,draft_id:null};
       return {data:{jobId:job.id},error:null};
     }
+    if(body.action==='plan'){job.analysis={planning_brief:{astra_guidance:'Verify',lesson_guidance:'Explain',review_guidance:'Check'}};job.revision++;}
+    if(body.action==='outline'){job.state='outlined';job.analysis.chapter_outline={chapter_title:'One unit',units:[{id:'U01',title:'Circuit',kind:'math',destination:'source',ordering:'independent',prerequisites:[]}]};}
     if(body.action==='analyze'){job.state='analyzed';job.analysis=exampleAnalysis;}
-    if(body.action==='draft'){job.state='drafted';job.lesson=lesson;}
+    if(body.action==='draft'){job.state='drafted';job.lesson={lessons:[],current:{...lesson,plan:job.analysis.chapter_outline.units[0]}};}
     if(body.action==='review'){job.state='reviewed';job.review=sampleReview;}
     if(body.action==='approve'){job.state='approved';job.draft_id='GEN-'+job.id.toUpperCase();job.lesson={...job.lesson,id:job.draft_id,source:{scanId:job.id,title:job.title,analysisRevision:3}};}
     return {data:{state:job.state,usage:{input:100,output:200,estimatedUSD:0.002}},error:null};
@@ -60,6 +63,8 @@ try{
  });
  await page.waitForFunction(()=>document.querySelector('#scan-status')?.textContent.includes('0 private source'));
  assert.equal(await page.locator('#scan-share-consent').isChecked(),false);
+ await page.locator('#scan-book').selectOption('book-one');
+ await page.locator('#scan-pages').fill('1');
  await page.locator('#scan-title').fill('Chapter 4 DC circuit scan');
  await page.locator('#scan-file').setInputFiles({name:'chapter.png',mimeType:'image/png',buffer:Buffer.from([137,80,78,71,13,10,26,10])});
  await page.locator('#scan-share-consent').check();
@@ -72,6 +77,7 @@ try{
  await page.locator('[data-scan-action="analyze"]').click();
  await page.locator('.scan-evidence-row').first().waitFor();
  assert.match(await page.locator('#scan-detail').innerText(),/S1/);
+ await page.locator('[data-scan-action="outline"]').click();
  await page.locator('[data-scan-action="draft"]').click();
  await page.locator('.scan-quiz-item').first().waitFor();
  assert.equal(await page.locator('.scan-lesson-section').count(),3);
