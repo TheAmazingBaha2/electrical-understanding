@@ -1,59 +1,85 @@
-// Private benchmark UI only; never sends OpenAI keys from the browser.
+// Private benchmark UI. AI responses are plain text, never HTML.
 const safe=s=>String(s??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
+let labResults = [];
+const appendBubble=(parent,role,text)=>{
+ const article=document.createElement('div');
+ article.className='ai-dialogue-bubble ai-dialogue-'+role;
+ const label=document.createElement('strong');label.textContent=role==='question'?'Scenario question':'Model answer';
+ const content=document.createElement('div');content.className='ai-dialogue-copy';content.textContent=text;
+ article.append(label,content);parent.append(article);return content;
+};
 export function renderAIModelLab(user){
- if(!user)return '<section class="panel"><h2>Private AI Model Lab</h2><p>Sign in to your staging study account to access your private GPT evaluation tools.</p><button class="primary" data-goto="account">Go to account sign-in →</button></section>';
+ if(!user)return '<section class="panel"><h2>Private AI Model Lab</h2><p>Sign in to your staging study account to access the private GPT evaluation tools.</p><button class="primary" data-goto="account">Go to account sign-in →</button></section>';
  return '<section class="panel ai-lab-panel"><p class="v2-kicker">OWNER-ONLY EXPERIMENT · NOT A COURSE GRADE</p><h2>Private AI Model Lab</h2>'+
- '<p>Compare GPT responses using the same prepared electronics challenge. These tests never change your study progress, and every paid request must be manually started.</p>'+
+ '<p>Read the full scenario and compare the answers from Luna, Sol and Astra. All results stay separate from your graded study progress.</p>'+
  '<div id="ai-lab-status" class="flash" role="status" aria-live="polite">Checking private access and API readiness…</div>'+
  '<div class="ai-lab-controls"><label class="lab-control">Scenario<select id="ai-case" disabled><option>Checking access…</option></select></label>'+
  '<label class="lab-control">Model<select id="ai-model" disabled><option>Select a model</option></select></label>'+
  '<button class="primary" id="ai-run" disabled>Run one model test</button></div>'+
- '<p class="muted sm">Each click triggers at most one request. Owner allowance: two per minute, six per hour, and twenty-four per 24 hours. Astra is limited to two tests per rolling 24 hours and costs more per token than Luna and Sol. Arbitrary prompts remain disabled.</p>'+
- '<div id="ai-lab-output" class="ai-lab-output" aria-live="polite"></div></section>';
+ '<div class="ai-lab-question-box"><h3>Scenario to test</h3><p id="ai-case-prompt">Choose a scenario to see its question here.</p></div>'+
+ '<p class="muted sm">Each Run uses paid API tokens. Shared limits: 2/minute, 6/hour, 24/day. Astra additionally: 2 per rolling 24 hours.</p>'+
+ '<div id="ai-lab-output" class="ai-lab-output" aria-label="Model test conversations" aria-live="polite"></div></section>';
 }
 export function attachAIModelLab(supabase,notify){
- const status=document.querySelector("#ai-lab-status"),sel=document.querySelector("#ai-case"),model=document.querySelector("#ai-model"),button=document.querySelector("#ai-run"),out=document.querySelector("#ai-lab-output");
+ const status=document.querySelector('#ai-lab-status'),sel=document.querySelector('#ai-case'),model=document.querySelector('#ai-model'),button=document.querySelector('#ai-run'),out=document.querySelector('#ai-lab-output'),preview=document.querySelector('#ai-case-prompt');
  if(!status||!sel||!model||!button||!supabase)return;
  const call=async body=>{
-  const {data,error}=await supabase.functions.invoke("ai-model-lab",{body});
-  if(error){const extra=await error.context?.json?.().catch?.(()=>null);throw new Error(extra?.error||error.message||"Private endpoint unavailable");}
+  const {data,error}=await supabase.functions.invoke('ai-model-lab',{body});
+  if(error){const extra=await error.context?.json?.().catch?.(()=>null);throw new Error(extra?.error||error.message||'Private endpoint unavailable');}
   return data;
  };
+ const buildResult=(data)=>{
+  const card=document.createElement('article');card.className='ai-result';
+  const header=document.createElement('div');header.className='ai-result-head';
+  const title=document.createElement('h3');title.textContent=data.model+' · '+(data.title||data.caseId);
+  const details=document.createElement('p');details.className='muted sm';
+  if(data.tokens)details.textContent=data.elapsedMs+' ms · '+data.tokens.input+' input / '+data.tokens.output+' output tokens · approx. $'+Number(data.estimatedUSD).toFixed(5)+' · '+data.checkCount+'/'+data.checkTotal+' simple checks (not a grade)';
+  header.append(title,details);card.append(header);
+  const dialogue=document.createElement('div');dialogue.className='ai-dialogue';
+  appendBubble(dialogue,'question',data.question||data.fallbackQuestion||'Scenario question');
+  appendBubble(dialogue,'answer',data.reply||'(The model returned no readable text.)');
+  card.append(dialogue);
+  if(data.disclaimer){const warn=document.createElement('p');warn.className='muted sm';warn.textContent=data.disclaimer;card.append(warn);}
+  return card;
+ };
+ labResults.slice(0,10).forEach(item=>out.append(buildResult(item)));
+ let cases=[];
  (async()=>{
   try{
-   const info=await call({action:"status"});
-   if(!info.authorized)throw new Error("You are not authorized for this private lab");
-   sel.innerHTML=info.cases.map(c=>'<option value="'+safe(c.id)+'">'+safe(c.topic)+' · '+safe(c.title)+'</option>').join("");
-   model.innerHTML=info.models.map(m=>'<option value="'+safe(m)+'">'+safe(m)+'</option>').join("");
-   sel.disabled=false;model.disabled=false;
-   button.disabled=!info.ready;
-   const costNote=document.createElement("p");
-   costNote.className="muted sm";
-   costNote.id="ai-model-cost-note";
-   model.insertAdjacentElement("afterend",costNote);
-   const updateCostNote=()=>{
-     costNote.textContent=model.value==="gpt-6-astra"
-       ?"Astra is premium-priced: $10 per million input tokens and $50 per million output tokens. Maximum 2 Astra tests per rolling 24 hours. Clicking Run uses paid API tokens."
-       :"Clicking Run uses metered API tokens. You can switch models to compare results.";
-   };
-   model.addEventListener("change",updateCostNote);
-   updateCostNote();
-   status.textContent=info.ready?"Ready: each model test uses your private OpenAI API quota.":"Gateway secured and benchmark scenarios loaded. Live inference is awaiting your OpenAI API key in staging Supabase Edge Function secrets.";
-  }catch(e){status.textContent="Private access unavailable: "+e.message}
+   const info=await call({action:'status'});
+   if(!info.authorized)throw new Error('You are not authorized for this private lab');
+   cases=info.cases||[];
+   sel.innerHTML=cases.map(c=>'<option value="'+safe(c.id)+'">'+safe(c.topic)+' · '+safe(c.title)+'</option>').join('');
+   model.innerHTML=info.models.map(m=>'<option value="'+safe(m)+'">'+safe(m)+'</option>').join('');
+   sel.disabled=false;model.disabled=false;button.disabled=!info.ready;
+   const updatePreview=()=>{preview.textContent=cases.find(c=>c.id===sel.value)?.prompt||'Scenario unavailable';};
+   sel.addEventListener('change',updatePreview);updatePreview();
+   const costNote=document.createElement('p');costNote.className='muted sm';costNote.id='ai-model-cost-note';model.insertAdjacentElement('afterend',costNote);
+   const updateCostNote=()=>{costNote.textContent=model.value==='gpt-6-astra'
+     ?'Astra: $10 per million input tokens and $50 per million output tokens. Maximum 2 Astra tests per rolling 24 hours.'
+     :'Clicking Run uses metered API tokens. Choose another model to compare the same question.';};
+   model.addEventListener('change',updateCostNote);updateCostNote();
+   status.textContent=info.ready?'Ready: choose a model, then run the scenario.':'Private gateway connected. Live model inference needs a configured OpenAI API key.';
+  }catch(e){status.textContent='Private access unavailable: '+e.message;}
  })();
- button.addEventListener("click",async()=>{
-  button.disabled=true;status.textContent="Running one verified scenario; please wait…";
+ button.addEventListener('click',async()=>{
+  if(button.disabled)return;
+  const selected=cases.find(c=>c.id===sel.value);
+  button.disabled=true;status.textContent='Waiting for '+model.value+'…';
+  const pending=buildResult({model:model.value,title:selected?.title,caseId:sel.value,question:selected?.prompt,reply:'Generating an answer…'});
+  out.prepend(pending);
+  // The active result stays in view even on a narrow phone screen.
+  pending.scrollIntoView({behavior:'smooth',block:'start'});
   try{
-   const data=await call({action:"run",model:model.value,caseId:sel.value});
-   const card=document.createElement("article");card.className="ai-result";
-   const heading=document.createElement("h3");heading.textContent=data.model+" · "+data.caseId;
-   const details=document.createElement("p");details.className="muted sm";
-   details.textContent=data.elapsedMs+" ms · "+data.tokens.input+" input / "+data.tokens.output+" output tokens · approx. $"+Number(data.estimatedUSD).toFixed(5)+" · "+data.checkCount+"/"+data.checkTotal+" simple answer checks (not a grade)";
-   const text=document.createElement("pre");text.className="ai-result-text";text.textContent=data.reply||"(The model returned no readable text.)";
-   const warn=document.createElement("p");warn.className="muted sm";warn.textContent=data.disclaimer;
-   card.append(heading,details,text,warn);out.prepend(card);
-   status.textContent="Test complete. You may select another model or scenario.";
-  }catch(e){status.textContent="No result: "+e.message;notify?.(e.message)}
-  finally{button.disabled=false}
+   const data=await call({action:'run',model:model.value,caseId:sel.value});
+   const record={...data,title:selected?.title,question:data.question||selected?.prompt};
+   pending.replaceWith(buildResult(record));
+   labResults.unshift(record);labResults=labResults.slice(0,10);
+   status.textContent='Test complete. Compare the full dialogue below.';
+  }catch(e){
+   pending.querySelector('.ai-dialogue-answer .ai-dialogue-copy').textContent='Request failed: '+e.message;
+   status.textContent='Test failed: '+e.message;
+   notify?.(e.message);
+  }finally{button.disabled=false;}
  });
 }
