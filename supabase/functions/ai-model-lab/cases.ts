@@ -14,4 +14,4 @@ export const CASES = [
  {id:"audio-rc",topic:"Audio electronics",title:"RC low-pass interpretation",prompt:"A resistor is in series with an input and a capacitor goes from the output node to circuit common. The output is taken across the capacitor. Qualitatively, what happens to higher audio frequencies?",check:["attenuat"]}
 ] as const;
 export type Case = typeof CASES[number];
-export const MODELS = ["gpt-6-luna","gpt-6.1-sol"] as const;
+export const MODELS = ["gpt-6-luna","gpt-6.1-sol","gpt-6-astra"] as const;
