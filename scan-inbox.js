@@ -2,6 +2,11 @@
 // Never inserts generated drafts into legacy lessons or graded progress automatically.
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const bucket="eu-private-scans";
+// Book titles and editions are private, reusable reference metadata, not uploaded book files.
+const catalogBookTitle=book=>String(book?.title||'').trim()+
+ (book?.edition?' ('+String(book.edition).trim()+')':'');
+const catalogTracks=new Set(['geier','teach','principles','cabling','guide','basic','other']);
+
 const supported=new Map([["application/pdf","pdf"],["image/jpeg","jpg"],["image/png","png"],["image/webp","webp"]]);
 let selectedId=null, operation=false, lastUsage=null;
 const by=s=>document.querySelector(s);
@@ -43,7 +48,31 @@ export function renderScanInbox(user){
   <p class="muted sm">PDF, JPG, PNG or WebP · up to 5 MB each. For affordable, reliable interpretation, upload 1–3 clear pages per source. Do not include personal identifying information.</p>
   <form id="scan-upload-form" class="scan-upload-form">
    <label>Source label<input id="scan-title" type="text" maxlength="140" required placeholder="e.g. CETa Chapter 4 — Series circuits"></label>
-   <label>Publication / book title <input id="scan-book" type="text" maxlength="180" required placeholder="e.g. Teach Yourself Electricity and Electronics, 7th edition"></label>
+   <div class="scan-book-picker">
+    <label for="scan-book">Book / publication</label>
+    <div class="scan-book-picker-row"><select id="scan-book" required aria-describedby="scan-books-hint">
+     <option value="">Loading your books…</option>
+    </select><button type="button" class="outline small-button" id="scan-book-refresh">Refresh books</button></div>
+    <p class="muted sm" id="scan-books-hint" aria-live="polite">Your saved book list is private and shared between your signed-in devices.</p>
+    <div id="scan-new-book-panel" class="scan-new-book-panel" hidden>
+     <h4>Add / import a book into your library</h4>
+     <p class="muted sm">Save the book's information once. This does not upload an entire book or use AI credits; you will still choose the scanned pages separately below.</p>
+     <div class="scan-new-book-grid">
+      <label>Book title<input id="scan-new-book-title" type="text" maxlength="180" placeholder="Full book title"></label>
+      <label>Author (optional)<input id="scan-new-book-author" type="text" maxlength="180" placeholder="Author or editor"></label>
+      <label>Edition (optional)<input id="scan-new-book-edition" type="text" maxlength="50" placeholder="e.g. 7th edition"></label>
+      <label>Usual study track<select id="scan-new-book-track">
+       <option value="other">Other book / source</option><option value="guide">Exam Preparation / CETa</option>
+       <option value="teach">Teach Yourself Electricity and Electronics</option>
+       <option value="principles">Electronics: Principles and Applications</option>
+       <option value="geier">Geier / DMM companion</option><option value="cabling">Cabling / Networking</option>
+       <option value="basic">Hands-On Laboratory</option>
+      </select></label>
+     </div>
+     <div class="scan-book-actions"><button type="button" class="primary small-button" id="scan-add-book">Save book to my library (free)</button>
+      <button type="button" class="outline small-button" id="scan-cancel-new-book">Cancel</button></div>
+    </div>
+   </div>
    <label>Printed pages shown in this scan<input id="scan-pages" type="text" maxlength="80" required placeholder="e.g. pp. 104–106 or Figure 3.2, p. 45"></label>
    <label>Destination track<select id="scan-track"><option value="other">Other book / source</option><option value="geier">How to Diagnose and Fix Everything Electronic</option><option value="teach">Teach Yourself Electricity and Electronics</option><option value="principles">Electronics: Principles and Applications</option><option value="cabling">Cabling / Networking</option><option value="guide">Associate CET Study Guide</option><option value="basic">Hands-On Laboratory</option></select></label>
    <p class="muted sm">Use the printed page numbers, not the PDF reader's position. These source details will accompany every generated lesson and review exercise.</p>
