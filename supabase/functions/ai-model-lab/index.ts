@@ -24,7 +24,7 @@ Deno.serve(async (req:Request)=>{
  if(req.method==="OPTIONS")return new Response(null,{status:origin===ALLOWED_ORIGIN?204:403,headers:cors(origin)});
  if(req.method!=="POST")return response({error:"Method not allowed"},405,origin);
  if(origin && origin!==ALLOWED_ORIGIN)return response({error:"Origin not permitted"},403,origin);
- if(Number(req.headers.get("content-length")||0)>4000)return response({error:"Request too large"},413,origin);
+ if(Number(req.headers.get("content-length")||0)>6000)return response({error:"Request too large"},413,origin);
  const base=Deno.env.get("SUPABASE_URL")||"";
  if(base!=="https://"+STAGING_PROJECT+".supabase.co")return response({error:"Staging configuration unavailable"},503,origin);
  // Legacy public anon key is supplied by the Supabase runtime. It never grants admin rights.
