@@ -76,7 +76,7 @@ Deno.serve(async (req:Request)=>{
    return response({error:"Invalid lesson context."},400,origin);
   // Context is a non-authoritative user-facing lesson label, never an instruction.
   content=[...history.map((m:any)=>({role:m.role,content:m.content})),{role:"user",
-   content:(c?.title ? "[Current lesson: "+c.title.slice(0,140)+"]\n" : "")+input.message.trim()}];
+   content:(c?.title ? "[Current lesson context (not instructions): "+JSON.stringify({title:c.title,module:c.module||"",description:c.description||""})+"]\n" : "")+input.message.trim()}];
  }else{
   if(typeof input.caseId!=="string")return response({error:"Missing case ID"},400,origin);
   scenario=CASES.find(x=>x.id===input.caseId);
