@@ -158,12 +158,18 @@ const STANDARD_COVERAGE=[
 async function existingLessonInventory(admin:any,userId:string,jobId:string){
  const {data,error}=await admin.from("scan_lesson_jobs")
   .select("id,title,source_book,source_pages,lesson").eq("user_id",userId)
-  .eq("state","approved").neq("id",jobId).order("approved_at",{ascending:false}).limit(25);
+  .eq("state","approved").neq("id",jobId).order("approved_at",{ascending:false}).limit(16);
  if(error)throw Error("Cannot compare existing approved lessons; please retry later.");
  return {built_in:STANDARD_COVERAGE,approved:(data||[]).map((v:any)=>({
   id:v.id,title:v.lesson?.title||v.title,book:v.source_book||v.title,
-  topics:(v.lesson?.sections||[]).slice(0,7).map((p:any)=>String(p.heading||"").slice(0,120)),
-  reinforcements:(v.lesson?.review_lessons||[]).slice(0,3).map((p:any)=>String(p.title||"").slice(0,120))
+  objective:String(v.lesson?.description||"").slice(0,130),
+  topics:(v.lesson?.sections||[]).slice(0,3).map((p:any)=>({
+   heading:String(p.heading||"").slice(0,90),approach:String(p.body||"").slice(0,140)
+  })),
+  sample_questions:(v.lesson?.questions||[]).slice(0,2).map((q:any)=>String(q.prompt||"").slice(0,120)),
+  reinforcements:(v.lesson?.review_lessons||[]).slice(0,3).map((p:any)=>({
+   title:String(p.title||"").slice(0,90),perspective:String(p.new_perspective||"").slice(0,110)
+  }))
  }))};
 }
 const sourceLabel=(job:any)=>({book:job.source_book||"",pages:job.source_pages||"",track:job.source_track||"other",section:job.title});
