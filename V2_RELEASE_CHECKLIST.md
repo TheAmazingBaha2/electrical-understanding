@@ -47,3 +47,19 @@ When preparing the V2 production release, make **Legacy Lessons** display two di
 - **Remain active pending provenance recheck:** BDMM-01, BDMM-02, EIM-BEC-PRELAB and EIM-BEC-DC02 (known referenced manual ranges).
 - **UI paths:** Legacy in sidebar/mobile navigation; the Mathematics Companion and CETa Study Guide provide Legacy Group 2 links; both groups share the Legacy page, side by side on wide displays and stacked on phones.
 - **No migration of saved progress:** Stable lesson/question IDs are retained and original source code remains available. This is a presentation-only reorganization.
+
+### AI pipeline financial reliability gate (added October 12, 2026)
+
+- [x] Keep staging isolated from production credentials, study progress, and lesson publishing.
+- [x] Preserve completed stages, model responses and request IDs where the provider returns them.
+- [x] Prevent two active paid model requests per scan in the database.
+- [x] Require explicit confirmation of paid retries, including risk of earlier unknown billing.
+- [x] Move source citation and approved-inventory checks before new model quota reservations.
+- [x] Provide a read-only **Check pipeline readiness (free)** action that creates no provider request or quota reservation.
+- [x] Refuse automatic resubmission of running jobs without a saved provider response ID.
+- [ ] Run free readiness preflight from signed-in desktop and mobile browsers, including on the earlier interrupted chapter scan after saving book/pages metadata.
+- [ ] With explicit owner authorization for API spending, run one small, single-page end-to-end test: Sol planning, Astra extraction, Sol drafting, Astra review, and human approval. Keep a cost ledger for each stage; never silently retry failed provider requests.
+- [ ] Interrupt/resume a **test** in-progress request and confirm that the same provider response ID is retrieved without a second generation. Don't intentionally interrupt a production source scan.
+- [ ] Check real provider billing against the site's estimates, including timeout/502 behavior and model-specific input/output rates; no code can guarantee a provider will never charge for incomplete work.
+- [ ] Verify that new book/page references and Review & Reinforcement routing survive the full approval pipeline.
+- [ ] Obtain explicit approval before publishing V2 to production.
