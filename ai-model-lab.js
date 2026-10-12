@@ -1,6 +1,6 @@
 // Private benchmark UI. AI responses are plain text, never HTML.
 const safe=s=>String(s??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
-let labResults = [];
+let labResults = [], labResultsOwner = null;
 const appendBubble=(parent,role,text)=>{
  const article=document.createElement('div');
  article.className='ai-dialogue-bubble ai-dialogue-'+role;
@@ -9,6 +9,8 @@ const appendBubble=(parent,role,text)=>{
  article.append(label,content);parent.append(article);return content;
 };
 export function renderAIModelLab(user){
+ const nextOwner=user?.id||null;
+ if(nextOwner!==labResultsOwner){labResults=[];labResultsOwner=nextOwner}
  if(!user)return '<section class="panel"><h2>Private AI Model Lab</h2><p>Sign in to your staging study account to access the private GPT evaluation tools.</p><button class="primary" data-goto="account">Go to account sign-in →</button></section>';
  return '<section class="panel ai-lab-panel"><p class="v2-kicker">OWNER-ONLY EXPERIMENT · NOT A COURSE GRADE</p><h2>Private AI Model Lab</h2>'+
  '<p>Read the full scenario and compare the answers from Luna, Sol and Astra. All results stay separate from your graded study progress.</p>'+
