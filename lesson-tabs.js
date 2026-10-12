@@ -41,6 +41,19 @@ export function lessonActivities(lesson) {
   return placeholders.map((kind,i)=>({kind,title:headings[i]||"Circuit challenge "+(i+1),description:activityDescriptions[kind]||"Change a value and observe what the circuit does."}));
 }
 const activityDescriptions={
+  "math-prefix-current":"Convert a simulated current to amperes while checking the factor of 1,000.",
+  "math-prefix-capacitance":"Convert microfarads to farads with the correct power-of-ten scale.",
+  "math-ohm-current":"Predict how ideal current changes when source voltage changes at fixed resistance.",
+  "math-ohm-voltage":"Use V = IR and correct SI units to predict a voltage drop.",
+  "math-series":"Add three resistor values in one current path.",
+  "math-divider":"Find a resistor's proportion of the total series voltage.",
+  "math-parallel":"Add current contributions from parallel branches.",
+  "math-tolerance":"Translate an illustrative percentage tolerance into lower and upper limits.",
+  "math-error":"Calculate percentage error relative to a known reference.",
+  "math-power":"Watch volts and amperes combine into watts.",
+  "math-energy":"Change operating time and observe accumulated joules.",
+  "math-period":"Explore how increasing frequency makes each signal cycle shorter.",
+  "math-cutoff":"Explore how capacitance changes an ideal RC filter's cutoff frequency.",
   tolerance:"Find the resistor tolerance limits and decide whether an actual meter reading is acceptable.",
   bands:"Decode the resistor's colored bands to predict its nominal resistance.",
   rating:"Explore how dissipated power increases with applied voltage. This is a virtual circuit, not a physical hookup instruction.",
