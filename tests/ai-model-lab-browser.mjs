@@ -10,7 +10,7 @@ try {
    document.querySelector("#main").innerHTML=renderAIModelLab({id:"mock-owner"});
    const mocked={
     functions:{invoke:async(_slug,{body})=>{
-     if(body.action==="status")return {data:{authorized:true,ready:true,models:["gpt-6-luna","gpt-6.1-sol"],cases:[{id:"units-milli",title:"Convert milliamperes",topic:"CETa"}]},error:null};
+     if(body.action==="status")return {data:{authorized:true,ready:true,models:["gpt-6-luna","gpt-6.1-sol","gpt-6-astra"],cases:[{id:"units-milli",title:"Convert milliamperes",topic:"CETa"}]},error:null};
      if(body.action==="run")return {data:{model:body.model,caseId:body.caseId,reply:"2.5 mA = 0.0025 A. Multiply by one thousand for mA.",elapsedMs:42,
        tokens:{input:80,output:70},estimatedUSD:0.000043,checkCount:2,checkTotal:2,disclaimer:"Not a certified grade."},error:null};
      return {data:null,error:new Error("Unknown action")};
@@ -20,7 +20,9 @@ try {
  });
  await page.waitForFunction(()=>!document.querySelector("#ai-run").disabled);
  assert.equal(await page.locator("#ai-case option").count(),1);
- assert.equal(await page.locator("#ai-model option").count(),2);
+ assert.equal(await page.locator("#ai-model option").count(),3);
+ await page.locator("#ai-model").selectOption("gpt-6-astra");
+ assert.match(await page.locator("#ai-model-cost-note").textContent(),/Maximum 2 Astra tests/);
  await page.locator("#ai-model").selectOption("gpt-6.1-sol");
  await page.locator("#ai-run").click();
  await page.locator(".ai-result").waitFor({timeout:10000});
