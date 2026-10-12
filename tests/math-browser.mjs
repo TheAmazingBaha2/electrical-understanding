@@ -13,7 +13,7 @@ try{
  assert.equal(await page.locator('.math-topic-card').count(),6);
  assert.equal(await page.locator('.math-topic-card:not(.locked)').count(),4);
  assert.equal(await page.locator('.math-topic-card.locked').count(),2);
- assert.match(await page.locator('.math-track').innerText(),/No subtracks/i).catch?.(()=>{});
+ assert.match(await page.locator('.math-track').innerText(),/no separate math prerequisite ladder/i);
  assert.equal(await page.locator('.math-track [data-goto="subtrack"]').count(),0);
  await page.locator('.math-topic-card [data-lesson="MATH-001"][data-goto="lesson"]').click();
  assert.match(await page.locator('.lesson-header').innerText(),/Scale, Prefixes/);
@@ -25,7 +25,7 @@ try{
  await page.locator('.math-explorer').waitFor();
  assert.match(await page.locator('.math-calculation').innerText(),/1\. Equation/);
  assert.match(await page.locator('.math-calculation').innerText(),/0\.005 A/);
- await page.locator('.math-explorer input[type=range]').fill('10');
+ await page.locator('.math-explorer input[type=range]').evaluate(input=>{input.value='10';input.dispatchEvent(new Event('input',{bubbles:true}));});
  assert.match(await page.locator('.math-calculation').innerText(),/0\.010 A/);
  await page.locator('.lesson-tabs [data-lesson-tab="quiz"]').click();
  assert.equal(await page.locator('.quiz-step').count(),6);
