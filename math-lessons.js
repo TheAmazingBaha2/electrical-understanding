@@ -90,7 +90,7 @@ export const mathLessons=[
   sourceLessonIds:['L05'],sourceTopics:['AC frequency','RC filters'],
   html:'<p>Signals change in time. Frequency measures cycles per second and period measures seconds per cycle. Capacitors respond differently as frequency changes, making the math useful for practical audio circuits.</p>'+
    step('1. Turn frequency into time','T = 1/f. A 100 Hz wave repeats every 0.01 seconds, or 10 ms. Frequency and period are reciprocals: more cycles each second mean less time per cycle.','math-period')+
-   step('2. Understand the frequency factor','For a first-order RC low-pass filter, the cutoff frequency is fₙ = 1/(2πRC). R is in ohms and C in farads. The factor 2π connects angular frequency to cycles per second; a missing prefix or a missing π can severely change the answer.','math-cutoff')+
+   step('2. Understand the frequency factor','For a first-order RC low-pass filter, the cutoff frequency is f_c = 1/(2πRC). R is in ohms and C in farads. The factor 2π connects angular frequency to cycles per second; a missing prefix or a missing π can severely change the answer.','math-cutoff')+
    step('3. Predict direction without a calculator','Holding R constant, a larger capacitor produces a lower cutoff. Holding C constant, a larger resistor also produces a lower cutoff. A cutoff frequency is a characteristic of this ideal filter; it is not a brick-wall stop for every signal above that value.')+
    step('4. Interpret the physical circuit','In the simple low-pass arrangement, R is in series and C shunts higher-frequency content toward the reference node. The cutoff marks approximately −3 dB magnitude, or about 0.707 times the low-frequency voltage amplitude for an ideal first-order filter.'),
   questions:[
