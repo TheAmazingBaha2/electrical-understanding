@@ -1,6 +1,6 @@
 import { ProgressStore, cloudTransport } from './persistence.js';
 import { renderAIModelLab, attachAIModelLab } from './ai-model-lab.js';
-import { mountAIChat, updateAIChatSession } from './ai-chat-widget.js';
+import { mountAIChat, updateAIChatSession, refreshAIChatContext } from './ai-chat-widget.js';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_ENVIRONMENT } from './config.js';
 import { lessons, books } from './lessons.js';
 import { v2Dashboard, v2Page } from './v2-panels.js';
@@ -57,10 +57,10 @@ async function connect(){
    const pkg=await import('https://esm.sh/@supabase/supabase-js@2.57.4');
    supabase=pkg.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
    supabase.auth.onAuthStateChange((_event,session)=>{
-     if(session?.user?.id!==user?.id){user=session?.user||null;progress=localLoad();syncLabel(user?'Staging cloud connected':'Sign in for staging sync',!!user);render();if(user)void loadCloud();}
+     if(session?.user?.id!==user?.id){user=session?.user||null;progress=localLoad();updateAIChatSession(user,supabase);syncLabel(user?'Staging cloud connected':'Sign in for staging sync',!!user);render();if(user)void loadCloud();}
    });
    const {data,error}=await supabase.auth.getSession();if(error)throw error;
-   user=data.session?.user||null;progress=localLoad();syncLabel(user?'Cloud connected':'Sign in to synchronize',!!user);
+   user=data.session?.user||null;progress=localLoad();updateAIChatSession(user,supabase);syncLabel(user?'Cloud connected':'Sign in to synchronize',!!user);
    if(user)await loadCloud();
  }catch(err){syncLabel('Cloud connection unavailable');notify('Cloud unavailable. Local progress remains on this device.');console.error(err)}
  render();
@@ -116,7 +116,7 @@ function bindNavigation(){document.querySelectorAll('[data-view]').forEach(b=>b.
 function v2Context(){return {lessons,progress,hasPassed,unlocked,reviews:reviewQueue().length,banner:cloudBanner(),coreRows:lessonRows(lessons),legacyRows:lessonRows(lessons.filter(l=>l.legacy===true||/^L\d{2,}$/.test(l.id))),labLessons,bookLessons,cetaLessons};}
 function setNav(){const current=view==='lesson'?(lessons.some(l=>l.id===activeLesson)?'ceta':bookLessons.some(l=>l.id===activeLesson)?'textbooks':cetaLessons.some(l=>l.id===activeLesson)?'ceta':'labs'):(view==='legacy'||view==='curriculum')?'ceta':view==='subtrack'?(activeLesson==='core'||['guide','exam'].includes(activeLesson)?'ceta':['geier','teach','principles','cabling'].includes(activeLesson)?'textbooks':'labs'):view;
  document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',current===b.dataset.view));}
-function render(){setNav();updateAIChatSession(user,supabase);const names={dashboard:'Your learning dashboard',ceta:'CETa preparation',curriculum:'Legacy lessons',legacy:'Legacy lessons',textbooks:'Textbook companions',labs:'Hands-on laboratory',subtrack:'Learning sub-track',lesson:'Lesson workbench',reviews:'Spaced review',library:'Textbook companions','scan-inbox':'Scan Inbox',account:'Your study account','ai-lab':'Private AI model tests'};
+function render(){setNav();refreshAIChatContext();const names={dashboard:'Your learning dashboard',ceta:'CETa preparation',curriculum:'Legacy lessons',legacy:'Legacy lessons',textbooks:'Textbook companions',labs:'Hands-on laboratory',subtrack:'Learning sub-track',lesson:'Lesson workbench',reviews:'Spaced review',library:'Textbook companions','scan-inbox':'Scan Inbox',account:'Your study account','ai-lab':'Private AI model tests'};
  $('#page-title').textContent=names[view]||names.dashboard;
  const main=$('#main');
  main.innerHTML=view==='dashboard'?renderDashboard():view==='lesson'?renderLesson():view==='reviews'?renderReviews():view==='account'?renderAccount():view==='ai-lab'?renderAIModelLab(user):view==='library'?renderLibrary():v2Page(view,v2Context(),activeLesson);
@@ -221,7 +221,7 @@ function renderAccount(){return `<div class="auth-card"><div class="panel"><h2>A
  ${recoveryPanel()}<div class="actions" style="margin-top:20px"><button id="export-progress" class="outline small-button">Export my progress (JSON)</button></div>
  </div><div class="panel" style="margin-top:16px"><h3>How synchronization behaves</h3><p class="muted sm">A submitted answer is saved locally and then sent to your account. Switching devices checks cloud revisions. If the cloud cannot be reached, the device keeps a local copy and retries when you return online. Simultaneous changes to the same lesson pause synchronization for that lesson. Both copies remain available in Account for explicit review. Device clocks never decide which answers survive.</p></div></div>`}
 function attachAuth(){const login=$('#email-login');if(login)login.addEventListener('click',async()=>{const email=$('#email').value.trim();if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){notify('Enter a valid email address.');return}login.disabled=true;login.textContent='Sending…';const {error}=await supabase.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname}});login.disabled=false;login.textContent='Email me a sign-in link';notify(error?'Sign-in failed: '+error.message:'Check your email for the sign-in link.');});
- $('#sign-out')?.addEventListener('click',async()=>{await supabase.auth.signOut();user=null;progress=localLoad();syncLabel('Sign in to synchronize');render()});
+ $('#sign-out')?.addEventListener('click',async()=>{await supabase.auth.signOut();user=null;progress=localLoad();updateAIChatSession(null,supabase);syncLabel('Sign in to synchronize');render()});
  $('#refresh-sync')?.addEventListener('click',()=>void loadCloud());
  const importData=async(input)=>{const currentStore=store;try{const doc=await currentStore.import(input);if(store!==currentStore)return;progress=doc.progress;notify('Imported. Review any differences below.');render();if(user)void loadCloud()}catch(error){notify(error.message)}};
  $('#import-demo')?.addEventListener('click',()=>{try{void importData({schemaVersion:3,progress:getAnonymousSnapshot()})}catch(error){notify(error.message)}});
