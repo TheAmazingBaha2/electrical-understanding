@@ -239,7 +239,7 @@ Deno.serve(async(req:Request)=>{
  try{request=await req.json()}catch{return fail("Malformed JSON",origin)}
  let action=request?.action;
  if(action==="status")return reply({authorized:true,bucket:BUCKET,pipeline:["analyze","draft","review","approve"],
-  models:{plan:"gpt-6.1-sol",analyze:"gpt-6-astra",draft:"gpt-6.1-sol",review:"gpt-6-astra"},
+  models:{plan:"gpt-6.1-sol",analyze:"gpt-6-astra",outline:"gpt-6.1-sol",draft:"gpt-6.1-sol",review:"gpt-6-astra"},
   note:"Every paid stage requires a separate click; uploads are private and reviewed lessons are not inserted into graded study progress."},200,origin);
  if(action==="register"){
   const path=request.path,title=String(request.title||"").trim();
@@ -271,7 +271,7 @@ Deno.serve(async(req:Request)=>{
   if(error||!created)return fail("Could not register private scan",origin,503);
   return reply({jobId:created.id},200,origin);
  }
- if(!["delete","update-source","preflight","plan","analyze","draft","review","approve","check","resume"].includes(action))return fail("Unknown action",origin);
+ if(!["delete","update-source","preflight","plan","analyze","outline","draft","review","approve","check","resume"].includes(action))return fail("Unknown action",origin);
  if(typeof request.jobId!=="string"||!/^[a-f0-9-]{36}$/.test(request.jobId))return fail("Invalid job",origin);
  const {data:job,error:jobError}=await admin.from("scan_lesson_jobs").select("*").eq("user_id",userId).eq("id",request.jobId).maybeSingle();
  if(jobError)return fail("Source lookup failed",origin,503);
@@ -279,7 +279,7 @@ Deno.serve(async(req:Request)=>{
  if(action==="preflight"){
   // Read-only diagnostics; never create a model attempt or consume the paid quota.
   const stage=job.state==="uploaded"?(job.analysis?.planning_brief?"analyze":"plan"):
-   job.state==="analyzed"||job.state==="needs_revision"?"draft":
+   job.state==="analyzed"?"outline":job.state==="outlined"||job.state==="needs_revision"?"draft":
    job.state==="drafted"?"review":job.state==="reviewed"?"approve":"complete";
   const errors:string[]=[],notes:string[]=[];
   if(!plain(job.source_book,180)||!plain(job.source_pages,80))
@@ -297,7 +297,7 @@ Deno.serve(async(req:Request)=>{
   if(stage==="complete")notes.push("This scan is already approved; no model call is needed.");
   if(!String(Deno.env.get("OPENAI_API_KEY")||"").startsWith("sk-"))
    errors.push("Staging model API key is not configured.");
-  if(["plan","analyze","draft","review"].includes(stage)){
+  if(["plan","analyze","outline","draft","review"].includes(stage)){
    try{await existingLessonInventory(admin,userId,job.id)}
    catch(e){errors.push("Lesson inventory is unavailable: "+String(e));}
   }
@@ -348,9 +348,9 @@ Deno.serve(async(req:Request)=>{
   }
  }else if(action==="resume"){
   action=job.state==="uploaded"?(job.analysis?.planning_brief?"analyze":"plan")
-    :job.state==="analyzed"||job.state==="needs_revision"?"draft":job.state==="drafted"?"review":"approve";
+    :job.state==="analyzed"?"outline":job.state==="outlined"||job.state==="needs_revision"?"draft":job.state==="drafted"?"review":"approve";
  }
- const targetState={plan:"uploaded",analyze:"uploaded",draft:"analyzed",review:"drafted",approve:"reviewed"} as any;
+ const targetState={plan:"uploaded",analyze:"uploaded",outline:"analyzed",draft:job.analysis?.chapter_outline?"outlined":"analyzed",review:"drafted",approve:"reviewed"} as any;
  if(action==="draft"&&job.state==="needs_revision"){}else if(job.state!==targetState[action])
   return fail("Wrong stage: "+job.state+". Refresh the Scan Inbox before continuing.",origin,409);
  if(action==="approve"){
@@ -375,7 +375,7 @@ Deno.serve(async(req:Request)=>{
  if(typeof learnerContext!=="string"||learnerContext.length>2000)return fail("Additional instructions must be at most 2000 characters.",origin);
  const key=Deno.env.get("OPENAI_API_KEY")||"";
  if(!key.startsWith("sk-"))return fail("OpenAI API secret is not configured in staging",origin,503);
- const model=action==="plan"||action==="draft"?"gpt-6.1-sol":"gpt-6-astra";
+ const model=["plan","outline","draft"].includes(action)?"gpt-6.1-sol":"gpt-6-astra";
  if(!attempt){
   const latest=await admin.from("scan_model_attempts").select("*").eq("job_id",job.id).eq("user_id",userId)
     .eq("base_revision",job.revision).eq("phase",action).order("created_at",{ascending:false}).limit(1).maybeSingle();
@@ -400,7 +400,7 @@ Deno.serve(async(req:Request)=>{
   return fail("This request has no recoverable provider ID. No new AI request was started. Refresh and review the saved warning before considering a paid retry.",origin,409);
  }
  let sourceInput:any=null;
- if(!attempt&&action!=="draft"){
+ if(!attempt&&(action==="plan"||action==="analyze"||(action==="review"&&!job.analysis?.chapter_outline))){
   try{
    const source=await download(owner,job.source_path,job.source_kind);
    const encoded=data64(source.bytes);
@@ -409,6 +409,7 @@ Deno.serve(async(req:Request)=>{
     :{type:"input_image",image_url:"data:"+job.source_kind+";base64,"+encoded,detail:"high"};
   }catch(e){return fail(String(e),origin,422)}
  }
+ if(action==="outline"&&!Array.isArray(job.analysis?.facts))return fail("Saved Astra evidence is required before a chapter outline.",origin,409);
  if(action==="draft"&&!job.analysis)return fail("Source analysis missing",origin,409);
  if(action==="review"&&(!job.analysis||!job.lesson))return fail("Source or draft missing",origin,409);
  // Resolve all source metadata and lesson-inventory dependencies BEFORE quota
