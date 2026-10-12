@@ -38,7 +38,7 @@ update public.scan_quota_completion set used_stages=array_append(used_stages,p_s
 end if;
 insert into public.ai_test_request_log(user_id,model) values(p_user,m);
 return true;
-end $function$
+end $function$;
 
 CREATE OR REPLACE FUNCTION public.scan_apply_attempt(p_user uuid, p_attempt uuid, p_patch jsonb, p_next text)
  RETURNS boolean
@@ -69,5 +69,5 @@ update public.scan_model_attempts set status='applied',error_message=null,update
 -- Completion allowance closes only after the last chapter unit is approved;
 -- intermediate technical reviews must not close it.
 return true;
-end $function$
+end $function$;
 
