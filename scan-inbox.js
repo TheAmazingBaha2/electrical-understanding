@@ -88,6 +88,14 @@ function lessonExercises(questions,job,namespace){
 }
 function explainLesson(data,job){
  if(!data)return "";
+ if(Array.isArray(data.lessons)){
+  const rendered=data.lessons.map((unit,i)=>'<section class="scan-chapter-accepted"><p class="v2-kicker">Approved lesson '+(i+1)+'</p>'+
+   '<p class="muted sm">'+esc(unit.plan?.kind||unit.kind||'concept')+' · '+esc(unit.plan?.ordering||unit.ordering||'independent')+'</p>'+
+   explainLesson(unit,job)+'</section>').join('');
+  const pending=data.current?'<section class="scan-chapter-current"><p class="v2-kicker">Current draft · '+esc(data.current.plan?.id||'')+'</p>'+
+   explainLesson(data.current,job)+'</section>':'';
+  return rendered+pending;
+ }
  const unique=(data.sections||[]).length>0;
  const original='<section class="scan-lesson"><p class="v2-kicker">Source-specific material · '+esc(job.source_track||"other")+'</p>'+
   (unique?'<h3>'+esc(data.title)+'</h3><p>'+esc(data.description)+'</p><h4>Learning goals</h4><ul>'+(data.objectives||[]).map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>'+
@@ -99,6 +107,25 @@ function explainLesson(data,job){
   (part.related_lessons?.length?'<p class="muted sm">Related coverage: '+esc(part.related_lessons.join('; '))+'</p>':'')+
   lessonSections(part.sections,job,'review-'+i)+'<h4>Different-angle practice</h4>'+lessonExercises(part.questions,job,'review-'+i)+'</section>').join('');
  return original+reviews;
+}
+function explainOutline(job){
+ const outline=job.analysis?.chapter_outline;
+ if(!outline?.units?.length)return '';
+ const approved=(job.lesson?.lessons||[]).length;
+ const rows=outline.units.map((unit,i)=>{
+  const completed=i<approved;
+  return '<li class="scan-outline-item'+(completed?' complete':'')+'"><div><strong>'+
+   esc(unit.id)+' · '+esc(unit.title)+'</strong><span class="muted sm">'+
+   esc(unit.kind)+' · '+esc(unit.destination==='review'?'Review & Reinforcement':'Source-specific')+
+   ' · '+esc(unit.ordering==='sequential'?'Sequential prerequisite':'Self-paced / independent')+
+   (unit.prerequisites?.length?' · Requires '+esc(unit.prerequisites.join(', ')):'')+
+   '</span></div><p>'+esc(unit.focus)+'</p><small>Source: '+esc(scanCite(job,unit.source_ids))+'</small>'+
+   (completed?'<span class="scan-outline-done">Approved</span>':'')+'</li>';
+ }).join('');
+ return '<section class="scan-chapter-outline panel"><p class="v2-kicker">SOL · FLEXIBLE CHAPTER PLAN</p>'+
+  '<h3>'+esc(outline.chapter_title)+'</h3><p>'+esc(outline.rationale)+'</p>'+
+  '<p class="muted sm">'+approved+' of '+outline.units.length+' chapter lessons approved. Sol chooses the count by educational need, not a fixed target of 12.</p>'+
+  '<ol>'+rows+'</ol><p class="muted sm">Mathematics is self-paced. Sequential ordering applies only to concept-dependent lessons, and every new paid draft is started separately.</p></section>';
 }
 function explainReview(data){
  if(!data)return "";
@@ -112,10 +139,18 @@ export function buttonFor(job){
  if(attempt&&["failed","incomplete","invalid","unknown"].includes(attempt.status))return '<button class="primary" data-scan-action="resume" data-scan-retry="true">'+(attempt.output_text?'Continue from saved response':'Retry unfinished stage')+' (paid call)</button>';
  if(job.state==="uploaded"&&job.analysis?.planning_brief)return '<button class="primary" data-scan-action="analyze">Resume Astra analysis — Sol brief saved</button>';
  if(job.state==="uploaded")return '<button class="primary" data-scan-action="analyze">Run Sol planning → Astra analysis</button>';
- if(job.state==="analyzed")return '<button class="primary" data-scan-action="draft">Have Sol draft the lesson</button>';
+ if(job.state==="analyzed")return '<button class="primary" data-scan-action="outline">Ask Sol to outline the full chapter (paid call)</button>';
+ if(job.state==="outlined"){
+  const total=job.analysis?.chapter_outline?.units?.length||0,done=job.lesson?.lessons?.length||0;
+  return '<button class="primary" data-scan-action="draft">Draft lesson '+(done+1)+' of '+total+' with Sol (paid call)</button>';
+ }
  if(job.state==="drafted")return '<button class="primary" data-scan-action="review">Have Astra review the lesson</button>';
  if(job.state==="needs_revision")return '<button class="primary" data-scan-action="draft">Revise lesson with Sol</button>';
- if(job.state==="reviewed")return '<button class="primary" data-scan-action="approve">Approve for my private lesson library (no AI charge)</button>';
+ if(job.state==="reviewed"){
+  const total=job.analysis?.chapter_outline?.units?.length;
+  const index=(job.lesson?.lessons?.length||0)+1;
+  return '<button class="primary" data-scan-action="approve">Approve '+(total?'lesson '+index+' of '+total:'draft')+' (free)</button>';
+ }
  return '<div class="success">Approved · available in your private lesson library below.</div>';
 }
 function attemptLog(job){
@@ -139,11 +174,11 @@ const SCAN_ATTEMPT_PENDING=new Set(['starting','running','received']);
 const SCAN_ATTEMPT_INTERRUPTED=new Set(['failed','incomplete','invalid','unknown']);
 function currentScanPhase(job){
  return ({uploaded:job.analysis?.planning_brief?'analyze':'plan',
-  analyzed:'draft',drafted:'review',needs_revision:'draft',reviewed:'approve'})[job.state]||null;
+  analyzed:'outline',outlined:'draft',drafted:'review',needs_revision:'draft',reviewed:'approve'})[job.state]||null;
 }
 function scanStageStates(job,livePhase=null){
- const finishedThrough=({uploaded:-1,analyzed:0,drafted:1,needs_revision:0,reviewed:2,approved:3})[job.state]??-1;
- const activeIndex=({uploaded:0,analyzed:1,drafted:2,needs_revision:1,reviewed:3})[job.state]??-1;
+ const finishedThrough=({uploaded:-1,analyzed:0,outlined:0,drafted:1,needs_revision:0,reviewed:2,approved:3})[job.state]??-1;
+ const activeIndex=({uploaded:0,analyzed:1,outlined:1,drafted:2,needs_revision:1,reviewed:3})[job.state]??-1;
  const phase=currentScanPhase(job);
  const currentAttempt=job.attempts?.find(a=>a.base_revision===job.revision&&a.phase===phase);
  return SCAN_STAGE_DEFINITIONS.map((definition,index)=>{
@@ -166,7 +201,8 @@ function scanStageStates(job,livePhase=null){
   if(state==='ready'&&phase==='analyze'&&index===0)hint='Sol brief saved · Astra is next';
   if(state==='running'&&phase==='plan'&&index===0)hint='Sol is preparing the teaching brief';
   if(state==='running'&&phase==='analyze'&&index===0)hint='Astra is interpreting the source';
-  if(state==='running'&&phase==='draft')hint='Sol is drafting the lesson';
+  if(state==='running'&&phase==='outline')hint='Sol is outlining chapter learning units';
+   if(state==='running'&&phase==='draft')hint='Sol is drafting one chapter lesson';
   if(state==='running'&&phase==='review')hint='Astra is checking the draft';
   if(state==='running'&&phase==='approve')hint='Saving your approval';
   return {...definition,index,state,status:statuses[state],hint};
@@ -206,7 +242,7 @@ function detail(job){
  '<p class="scan-phase-banner" role="status">'+esc(scanPhaseMessage(job))+'</p>'+scanTrackerMarkup(job)+
  (job.analysis?.planning_brief?'<details data-scan-expand="sol-brief"><summary>Sol’s saved teaching brief</summary>'+bubble('Your instructions',job.analysis.planning_brief.learner_context||'Default teaching guidance')+bubble('Astra extraction',job.analysis.planning_brief.astra_guidance)+bubble('Lesson drafting',job.analysis.planning_brief.lesson_guidance)+bubble('Technical review',job.analysis.planning_brief.review_guidance)+'</details>':'')+
  (job.state==='uploaded'&&!job.analysis?.planning_brief?'<label>Additional instructions for Sol (optional)<textarea id="scan-learner-context" maxlength="2000" rows="4" placeholder="Leave blank for Sol to plan from the scanned pages."></textarea></label>':'')+
- explainAnalysis(job.analysis)+explainLesson(job.lesson,job)+explainReview(job.review)+provenance+
+ explainAnalysis(job.analysis)+explainOutline(job)+explainLesson(job.lesson,job)+explainReview(job.review)+provenance+
  attemptLog(job)+'<div class="scan-approve-actions"><button type="button" class="outline" id="scan-free-preflight">Check pipeline readiness (free)</button>'+buttonFor(job)+'</div>'+
  '<div id="scan-free-preflight-result" class="scan-preflight-result" role="status" aria-live="polite" hidden></div>'+
  '<p class="muted sm">Model outputs are drafts, not definitive references. Compare important formulas and safety guidance against the actual scanned pages before approving. Approved lessons are read-only study companions; they do not award scores.</p></section>';
