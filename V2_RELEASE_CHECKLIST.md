@@ -1,7 +1,7 @@
 # Electronic Learning Workbench V2 — Production Release Checklist
 
-> **Status:** Release requirement recorded; NOT applied to the staging study interface or the existing production deployment.
-> **Activation:** Only during the user-approved V2 production release. Do not automatically deploy, archive, delete, or rewrite lessons before explicit launch approval.
+> **Status:** Two-group layout implemented on the V2 staging development branch as of 2026-10-12; production site remains unchanged.
+> **Production activation:** Only after explicit user approval for the V2 production release. This staging preview reorganizes navigation and display, not content, lesson IDs, or user answers.
 
 ## Required: Split Legacy Lessons into two peer groups
 
@@ -31,11 +31,19 @@ When preparing the V2 production release, make **Legacy Lessons** display two di
 
 ### Release sign-off
 
-- [ ] Audit and record all existing published lesson IDs plus source citations.
+- [x] Inventory current built-in lesson IDs and identify 5 pilots, 6 source-independent math lessons, and 1 TOC-only CETa companion. Recheck source provenance before production.
 - [ ] Review uncertain classifications (especially Mathematics and the Chapter 3 TOC-only companion) with the user.
-- [ ] Implement Legacy Group 1 and Legacy Group 2 as sibling sections on staging.
+- [x] Implement Legacy Group 1 and Legacy Group 2 as sibling sections on staging (5 original pilots + 7 unreferenced companions).
 - [ ] Preserve routes, IDs, completions, answers, scheduled reviews, and offline/local/cloud backups.
 - [ ] Confirm sourced lessons stay in the appropriate Exam, Textbook, or Laboratory tracks.
 - [ ] Confirm Review & Reinforcement is unchanged.
 - [ ] Verify mobile/desktop presentation and regression-test sample saved study progress.
 - [ ] Obtain explicit user approval, then perform the V2 production release.
+
+### Current staging classification (2026-10-12)
+
+- **Group 1 (5):** L01, L02, L03, L04, L05.
+- **Group 2 (7):** CETA-G03-01, MATH-001, MATH-002, MATH-003, MATH-004, MATH-005, MATH-006.
+- **Remain active pending provenance recheck:** BDMM-01, BDMM-02, EIM-BEC-PRELAB and EIM-BEC-DC02 (known referenced manual ranges).
+- **UI paths:** Legacy in sidebar/mobile navigation; the Mathematics Companion and CETa Study Guide provide Legacy Group 2 links; both groups share the Legacy page, side by side on wide displays and stacked on phones.
+- **No migration of saved progress:** Stable lesson/question IDs are retained and original source code remains available. This is a presentation-only reorganization.
