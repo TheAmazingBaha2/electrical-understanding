@@ -127,14 +127,14 @@ Deno.serve(async(req:Request)=>{
   note:"Every paid stage requires a separate click; uploads are private and reviewed lessons are not inserted into graded study progress."},200,origin);
  if(action==="register"){
   const path=request.path,title=String(request.title||"").trim();
-  if(!plain(title,140)||typeof path!=="string"||!new RegExp("^"+userId.replace(/[.*+?^$\{\}()|[\]\\]/g,"\\$&")+"/[a-f0-9-]{36}\\.(pdf|png|jpg|jpeg|webp)$").test(path))
+  if(!plain(title,140)||typeof path!=="string"||!path.startsWith(userId+"/")
+     || !/^[a-f0-9-]{36}\.(pdf|png|jpg|jpeg|webp)$/.test(path.slice(userId.length+1)))
    return fail("Invalid private scan path or title",origin);
   const {data:existing}=await admin.from("scan_lesson_jobs").select("id").eq("user_id",userId).eq("source_path",path).maybeSingle();
   if(existing)return reply({jobId:existing.id,existing:true},200,origin);
-  const {data:count,error:countError}=await admin.from("scan_lesson_jobs").select("id",{count:"exact",head:true}).eq("user_id",userId);
-  // count returns a count separate from data; enforce a small trial limit.
+  // Count registered scans before admitting another source into the private library.
   const listing=await admin.from("scan_lesson_jobs").select("id",{count:"exact",head:true}).eq("user_id",userId);
-  if(countError||listing.error)return fail("Source quota check unavailable",origin,503);
+  if(listing.error)return fail("Source quota check unavailable",origin,503);
   if((listing.count||0)>=20)return fail("Staging source library is limited to 20 uploads until reviewed",origin,429);
   let contentType;
   let size;
@@ -191,7 +191,7 @@ Deno.serve(async(req:Request)=>{
  const reserved=await owner.rpc("ai_test_reserve",{p_model:model});
  if(reserved.error)return fail("Paid-use quota check unavailable",origin,503);
  if(!reserved.data)return fail("Shared private API quota reached, including Astra 2/day. Try later.",origin,429);
- const input=action==="analysis" ? null : action==="analyze"
+ const input=action==="analyze"
   ?[{role:"user",content:[{type:"input_text",text:"Extract only the visible, verifiable electronics concepts from this private source."},sourceInput]}]
   :action==="draft"
   ?JSON.stringify({source_title:job.title,analysis:job.analysis})
