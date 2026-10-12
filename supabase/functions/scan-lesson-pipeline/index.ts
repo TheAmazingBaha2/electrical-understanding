@@ -153,11 +153,20 @@ Deno.serve(async(req:Request)=>{
   if(error||!created)return fail("Could not register private scan",origin,503);
   return reply({jobId:created.id},200,origin);
  }
- if(!["plan","analyze","draft","review","approve"].includes(action))return fail("Unknown action",origin);
+ if(!["delete","plan","analyze","draft","review","approve"].includes(action))return fail("Unknown action",origin);
  if(typeof request.jobId!=="string"||!/^[a-f0-9-]{36}$/.test(request.jobId))return fail("Invalid job",origin);
  const {data:job,error:jobError}=await admin.from("scan_lesson_jobs").select("*").eq("user_id",userId).eq("id",request.jobId).maybeSingle();
  if(jobError)return fail("Source lookup failed",origin,503);
- if(!job)return fail("Private source does not exist",origin,404);
+ if(!job)return action==="delete"?reply({deleted:true},200,origin):fail("Private source does not exist",origin,404);
+ if(action==="delete"){
+  // Only the authenticated owner's stored path can be removed; never accept a path from the browser.
+  if(!job.source_path.startsWith(userId+"/"))return fail("Invalid source ownership",origin,403);
+  const removed=await admin.storage.from(BUCKET).remove([job.source_path]);
+  if(removed.error)return fail("Could not remove the original scan. Nothing was removed from your library; retry deletion.",origin,503);
+  const deleted=await admin.from("scan_lesson_jobs").delete().eq("id",job.id).eq("user_id",userId);
+  if(deleted.error)return fail("Original scan removed, but its library record could not be removed. Retry deletion to finish.",origin,503);
+  return reply({deleted:true},200,origin);
+ }
  const targetState={plan:"uploaded",analyze:"uploaded",draft:"analyzed",review:"drafted",approve:"reviewed"} as any;
  if(action==="draft"&&job.state==="needs_revision"){}else if(job.state!==targetState[action])
   return fail("Wrong stage: "+job.state+". Refresh the Scan Inbox before continuing.",origin,409);
@@ -229,3 +238,4 @@ Deno.serve(async(req:Request)=>{
  if(saveError||!saved)return fail("The source changed during processing. The previous version is preserved; refresh before retrying.",origin,409);
  return reply({state:nextState,usage:result.usage,needsReview:true},200,origin);
 });
+

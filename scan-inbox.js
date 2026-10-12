@@ -10,6 +10,20 @@ function humanState(state){
   drafted:"Ready for Astra technical review",reviewed:"Ready for your approval",
   needs_revision:"Review found problems — revise with Sol",approved:"Approved for your private lesson library"})[state]||state;
 }
+// Detach Android content-provider files immediately, before another app changes the file handle.
+export async function prepareScanFile(file){
+ if(!file||file.size<1||file.size>5242880)throw Error('Choose a file of 5 MB or less.');
+ let bytes;
+ try{bytes=await file.arrayBuffer()}catch{throw Error('Your phone could not read this file. Save the scan to Downloads, then select it again.')}
+ if(bytes.byteLength!==file.size)throw Error('The selected file changed while reading. Select it again.');
+ const b=new Uint8Array(bytes),prefix=n=>Array.from(b.slice(0,n)).join(',');
+ const type=prefix(4)==='37,80,68,70'?'application/pdf'
+  :prefix(8)==='137,80,78,71,13,10,26,10'?'image/png'
+  :prefix(3)==='255,216,255'?'image/jpeg'
+  :String.fromCharCode(...b.slice(0,4))==='RIFF'&&String.fromCharCode(...b.slice(8,12))==='WEBP'?'image/webp':null;
+ if(!type)throw Error('Choose a valid PDF, PNG, JPEG or WebP scan.');
+ return {bytes,type,extension:supported.get(type)};
+}
 export function renderScanInbox(user){
  if(!user)return '<header class="v2-intro"><p class="v2-kicker">PRIVATE SOURCE LIBRARY</p><h2>Scan Inbox</h2><p>Sign in to your staging study account before uploading and building lessons.</p><button class="primary" data-goto="account">Sign in →</button></header>';
  return `<section id="scan-root" class="scan-workbench">
@@ -65,7 +79,7 @@ function buttonFor(job){
 function detail(job){
  const provenance=job.lesson?.source?'<p class="muted sm">Stable lesson ID: '+esc(job.draft_id)+' · source '+esc(job.title)+'</p>':'';
  return '<section class="scan-source-card panel"><h2>'+esc(job.title)+'</h2><p class="muted sm">'+humanState(job.state)+' · '+new Date(job.created_at).toLocaleDateString()+' · '+Math.ceil(job.source_bytes/1024)+' KB</p>'+
- '<button class="outline small-button" id="scan-download-source">Download original private source</button>'+
+ '<button class="outline small-button" id="scan-download-source">Download original private source</button> <button class="outline small-button" id="scan-delete-source">Delete scan & generated content</button>'+
  '<div class="scan-stages">'+['Astra interpretation','Sol lesson draft','Astra review','Your approval'].map((x,i)=>'<span class="'+(i<=({uploaded:-1,analyzed:0,drafted:1,needs_revision:2,reviewed:2,approved:3}[job.state]??-1)?'complete':'')+'">'+(i+1)+'. '+x+'</span>').join('')+'</div>'+
  (job.analysis?.planning_brief?'<details><summary>Sol’s saved teaching brief</summary>'+bubble('Your instructions',job.analysis.planning_brief.learner_context||'Default teaching guidance')+bubble('Astra extraction',job.analysis.planning_brief.astra_guidance)+bubble('Lesson drafting',job.analysis.planning_brief.lesson_guidance)+bubble('Technical review',job.analysis.planning_brief.review_guidance)+'</details>':'')+
  (job.state==='uploaded'&&!job.analysis?.planning_brief?'<label>Additional instructions for Sol (optional)<textarea id="scan-learner-context" maxlength="2000" rows="4" placeholder="Leave blank for Sol to plan from the scanned pages."></textarea></label>':'')+
@@ -77,7 +91,14 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
  const root=by('#scan-root');
  if(!root||!supabase||!user)return;
  const id=user.id;
- let jobs=[];
+ let jobs=[],preparedFile=null,preparing=null,pendingUpload=null;
+ const fileInput=root.querySelector("#scan-file");
+ fileInput.addEventListener("change",()=>{
+  preparedFile=fileInput.files[0]||null;pendingUpload=null;
+  preparing=preparedFile?prepareScanFile(preparedFile):null;
+  // Attach the error handler immediately; the original promise is awaited on submit.
+  preparing?.catch(error=>status(error.message));
+ });
  const status=(text)=>{if(root.isConnected)root.querySelector('#scan-status').textContent=text;};
  const invoke=async body=>{
   const {data,error}=await supabase.functions.invoke('scan-lesson-pipeline',{body});
@@ -96,6 +117,18 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
   const div=root.querySelector('#scan-detail');
   div.innerHTML=job?detail(job):'<section class="panel"><h3>3 · Select a scan</h3><p>Choose an uploaded source to review its evidence and build a draft.</p></section>';
   if(!job)return;
+  div.querySelector('#scan-delete-source')?.addEventListener('click',async e=>{
+   if(operation)return;
+   if(!window.confirm('Permanently delete “'+job.title+'”, its original scan, analysis, and any generated lesson? This cannot be undone.'))return;
+   operation=true;const button=e.currentTarget;button.disabled=true;
+   status('Deleting scan and generated content…');
+   try{
+    await invoke({action:'delete',jobId:job.id});
+    if(selectedId===job.id)selectedId=null;
+    await refresh(false);status('Scan and its generated content deleted. No AI charge.');
+   }catch(error){status('Delete failed: '+error.message+' You can retry.');notify(error.message)}
+   finally{operation=false;if(button.isConnected)button.disabled=false}
+  });
   div.querySelector('#scan-download-source')?.addEventListener('click',async()=>{
    try{
     const {data,error}=await supabase.storage.from(bucket).download(job.source_path);
@@ -143,17 +176,38 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
   const name=root.querySelector('#scan-title').value.trim(),file=root.querySelector('#scan-file').files[0],
    approved=root.querySelector('#scan-share-consent').checked;
   if(!approved||!name||!file)return;
-  const extension=supported.get(file.type);
-  if(!extension||file.size<1||file.size>5242880){status('Choose a PDF, PNG, JPEG or WebP file of 5 MB or less.');return}
-  operation=true;const button=root.querySelector('#scan-upload');button.disabled=true;status('Uploading privately…');
+  operation=true;const button=root.querySelector('#scan-upload');button.disabled=true;
+  let phase='reading the selected file';
+  status('Reading scan from your device…');
   try{
-   const path=id+'/'+crypto.randomUUID()+'.'+extension;
-   const upload=await supabase.storage.from(bucket).upload(path,file,{upsert:false,contentType:file.type,cacheControl:'0'});
-   if(upload.error)throw upload.error;
-   const registered=await invoke({action:'register',path,title:name});
+   if(preparedFile!==file||!preparing){preparedFile=file;preparing=prepareScanFile(file);}
+   const prepared=await preparing;
+   if(!pendingUpload)pendingUpload={path:id+'/'+crypto.randomUUID()+'.'+prepared.extension,uploaded:false};
+   const pending=pendingUpload;
+   if(!pending.uploaded){
+    phase='sending the scan';status('Uploading scan bytes privately…');
+    // An earlier network failure may have occurred after Storage accepted the upload.
+    if(pending.attempted){
+     const existing=await supabase.storage.from(bucket).download(pending.path);
+     if(!existing.error&&existing.data?.size===prepared.bytes.byteLength)pending.uploaded=true;
+    }
+    if(!pending.uploaded){
+     pending.attempted=true;
+     const upload=await supabase.storage.from(bucket).upload(pending.path,prepared.bytes,{upsert:false,contentType:prepared.type,cacheControl:'0'});
+     if(upload.error)throw upload.error;
+     pending.uploaded=true;
+    }
+   }
+   phase='adding the scan to your library';status('Upload received. Adding to your private library…');
+   const registered=await invoke({action:'register',path:pending.path,title:name});
    selectedId=registered.jobId;root.querySelector('#scan-upload-form').reset();
-   await refresh(false);status('Source uploaded. No AI charges yet. Select Run Astra source analysis when ready.');
-  }catch(error){status('Private upload failed: '+error.message);notify(error.message)}
+   preparedFile=null;preparing=null;pendingUpload=null;
+   await refresh(false);status('Source uploaded. No AI charges yet. Select Run Sol planning → Astra analysis when ready.');
+   button.textContent='Upload privately (no AI charge)';
+  }catch(error){
+   status('Upload failed while '+phase+': '+error.message+'. Tap Retry upload to try again.');
+   button.textContent='Retry upload (no AI charge)';notify(error.message);
+  }
   finally{operation=false;button.disabled=false}
  });
  void (async()=>{
@@ -161,3 +215,4 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
   catch(e){status('Private scan authorization unavailable: '+e.message);root.querySelector('#scan-upload').disabled=true}
  })();
 }
+

@@ -10,7 +10,7 @@ try{
  await page.locator('.v2-hero').waitFor({timeout:30000});
  await page.evaluate(async()=>{
   const {renderScanInbox,attachScanInbox}=await import('/scan-inbox.js');
-  let job=null;
+  let job=null;window.__uploadCount=0;window.__failRegistration=true;
   const exampleAnalysis={
    overview:'A simulated low-voltage resistor circuit is illustrated.',
    facts:[{id:'S1',claim:'One 1 kΩ resistor is connected to 5 V.',location:'page 1',confidence:'high'},
@@ -34,12 +34,14 @@ try{
    },
    storage:{from(bucket){
     if(bucket!=='eu-private-scans')throw Error('Wrong bucket');
-    return {upload:async()=>({error:null}),download:async()=>({data:new Blob([1]),error:null})};
+    return {upload:async(path,body,options)=>{if(!(body instanceof ArrayBuffer))throw Error('Upload must use detached bytes');if(options.contentType!=='image/png')throw Error('Wrong normalized MIME');window.__uploadCount++;return {error:null}},download:async()=>({data:new Blob([1]),error:null})};
    }},
    functions:{invoke:async(slug,{body})=>{
     if(slug!=='scan-lesson-pipeline')throw Error('Wrong function');
     if(body.action==='status')return {data:{authorized:true},error:null};
+    if(body.action==='delete'){job=null;return {data:{deleted:true},error:null};}
     if(body.action==='register'){
+      if(window.__failRegistration){window.__failRegistration=false;return {error:{message:'Simulated lost registration response'}};}
       job={id:'00000000-0000-4000-8000-000000000001',title:body.title,source_path:body.path,
         source_bytes:1024,created_at:new Date().toISOString(),state:'uploaded',analysis:null,lesson:null,review:null,draft_id:null};
       return {data:{jobId:job.id},error:null};
@@ -61,7 +63,10 @@ try{
  await page.locator('#scan-file').setInputFiles({name:'chapter.png',mimeType:'image/png',buffer:Buffer.from([137,80,78,71,13,10,26,10])});
  await page.locator('#scan-share-consent').check();
  await page.locator('#scan-upload').click();
+ await page.waitForFunction(()=>document.querySelector('#scan-upload')?.textContent.includes('Retry'));
+ await page.locator('#scan-upload').click();
  await page.locator('[data-scan-action="analyze"]').waitFor();
+ assert.equal(await page.evaluate(()=>window.__uploadCount),1,'Registration retry must not upload a duplicate');
  assert.match(await page.locator('#scan-status').innerText(),/No AI charges yet/);
  await page.locator('[data-scan-action="analyze"]').click();
  await page.locator('.scan-evidence-row').first().waitFor();
@@ -77,8 +82,16 @@ try{
  await page.locator('[data-scan-action="approve"]').click();
  await page.waitForFunction(()=>document.querySelector('#scan-detail')?.innerText.includes('Approved · available'));
  assert.match(await page.locator('#scan-detail').innerText(),/GEN-00000000/);
+ page.once('dialog',dialog=>dialog.dismiss());
+ await page.locator('#scan-delete-source').click();
+ assert.equal(await page.locator('#scan-delete-source').count(),1,'Cancel preserves scan');
+ page.once('dialog',dialog=>dialog.accept());
+ await page.locator('#scan-delete-source').click();
+ await page.waitForFunction(()=>document.querySelector('#scan-status')?.textContent.includes('content deleted'));
+ assert.equal(await page.locator('.scan-list-row').count(),0);
  const dims=await page.evaluate(()=>({page:document.documentElement.scrollWidth,viewport:innerWidth}));
  assert.ok(dims.page<=dims.viewport+2,'Mobile overflow '+JSON.stringify(dims));
  assert.deepEqual(errors,[],'No JS runtime errors');
  console.log('PASS: owner-only scan upload, manual Astra/Sol/Astra stages, preview, approval, and phone widths.');
 }finally{await browser.close()}
+
