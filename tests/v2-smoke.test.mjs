@@ -25,8 +25,9 @@ test('the five original pilot lesson IDs and question data remain intact',()=>{
  assert.deepEqual(lessons.map(l=>l.id),['L01','L02','L03','L04','L05']);
  assert.ok(lessons.every(l=>l.questions.length>=5));
 });
-test('three tracks have distinct subtrack ids',()=>{
- assert.deepEqual(catalog.map(t=>t.id),['ceta','textbooks','labs']);
+test('four tracks have three source subtrack families and a flat math companion',()=>{
+ assert.deepEqual(catalog.map(t=>t.id),['ceta','textbooks','labs','math']);
+ assert.deepEqual(catalog.find(t=>t.id==='math').subtracks,[]);
  const ids=catalog.flatMap(t=>t.subtracks.map(s=>s.id));
  assert.equal(new Set(ids).size,ids.length);
  assert.ok(catalogSubtrack('core')&&catalogSubtrack('guide'));
@@ -61,7 +62,7 @@ test('persisted lesson IDs count in the dashboard without renaming records',()=>
 });
 test('guide, lab, catalog and Scan Inbox views are renderable',()=>{
  const c=context();
- for(const name of ['ceta','textbooks','labs','scan-inbox','legacy'])assert.ok(v2Page(name,c).length>150);
+ for(const name of ['ceta','textbooks','labs','math','scan-inbox','legacy'])assert.ok(v2Page(name,c).length>150);
  assert.match(v2Page('subtrack',c,'guide'),/Chapter 22/);
  assert.match(v2Page('subtrack',c,'basic'),/DC 02/);
  assert.match(v2Page('subtrack',c,'analog'),/Paused/);
@@ -69,7 +70,7 @@ test('guide, lab, catalog and Scan Inbox views are renderable',()=>{
 test('navigation and script imports are wired up',()=>{
  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
  const app=readFileSync(new URL('../app.js',import.meta.url),'utf8');
- for(const name of ['ceta','textbooks','labs','scan-inbox','reviews'])assert.ok(html.includes('data-view="'+name+'"'));
+ for(const name of ['ceta','textbooks','labs','math','scan-inbox','reviews'])assert.ok(html.includes('data-view="'+name+'"'));
  assert.ok(app.includes("from './v2-panels.js'"));
  assert.ok(app.includes('v2Page(view,v2Context(),activeLesson)'));
  assert.ok(!app.includes('Find this in your books'));
@@ -111,7 +112,8 @@ test('course paths expands without leaving the dashboard and exposes all sub-tra
  const html=v2Dashboard(context());
  assert.match(html,/id="course-paths-menu" hidden/);
  assert.match(html,/data-toggle-paths/);
- assert.equal((html.match(/class="course-menu-group"/g)||[]).length,3);
+ assert.equal((html.match(/class="course-menu-group"/g)||[]).length,4);
+ assert.ok(html.includes('data-goto="math"'));
  assert.ok(html.includes('data-goto="subtrack" data-lesson="guide"'));
  assert.ok(html.includes('data-goto="subtrack" data-lesson="basic"'));
 });
@@ -130,7 +132,7 @@ test('lab prose and five visual activities are in separate focused lesson views'
 });
 test('dashboard pie and track rings use real published course denominators',()=>{
  const html=v2Dashboard(context({'EIM-BEC-PRELAB':{complete:true}}));
- assert.equal((html.match(/v2-frost-ring/g)||[]).length,5);
+ assert.equal((html.match(/v2-frost-ring/g)||[]).length,6);
  assert.equal((html.match(/v2-evidence-pie/g)||[]).length,1);
  assert.match(html,/All published lessons/);
  assert.match(html,/Virtual laboratories/);
