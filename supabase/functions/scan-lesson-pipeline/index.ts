@@ -42,7 +42,7 @@ function verifyAnalysis(x:any){
  if(!x||!Array.isArray(x.facts)||x.facts.length<2||x.facts.length>30||!plain(x.overview,1800))throw Error("Astra extraction is incomplete; no data was saved.");
  const ids=new Set<string>();
  for(const [i,f] of x.facts.entries()){
-  if(!plain(f.claim,900)||!plain(f.location,100)||!["high","uncertain"].includes(f.confidence))throw Error("Malformed source evidence.");
+  if(!plain(f.claim,900)||!plain(f.location,400)||!["high","uncertain"].includes(f.confidence))throw Error("Malformed source evidence.");
   f.id="S"+(i+1);ids.add(f.id);
  }
  x.equations=(x.equations||[]).filter((e:any)=>ids.has(e.source_id)).slice(0,15);
@@ -270,7 +270,7 @@ Deno.serve(async(req:Request)=>{
   if(error||!created)return fail("Could not register private scan",origin,503);
   return reply({jobId:created.id},200,origin);
  }
- if(!["delete","update-source","preflight","plan","analyze","outline","draft","review","approve","check","resume"].includes(action))return fail("Unknown action",origin);
+ if(!["delete","update-source","preflight","recover","plan","analyze","outline","draft","review","approve","check","resume"].includes(action))return fail("Unknown action",origin);
  if(typeof request.jobId!=="string"||!/^[a-f0-9-]{36}$/.test(request.jobId))return fail("Invalid job",origin);
  const {data:job,error:jobError}=await admin.from("scan_lesson_jobs").select("*").eq("user_id",userId).eq("id",request.jobId).maybeSingle();
  if(jobError)return fail("Source lookup failed",origin,503);
@@ -326,6 +326,58 @@ Deno.serve(async(req:Request)=>{
    .eq("user_id",userId).eq("id",job.id).neq("state","approved");
   if(error)return fail("Could not save source information.",origin,503);
   return reply({saved:true},200,origin);
+ }
+ if(action==="recover"){
+  // Revalidate an already COMPLETED and saved model response locally; no OpenAI call,
+  // no quota reservation, and no new charged generation.
+  if(typeof request.attemptId!=="string")return fail("Choose a saved attempt to recover.",origin,400);
+  const {data:attempt,error:attemptError}=await admin.from("scan_model_attempts").select("*")
+   .eq("id",request.attemptId).eq("job_id",job.id).eq("user_id",userId).eq("status","invalid")
+   .eq("base_revision",job.revision).maybeSingle();
+  if(attemptError||!attempt)return fail("No matching saved invalid response at this revision.",origin,409);
+  let payload:any,patch:any,nextState:string;
+  try{
+   payload=decodeSaved(attempt).payload;
+   if(attempt.phase==="analyze"){
+    if(job.state!=="uploaded")throw Error("Astra extraction no longer matches the scan stage.");
+    payload=verifyAnalysis(payload);nextState="analyzed";
+    patch={analysis:{...payload,planning_brief:job.analysis?.planning_brief}};
+   }else if(attempt.phase==="outline"){
+    if(job.state!=="analyzed")throw Error("Chapter plan no longer matches the scan stage.");
+    payload=verifyOutline(payload,job.analysis);nextState="outlined";
+    patch={analysis:{...job.analysis,chapter_outline:payload},lesson:{lessons:[],current:null},review:null};
+   }else if(attempt.phase==="draft"){
+    if(!["outlined","analyzed","needs_revision"].includes(job.state))throw Error("Draft no longer matches the scan stage.");
+    payload=verifyDraft(payload,job.analysis);
+    const outline=job.analysis?.chapter_outline,done=job.lesson?.lessons||[];
+    const selected=outline?.units?.[done.length];
+    if(outline&&!selected)throw Error("Saved chapter plan is complete.");
+    nextState="drafted";patch={lesson:outline?{lessons:done,current:{...payload,plan:selected}}:payload,review:null};
+   }else if(attempt.phase==="review"){
+    if(job.state!=="drafted"||typeof payload.ready!=="boolean"||!Array.isArray(payload.findings))
+     throw Error("Saved technical review is invalid for this draft.");
+    payload.ready=payload.ready&&!payload.findings.some((x:any)=>x.severity==="blocker");
+    nextState=payload.ready?"reviewed":"needs_revision";patch={review:payload};
+   }else if(attempt.phase==="plan"){
+    if(job.state!=="uploaded")throw Error("Saved Sol plan no longer matches the source.");
+    for(const field of ["astra_guidance","lesson_guidance","review_guidance"])
+     if(!plain(payload[field],1800))throw Error("Saved teaching guidance remains incomplete.");
+    nextState="uploaded";patch={analysis:{planning_brief:payload}};
+   }else throw Error("Unsupported recovery stage.");
+  }catch(e){return fail("Saved output cannot yet be applied: "+String(e)+
+   ". Original response remains saved; no new AI call was made.",origin,422)}
+  const {data:claimed,error:claimError}=await admin.from("scan_model_attempts").update({status:"received",error_message:null,
+   updated_at:new Date().toISOString()}).eq("id",attempt.id).eq("user_id",userId).eq("status","invalid")
+   .select("id").maybeSingle();
+  if(claimError||!claimed)return fail("Another recovery is already being processed. Refresh.",origin,409);
+  const applied=await admin.rpc("scan_apply_attempt",{p_user:userId,p_attempt:attempt.id,
+   p_patch:patch,p_next:nextState});
+  if(applied.error||!applied.data){
+   await admin.from("scan_model_attempts").update({status:"invalid",error_message:"Local checkpoint application failed; safely retry free recovery."})
+    .eq("id",attempt.id).eq("status","received").eq("user_id",userId);
+   return fail("Could not apply saved extraction. It remains recoverable, and no provider call was started.",origin,503);
+  }
+  return reply({state:nextState,recovered:true,paidModelCallsStarted:0},200,origin);
  }
  if(action==="delete"){
   // Only the authenticated owner's stored path can be removed; never accept a path from the browser.
