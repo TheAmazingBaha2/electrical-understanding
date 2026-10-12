@@ -573,6 +573,56 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;
 .scan-upload-form label{display:grid;gap:7px;color:#C7E1EC;font-size:13px}
 .scan-upload-form input[type=text],.scan-upload-form input[type=file]{
  max-width:100%;min-width:0;width:100%;background:#17384D;border:1px solid #557B91;color:#F1FAFF;border-radius:9px;padding:11px}
+
+.scan-upload-form select,.scan-citation-editor select,.scan-citation-editor input{
+ max-width:100%;min-width:0;width:100%;background:#17384D;border:1px solid #557B91;
+ color:#F1FAFF;border-radius:9px;padding:11px;font:inherit;
+}
+.scan-citation-panel{
+ padding:15px 17px;border:1px solid rgba(151,230,248,.37);border-radius:14px;
+ background:linear-gradient(145deg,rgba(68,140,166,.20),rgba(22,52,78,.44));
+ backdrop-filter:blur(11px);-webkit-backdrop-filter:blur(11px);
+}
+.scan-citation-panel>strong{color:#D6F9FF}
+.scan-citation-panel p{font-size:12px;margin:7px 0;overflow-wrap:anywhere}
+.scan-citation-editor{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:15px 0}
+.scan-citation-editor label{display:grid;gap:6px;font-size:12px;color:#C5ECF7}
+.scan-citation-editor button{align-self:end;min-height:43px}
+.generated-library-panel{
+ margin-top:22px;border-color:rgba(151,230,248,.32)!important;
+ background:linear-gradient(145deg,rgba(48,102,136,.26),rgba(16,43,68,.80))!important;
+ backdrop-filter:blur(11px);-webkit-backdrop-filter:blur(11px);
+}
+.generated-library-top{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;flex-wrap:wrap;margin-bottom:14px}
+.generated-library-top h2{margin:0 0 8px;color:#E9FBFF}
+.generated-library-top p{max-width:760px}
+.generated-library-entry{
+ margin:12px 0;border-radius:13px;border:1px solid rgba(133,214,241,.31);
+ background:linear-gradient(145deg,rgba(57,122,151,.18),rgba(14,40,64,.48));
+ overflow:hidden;
+}
+.generated-library-entry>summary{
+ cursor:pointer;display:grid;gap:7px;padding:16px 18px;
+ color:#EBFDFF;line-height:1.45;
+}
+.generated-library-entry>summary::marker{color:#8EEBFF}
+.generated-library-title{font-weight:750;font-size:15px}
+.generated-library-entry>summary small,.generated-reading-part small,.generated-exercise small{
+ font-size:11px;color:#B2DBEC;display:block;overflow-wrap:anywhere;line-height:1.5;
+}
+.generated-library-body{padding:0 18px 18px;display:grid;gap:10px;min-width:0}
+.generated-library-body p{line-height:1.74;white-space:pre-wrap}
+.generated-reading{min-width:0;display:grid;gap:10px}
+.generated-reading-part{padding:12px 0;border-top:1px solid rgba(145,214,233,.20)}
+.generated-reading-part h4{margin:4px 0 9px;color:#D6F4FF}
+.generated-exercise{padding:12px;border:1px solid rgba(138,219,245,.3);border-radius:10px}
+.generated-exercise summary{cursor:pointer;color:#E2F8FF;font-weight:650}
+.generated-exercise p{font-size:13px}
+@media(max-width:760px){
+ .generated-library-top{display:grid}
+ .generated-library-body{padding:0 12px 14px}
+ .scan-citation-editor{grid-template-columns:1fr}
+}
 .scan-upload-form input[type=file]::file-selector-button{background:#22506A;color:#F1FAFF;border:1px solid #6AB9D3;border-radius:7px;padding:8px;cursor:pointer}
 .scan-upload-form .scan-consent{display:flex;align-items:flex-start;gap:9px;line-height:1.65}
 .scan-consent input{margin-top:5px;min-width:18px;min-height:18px;accent-color:#8EE5FA}
