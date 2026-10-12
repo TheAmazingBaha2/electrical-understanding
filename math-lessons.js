@@ -104,11 +104,8 @@ export const mathLessons=[
 ];
 export const mathById=id=>mathLessons.find(x=>x.id===id);
 export const relatedMath=sourceId=>mathLessons.filter(x=>x.sourceLessonIds.includes(sourceId));
-// Gate a companion on reachability of at least one of its ORIGINAL source lessons,
-// not completion of another math topic. Math itself never blocks core curriculum.
+// Mathematical practice is always available at the learner's own pace.
+// sourceLessonIds are suggested contextual reading, never completion gates.
 export function mathAvailability(math,sourceLessons,sourceAvailable){
- return math.sourceLessonIds.some(id=>{
-  const source=sourceLessons.find(l=>l.id===id);
-  return Boolean(source&&sourceAvailable(source));
- });
+ return Boolean(math);
 }
