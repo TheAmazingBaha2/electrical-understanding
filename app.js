@@ -1,5 +1,6 @@
 import { ProgressStore, cloudTransport } from './persistence.js';
 import { renderAIModelLab, attachAIModelLab } from './ai-model-lab.js';
+import { mountAIChat, updateAIChatSession } from './ai-chat-widget.js';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_ENVIRONMENT } from './config.js';
 import { lessons, books } from './lessons.js';
 import { v2Dashboard, v2Page } from './v2-panels.js';
@@ -115,7 +116,7 @@ function bindNavigation(){document.querySelectorAll('[data-view]').forEach(b=>b.
 function v2Context(){return {lessons,progress,hasPassed,unlocked,reviews:reviewQueue().length,banner:cloudBanner(),coreRows:lessonRows(lessons),legacyRows:lessonRows(lessons.filter(l=>l.legacy===true||/^L\d{2,}$/.test(l.id))),labLessons,bookLessons,cetaLessons};}
 function setNav(){const current=view==='lesson'?(lessons.some(l=>l.id===activeLesson)?'ceta':bookLessons.some(l=>l.id===activeLesson)?'textbooks':cetaLessons.some(l=>l.id===activeLesson)?'ceta':'labs'):(view==='legacy'||view==='curriculum')?'ceta':view==='subtrack'?(activeLesson==='core'||['guide','exam'].includes(activeLesson)?'ceta':['geier','teach','principles','cabling'].includes(activeLesson)?'textbooks':'labs'):view;
  document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',current===b.dataset.view));}
-function render(){setNav();const names={dashboard:'Your learning dashboard',ceta:'CETa preparation',curriculum:'Legacy lessons',legacy:'Legacy lessons',textbooks:'Textbook companions',labs:'Hands-on laboratory',subtrack:'Learning sub-track',lesson:'Lesson workbench',reviews:'Spaced review',library:'Textbook companions','scan-inbox':'Scan Inbox',account:'Your study account','ai-lab':'Private AI model tests'};
+function render(){setNav();updateAIChatSession(user,supabase);const names={dashboard:'Your learning dashboard',ceta:'CETa preparation',curriculum:'Legacy lessons',legacy:'Legacy lessons',textbooks:'Textbook companions',labs:'Hands-on laboratory',subtrack:'Learning sub-track',lesson:'Lesson workbench',reviews:'Spaced review',library:'Textbook companions','scan-inbox':'Scan Inbox',account:'Your study account','ai-lab':'Private AI model tests'};
  $('#page-title').textContent=names[view]||names.dashboard;
  const main=$('#main');
  main.innerHTML=view==='dashboard'?renderDashboard():view==='lesson'?renderLesson():view==='reviews'?renderReviews():view==='account'?renderAccount():view==='ai-lab'?renderAIModelLab(user):view==='library'?renderLibrary():v2Page(view,v2Context(),activeLesson);
@@ -229,4 +230,6 @@ function attachAuth(){const login=$('#email-login');if(login)login.addEventListe
  document.querySelectorAll('[data-resolve]').forEach(button=>button.addEventListener('click',async()=>{const currentStore=store;try{const doc=await currentStore.resolve(button.dataset.resolve,button.dataset.incoming==='true');if(store!==currentStore)return;progress=doc.progress;render();if(user)void loadCloud()}catch(error){notify(error.message)}}));
  $('#export-progress')?.addEventListener('click',()=>{const url=URL.createObjectURL(new Blob([store.export()],{type:'application/json'}));const a=document.createElement('a');a.href=url;a.download='electrical-understanding-progress-v3.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1200)});
 }
+mountAIChat(()=>{const lesson=view==='lesson'?findLesson(activeLesson):null;
+ return lesson?{title:lesson.title,module:lesson.module||'',description:(lesson.description||'').slice(0,180)}:null;});
 bindNavigation();void connect();
