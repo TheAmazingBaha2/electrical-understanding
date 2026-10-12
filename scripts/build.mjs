@@ -16,7 +16,7 @@ const commitSha = process.env.WORKERS_CI_COMMIT_SHA || process.env.GITHUB_SHA ||
 const output = "dist";
 const publicFiles = [
   "index.html",
-  "app.js", "persistence.js", "ai-model-lab.js", "ai-chat-widget.js",
+  "app.js", "persistence.js", "ai-model-lab.js", "ai-chat-widget.js", "scan-inbox.js",
   "lessons.js",
   "course-catalog.js",
   "v2-panels.js",
