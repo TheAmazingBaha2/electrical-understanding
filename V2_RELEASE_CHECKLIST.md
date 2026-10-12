@@ -78,3 +78,14 @@ When preparing the V2 production release, make **Legacy Lessons** display two di
 - [ ] Compare provider receipts to model cost estimates and verify zero duplicate paid attempts before production release.
 
 **Important:** Sequential unit labels describe educational dependencies, but newly generated reading companions currently use read-only self-checks rather than graded completion locks. Source-backed math companions appear in Mathematics and are never locked behind a different course's completion.
+
+### Persistent personal book catalog (staging)
+
+- [x] Replace free-text publication field in Scan Inbox with a saved, per-user book/edition selector.
+- [x] Add an **Add / import a new book** metadata panel: title, optional author/edition, and default study track. This stores metadata only; it does not automatically upload entire ebooks or generate lessons.
+- [x] Import the distinct existing `scan_lesson_jobs.source_book` titles into `study_books` without changing scan attribution or study progress.
+- [x] Protect `study_books` with authenticated owner-specific PostgreSQL row-level security.
+- [x] Selecting a saved book populates the reference used for the scanned pages and chooses its usual track; newly added titles persist in Supabase across signed-in devices.
+- [x] Preserve the manual citation editor for correcting previously uploaded scans, adding newly entered book titles to the catalog.
+- [x] Add unit tests for book labeling, metadata-only actions, RLS, old-source import, and mobile stacking.
+- [ ] Manually check the saved book selector and new-book flow on staging mobile and desktop before V2 production approval.
