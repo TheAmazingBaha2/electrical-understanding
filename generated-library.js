@@ -30,26 +30,42 @@ function lessonContent(lesson,job,idPrefix){
  return h+'</div>';
 }
 function cards(jobs,filter){
- let entries=[];
+ const entries=[];
  for(const job of jobs){
-  if(job.state!=="approved"||!job.lesson)continue;
+  if(!["outlined","drafted","reviewed","needs_revision","approved"].includes(job.state)||!job.lesson)continue;
   const track=job.source_track||job.lesson?.source?.track||"other";
-  if(filter==="review"){
-   for(const [i,lesson] of safeList(job.lesson.review_lessons).entries()){
-    entries.push({job,lesson,kind:"review",order:i});
+  const approvedUnits=Array.isArray(job.lesson.lessons)?job.lesson.lessons:
+   job.state==="approved"?[job.lesson]:[];
+  for(const unit of approvedUnits){
+   const kind=unit.plan?.kind||unit.kind||"concept";
+   const destination=unit.plan?.destination||unit.destination||"source";
+   const meta=unit.plan||unit;
+   if(filter==="review"){
+    for(const [i,review] of safeList(unit.review_lessons).entries()){
+     entries.push({job,lesson:review,kind:"review",order:i,meta});
+    }
+   }else if((filter==="math"&&kind==="math")||
+    (filter==="textbooks"&&BOOK_TRACKS.has(track))||
+    (filter==="ceta"&&track==="guide")||
+    (filter==="labs"&&track==="basic")||filter===track){
+    if(destination==="source"&&safeList(unit.sections).length){
+     entries.push({job,lesson:unit,kind:"unique",order:0,meta});
+    }
    }
-  }else if((filter==="textbooks"&&BOOK_TRACKS.has(track))||
-    (filter==="ceta"&&track==="guide")||(filter==="labs"&&track==="basic")||filter===track){
-   if(safeList(job.lesson.sections).length)entries.push({job,lesson:job.lesson,kind:"unique",order:0});
   }
  }
- if(!entries.length)return '<p class="muted">No approved '+(filter==="review"?'reinforcement lessons':'source-specific lessons')+' here yet. Lesson drafts stay in Scan Inbox until you approve them.</p>';
- return entries.map(({job,lesson,kind,order})=>{
+ if(!entries.length)return '<p class="muted">No approved '+(filter==="review"?'reinforcement lessons':'source-specific lessons')+
+  ' here yet. Completed chapter units appear as you approve them; drafts remain private in Scan Inbox.</p>';
+ return entries.map(({job,lesson,kind,order,meta})=>{
   const insight=kind==="review"?'<p><b>What this source adds:</b> '+esc(lesson.new_perspective)+'</p>':'<p>'+esc(lesson.description)+'</p>';
   const related=kind==="review"&&safeList(lesson.related_lessons).length?'<p class="muted sm">Related lessons: '+esc(lesson.related_lessons.join("; "))+'</p>':'';
+  const sequence=meta?.ordering==="sequential"?
+   'Suggested sequential study'+(safeList(meta.prerequisites).length?' · Prior unit(s): '+meta.prerequisites.join(', '):''):
+   'Independent / self-paced';
   return '<details class="generated-library-entry"><summary><span class="generated-library-title">'+esc(lesson.title)+'</span>'+
-   '<small>'+attribution(job)+'</small></summary><div class="generated-library-body">'+insight+related+
-   '<p class="muted sm">The page range is user-entered. Evidence positions come from Astra’s scan extraction; compare against the original source.</p>'+
+   '<small>'+attribution(job)+'</small><small>'+esc(sequence)+' · '+esc(meta?.kind||"concept")+'</small></summary>'+
+   '<div class="generated-library-body">'+insight+related+
+   '<p class="muted sm">The page range is user-entered. Evidence positions come from the saved Astra extraction; compare against the original pages.</p>'+
    lessonContent(lesson,job,kind+'-'+order)+'</div></details>';
  }).join("");
 }
@@ -73,8 +89,8 @@ export function attachGeneratedLibrary(supabase,user,notify=()=>{}){
   if(button)button.disabled=true;
   try{
    const {data,error}=await supabase.from('scan_lesson_jobs')
-    .select('id,title,source_book,source_pages,source_track,state,lesson,analysis,approved_at')
-    .eq('state','approved').order('approved_at',{ascending:false}).limit(200);
+    .select('id,title,source_book,source_pages,source_track,state,lesson,analysis,approved_at,created_at')
+    .in('state',['outlined','drafted','reviewed','needs_revision','approved']).order('created_at',{ascending:false}).limit(200);
    if(error)throw error;
    if(!region.isConnected)return;
    region.innerHTML=cards(data||[],region.dataset.track);
