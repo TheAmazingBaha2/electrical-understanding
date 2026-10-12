@@ -578,6 +578,9 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;
 .scan-consent input{margin-top:5px;min-width:18px;min-height:18px;accent-color:#8EE5FA}
 .scan-upload-form .primary{justify-self:start;max-width:100%;white-space:normal}
 .scan-heading{display:flex;align-items:center;gap:16px;justify-content:space-between}
+.scan-auto-updates{display:flex;align-items:center;gap:9px;margin-top:12px;color:#C7E1EC;font-size:13px;line-height:1.4;cursor:pointer}
+.scan-auto-updates input{accent-color:#8EE5FA;min-width:18px;min-height:18px;margin:0}
+.scan-auto-updates-hint{margin:4px 0 0}
 .scan-list{display:grid;gap:8px;margin-top:14px}
 .scan-list-row{display:flex;justify-content:space-between;align-items:center;text-align:left;gap:13px;border:1px solid #31546C;
  background:rgba(23,61,84,.45);border-radius:10px;padding:12px 14px;color:#E3F6FF;max-width:100%;min-width:0}
