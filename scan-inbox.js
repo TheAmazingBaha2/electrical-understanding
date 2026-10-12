@@ -16,7 +16,7 @@ function setScanInboxAutoUpdatesPaused(paused){
  try{sessionStorage.setItem(pauseKey,paused?'1':'0')}catch{/* Browsers may disable session storage. */}
 }
 function humanState(state){
- return ({uploaded:"Awaiting Astra interpretation",analyzed:"Ready for Sol lesson draft",
+ return ({uploaded:"Awaiting Astra interpretation",analyzed:"Ready for Sol chapter outline",outlined:"Ready for next chapter lesson",
   drafted:"Ready for Astra technical review",reviewed:"Ready for your approval",
   needs_revision:"Review found problems — revise with Sol",approved:"Approved for your private lesson library"})[state]||state;
 }
@@ -166,7 +166,7 @@ function attemptLog(job){
 
 const SCAN_STAGE_DEFINITIONS=[
  {label:'Astra interpretation',hint:'Sol plans · Astra extracts evidence'},
- {label:'Sol lesson draft',hint:'Build a source-grounded lesson'},
+ {label:'Sol chapter plan & lessons',hint:'Flexible outline and one sourced lesson at a time'},
  {label:'Astra review',hint:'Verify accuracy and safety'},
  {label:'Your approval',hint:'Add the reviewed lesson to your library'}
 ];
@@ -400,7 +400,7 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
    operation=true;
    updateLiveStage(action==='resume'?currentScanPhase(job):action);
    const button=e.currentTarget;button.disabled=true;
-   status(action==='approve'?'Saving your approval…':action==='analyze'?'Running Sol planning → Astra analysis (up to two paid requests)…':'Running '+action+' — one paid AI request, please wait…');
+   status(action==='approve'?'Saving your lesson approval (free)…':action==='analyze'?'Running Sol planning → Astra analysis (up to two paid requests)…':action==='outline'?'Sol is planning an adaptable chapter curriculum — one paid request…':'Running '+action+' — one paid AI request, please wait…');
    try{
     let planningUsage=null;
     if(action==='analyze'&&!job.analysis?.planning_brief){
