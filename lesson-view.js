@@ -18,7 +18,7 @@ function quizPanel(ctx){
  (passed?'<p class="lesson-success">All completion requirements have been met. Visit Review for your next lesson.</p>':'')+'</section>';
 }
 function reviewPanel(ctx){
- const {lesson,answers,passed,score,nextLesson,isPilot}=ctx;
+ const {lesson,answers,passed,score,nextLesson,isPilot,isLegacyArchived}=ctx;
  const attempted=Object.values(answers).filter(a=>typeof a?.correct==="boolean").length;
  const due=lesson.questions.filter(q=>typeof answers[q.id]?.correct==="boolean" && answers[q.id].reviewDue<=Date.now()).length;
  return '<section class="lesson-summary"><span class="v2-kicker">YOUR LEARNING RECORD</span><h3>'+(passed?'Lesson mastered':'Your progress so far')+'</h3>'+
@@ -29,7 +29,7 @@ function reviewPanel(ctx){
   return '<button type="button" class="lesson-review-item" data-quiz-jump="'+i+'"><span><b>'+e("Question "+(i+1))+'</b> '+e(q.prompt)+'</span><small>'+label+' →</small></button>';
  }).join("")+'</div><div class="actions"><button class="outline" data-lesson-tab="quiz">Return to quiz</button>'+
  (passed&&nextLesson?'<button class="primary" data-goto="lesson" data-lesson="'+e(nextLesson.id)+'">Next lesson →</button>':'')+
- '<button class="outline" data-goto="'+(lesson.subtrack==='math'?'math':isPilot?'legacy':'subtrack')+'" '+(lesson.subtrack==='math'||isPilot?'':'data-lesson="'+e(lesson.subtrack||'basic')+'"')+'>'+(lesson.subtrack==='math'?'Back to Mathematics Companion':isPilot?'Legacy lesson library':lesson.subtrack==='geier'?'Back to DMM companion':lesson.subtrack==='guide'?'Back to CETa Study Guide':'Back to lab manual')+'</button></div></section>';
+ '<button class="outline" data-goto="'+(isLegacyArchived?'legacy':lesson.subtrack==='math'?'math':isPilot?'legacy':'subtrack')+'" '+(isLegacyArchived||lesson.subtrack==='math'||isPilot?'':'data-lesson="'+e(lesson.subtrack||'basic')+'"')+'>'+(isLegacyArchived?'Back to Legacy Lessons':lesson.subtrack==='math'?'Back to Mathematics Companion':isPilot?'Legacy lesson library':lesson.subtrack==='geier'?'Back to DMM companion':lesson.subtrack==='guide'?'Back to CETa Study Guide':'Back to lab manual')+'</button></div></section>';
 }
 // Cite only page information actually present in the source record; no invented page numbers.
 function sourceAttribution(lesson){
@@ -44,7 +44,7 @@ function sourceAttribution(lesson){
  return 'Original foundational lesson; not derived from specific verified textbook pages. Related reading may be suggested separately, but exact page citations are unavailable.';
 }
 export function tabbedLesson(ctx) {
- const {lesson,isPilot,idx,score,passed,tab,activityIndex}=ctx;
+ const {lesson,isPilot,isLegacyArchived,legacyGroup,idx,score,passed,tab,activityIndex}=ctx;
  const active=lessonTabs.some(t=>t.id===tab)?tab:"overview";
  const answers=ctx.answers||{};
  const graded=Object.values(answers).filter(v=>typeof v?.correct==="boolean").length;
@@ -62,7 +62,7 @@ export function tabbedLesson(ctx) {
  } else {
   contents=reviewPanel(ctx);
  }
- return '<div class="learning learning-tabbed"><div class="bread">'+e(lesson.module)+' / '+(isPilot?'LEGACY LESSON '+(idx+1)+' OF 5':lesson.subtrack==='geier'?'TEXTBOOK · DMM COMPANION':lesson.subtrack==='guide'?'CETA · STUDY GUIDE COMPANION':lesson.subtrack==='math'?'CROSS-TRACK MATHEMATICS':'EIM LAB COMPANION')+'</div>'+
+ return '<div class="learning learning-tabbed"><div class="bread">'+e(lesson.module)+' / '+(isPilot?'LEGACY GROUP 1 · PILOT '+(idx+1)+' OF 5':isLegacyArchived?'LEGACY GROUP 2 · ORIGINAL / UNREFERENCED':lesson.subtrack==='geier'?'TEXTBOOK · DMM COMPANION':lesson.subtrack==='guide'?'CETA · STUDY GUIDE COMPANION':lesson.subtrack==='math'?'CROSS-TRACK MATHEMATICS':'EIM LAB COMPANION')+'</div>'+
  '<div class="lesson-header"><h2>'+e(lesson.title)+'</h2><p class="muted">'+e(lesson.description)+'</p><span class="chip">About '+lesson.minutes+' minutes · '+graded+'/'+score.total+' graded</span></div>'+
  '<aside class="lesson-source-citation" aria-label="Lesson source reference"><strong>Source & page reference</strong><p>'+e(sourceAttribution(lesson))+'</p></aside>'+
   renderLessonTabs(active,graded,score.total)+
