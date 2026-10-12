@@ -307,8 +307,10 @@ Deno.serve(async(req:Request)=>{
   if(attemptError)errors.push("Saved attempt status could not be read.");
   if(previous&&["running","received","starting"].includes(previous.status))
    notes.push("A prior request may still be in progress. Resume/check it; do not start another.");
-  if(previous&&["failed","invalid","unknown","incomplete"].includes(previous.status))
-   notes.push("Previous "+stage+" attempt is "+previous.status+". A paid retry requires your explicit confirmation; earlier charges cannot be ruled out.");
+  if(previous?.status==="invalid"&&previous.response_id)
+   notes.push("A completed response failed local validation. Try the free Revalidate saved response action before considering another paid request.");
+  else if(previous&&["failed","invalid","unknown","incomplete"].includes(previous.status))
+   notes.push("Previous "+stage+" attempt is "+previous.status+". A paid retry requires explicit confirmation; earlier charges cannot be ruled out.");
   notes.push("This check does not contact OpenAI, test model access, reserve quota, or guarantee provider availability.");
   return reply({ready:errors.length===0,stage,errors,notes,
    existingAttempt:previous?{status:previous.status,hasResponseId:!!previous.response_id}:null,
