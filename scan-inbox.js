@@ -117,8 +117,8 @@ function explainOutline(job){
   return '<li class="scan-outline-item'+(completed?' complete':'')+'"><div><strong>'+
    esc(unit.id)+' · '+esc(unit.title)+'</strong><span class="muted sm">'+
    esc(unit.kind)+' · '+esc(unit.destination==='review'?'Review & Reinforcement':'Source-specific')+
-   ' · '+esc(unit.ordering==='sequential'?'Sequential prerequisite':'Self-paced / independent')+
-   (unit.prerequisites?.length?' · Requires '+esc(unit.prerequisites.join(', ')):'')+
+   ' · '+esc(unit.ordering==='sequential'?'Suggested sequential study':'Self-paced / independent')+
+   (unit.prerequisites?.length?' · Builds on '+esc(unit.prerequisites.join(', ')):'')+
    '</span></div><p>'+esc(unit.focus)+'</p><small>Source: '+esc(scanCite(job,unit.source_ids))+'</small>'+
    (completed?'<span class="scan-outline-done">Approved</span>':'')+'</li>';
  }).join('');
