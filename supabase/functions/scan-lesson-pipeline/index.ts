@@ -358,6 +358,13 @@ Deno.serve(async(req:Request)=>{
   return fail("Submission interrupted; refresh to see the saved error. A paid retry requires your explicit click.",origin,409);
  }
  if(attempt?.status==="starting")return fail("Request submission is still being recorded. Refresh shortly; no duplicate request was started.",origin,409);
+ // A running request without a durable provider ID cannot safely be polled.
+ // Never turn a "Resume" click into an unannounced second paid generation.
+ if(attempt?.status==="running"&&!attempt.response_id){
+  await saveAttempt(admin,attempt,{status:"unknown",error_message:
+   "The request is marked running, but no provider response ID was saved. Acceptance and previous billing cannot be verified. Automatic resubmission is blocked. An explicit paid retry is required."});
+  return fail("This request has no recoverable provider ID. No new AI request was started. Refresh and review the saved warning before considering a paid retry.",origin,409);
+ }
  let sourceInput:any=null;
  if(!attempt&&action!=="draft"){
   try{
