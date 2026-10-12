@@ -904,3 +904,30 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;
 }
 .scan-preflight-result.needs-attention strong{color:#FFE4B8}
 #scan-free-preflight{white-space:normal}
+
+/* Astra evidence -> flexible Sol chapter lesson outline */
+.scan-chapter-outline{
+ margin:18px 0;border:1px solid rgba(140,226,247,.40);
+ background:linear-gradient(140deg,rgba(42,115,145,.24),rgba(17,45,72,.70));
+ backdrop-filter:blur(11px);-webkit-backdrop-filter:blur(11px);
+}
+.scan-chapter-outline h3{color:#E7FAFF;margin:8px 0}
+.scan-chapter-outline>p{line-height:1.65}
+.scan-chapter-outline ol{list-style:none;padding:0;margin:14px 0;display:grid;gap:9px}
+.scan-outline-item{
+ padding:14px 15px;border:1px solid rgba(154,216,236,.26);
+ border-radius:11px;background:rgba(30,84,117,.20);min-width:0;
+}
+.scan-outline-item.complete{border-color:rgba(157,239,243,.54);background:rgba(34,111,123,.18)}
+.scan-outline-item>div{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.scan-outline-item strong{color:#E7FAFF;font-size:13px}
+.scan-outline-item p{font-size:12px;line-height:1.65;margin:8px 0}
+.scan-outline-item small,.scan-outline-done{font-size:11px;color:#9ACEE3;overflow-wrap:anywhere}
+.scan-outline-done{display:block;margin-top:8px;color:#ACF9E3;font-weight:700}
+.scan-chapter-accepted,.scan-chapter-current{
+ padding:13px;margin:13px 0;border-radius:11px;
+ border:1px solid rgba(141,218,241,.28);
+ background:rgba(37,91,114,.17);
+}
+.scan-chapter-accepted{border-color:rgba(156,230,212,.42)}
+@media(max-width:660px){.scan-outline-item>div{display:grid;gap:6px}}
