@@ -105,6 +105,7 @@ export function toggleAIChat(value){
   by('ai-chat-input').focus();
  }else by('ai-chat-launch').focus();
 }
+export function refreshAIChatContext(){if(root&&open)syncLessonLabel()}
 export function updateAIChatSession(user,supabase){
  if(!root)return;
  const id=user?.id||null;
