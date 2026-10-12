@@ -1,5 +1,6 @@
 import { ProgressStore, cloudTransport } from './persistence.js';
 import { renderAIModelLab, attachAIModelLab } from './ai-model-lab.js';
+import { renderScanInbox, attachScanInbox } from './scan-inbox.js';
 import { mountAIChat, updateAIChatSession, refreshAIChatContext } from './ai-chat-widget.js';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_ENVIRONMENT } from './config.js';
 import { lessons, books } from './lessons.js';
@@ -119,7 +120,7 @@ function setNav(){const current=view==='lesson'?(lessons.some(l=>l.id===activeLe
 function render(){setNav();refreshAIChatContext();const names={dashboard:'Your learning dashboard',ceta:'CETa preparation',curriculum:'Legacy lessons',legacy:'Legacy lessons',textbooks:'Textbook companions',labs:'Hands-on laboratory',subtrack:'Learning sub-track',lesson:'Lesson workbench',reviews:'Spaced review',library:'Textbook companions','scan-inbox':'Scan Inbox',account:'Your study account','ai-lab':'Private AI model tests'};
  $('#page-title').textContent=names[view]||names.dashboard;
  const main=$('#main');
- main.innerHTML=view==='dashboard'?renderDashboard():view==='lesson'?renderLesson():view==='reviews'?renderReviews():view==='account'?renderAccount():view==='ai-lab'?renderAIModelLab(user):view==='library'?renderLibrary():v2Page(view,v2Context(),activeLesson);
+ main.innerHTML=view==='dashboard'?renderDashboard():view==='lesson'?renderLesson():view==='reviews'?renderReviews():view==='account'?renderAccount():view==='scan-inbox'?renderScanInbox(user):view==='ai-lab'?renderAIModelLab(user):view==='library'?renderLibrary():v2Page(view,v2Context(),activeLesson);
  main.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>switchTo(b.dataset.goto,b.dataset.lesson||null,b.dataset.question||null)));
  main.querySelectorAll('[data-lesson-tab]').forEach(b=>b.addEventListener('click',()=>{lessonTab=b.dataset.lessonTab;render()}));
  main.querySelectorAll('[data-reveal-insight]').forEach(b=>b.addEventListener('click',()=>{const p=main.querySelector('#starting-insight');if(!p)return;p.hidden=!p.hidden;b.setAttribute('aria-expanded',String(!p.hidden));b.innerHTML=p.hidden?'Reveal the starting insight <span aria-hidden="true">⌄</span>':'Hide the starting insight <span aria-hidden="true">⌃</span>'; }));
@@ -144,6 +145,7 @@ function render(){setNav();refreshAIChatContext();const names={dashboard:'Your l
  if(view==='lesson'){attachQuiz();if(lessonTab==='interact'){renderExperiment();attachLabWidgets();attachDmmWidgets();attachCetaWidgets()}}
  if(view==='account')attachAuth();
  if(view==='ai-lab'&&user)attachAIModelLab(supabase,notify);
+ if(view==='scan-inbox'&&user)attachScanInbox(supabase,user,notify);
 }
 function cloudBanner(){if(user)return `<div class="success sm">Signed in. Answers save on this device first. Check the sync status; resolve any differences in Account.</div>`;
   if(stagingPreview)return `<div class="flash sm"><b>Staging sync enabled:</b> Sign in to the separate preview Supabase project to sync trial answers between devices. Production progress is never used by this preview. <button class="outline small-button" data-goto="account">Sign in →</button></div>`;
