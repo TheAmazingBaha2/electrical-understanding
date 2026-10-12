@@ -8,7 +8,7 @@ export function renderAIModelLab(user){
  '<div class="ai-lab-controls"><label class="lab-control">Scenario<select id="ai-case" disabled><option>Checking access…</option></select></label>'+
  '<label class="lab-control">Model<select id="ai-model" disabled><option>Select a model</option></select></label>'+
  '<button class="primary" id="ai-run" disabled>Run one model test</button></div>'+
- '<p class="muted sm">Each click triggers at most one request. Owner allowance: two per minute, six per hour, and twenty-four per 24 hours. Astra and arbitrary prompts are disabled while evaluating.</p>'+
+ '<p class="muted sm">Each click triggers at most one request. Owner allowance: two per minute, six per hour, and twenty-four per 24 hours. Astra is limited to two tests per rolling 24 hours and costs more per token than Luna and Sol. Arbitrary prompts remain disabled.</p>'+
  '<div id="ai-lab-output" class="ai-lab-output" aria-live="polite"></div></section>';
 }
 export function attachAIModelLab(supabase,notify){
@@ -27,6 +27,17 @@ export function attachAIModelLab(supabase,notify){
    model.innerHTML=info.models.map(m=>'<option value="'+safe(m)+'">'+safe(m)+'</option>').join("");
    sel.disabled=false;model.disabled=false;
    button.disabled=!info.ready;
+   const costNote=document.createElement("p");
+   costNote.className="muted sm";
+   costNote.id="ai-model-cost-note";
+   model.insertAdjacentElement("afterend",costNote);
+   const updateCostNote=()=>{
+     costNote.textContent=model.value==="gpt-6-astra"
+       ?"Astra is premium-priced: $10 per million input tokens and $50 per million output tokens. Maximum 2 Astra tests per rolling 24 hours. Clicking Run uses paid API tokens."
+       :"Clicking Run uses metered API tokens. You can switch models to compare results.";
+   };
+   model.addEventListener("change",updateCostNote);
+   updateCostNote();
    status.textContent=info.ready?"Ready: each model test uses your private OpenAI API quota.":"Gateway secured and benchmark scenarios loaded. Live inference is awaiting your OpenAI API key in staging Supabase Edge Function secrets.";
   }catch(e){status.textContent="Private access unavailable: "+e.message}
  })();
