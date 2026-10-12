@@ -47,7 +47,7 @@ try{
     if(body.action==='analyze'){job.state='analyzed';job.analysis=exampleAnalysis;}
     if(body.action==='draft'){job.state='drafted';job.lesson=lesson;}
     if(body.action==='review'){job.state='reviewed';job.review=sampleReview;}
-    if(body.action==='approve'){job.state='approved';job.draft_id='GEN-'+job.id.toUpperCase();}
+    if(body.action==='approve'){job.state='approved';job.draft_id='GEN-'+job.id.toUpperCase();job.lesson={...job.lesson,id:job.draft_id,source:{scanId:job.id,title:job.title,analysisRevision:3}};}
     return {data:{state:job.state,usage:{input:100,output:200,estimatedUSD:0.002}},error:null};
    }}
   };
