@@ -31,6 +31,18 @@ function reviewPanel(ctx){
  (passed&&nextLesson?'<button class="primary" data-goto="lesson" data-lesson="'+e(nextLesson.id)+'">Next lesson →</button>':'')+
  '<button class="outline" data-goto="'+(lesson.subtrack==='math'?'math':isPilot?'legacy':'subtrack')+'" '+(lesson.subtrack==='math'||isPilot?'':'data-lesson="'+e(lesson.subtrack||'basic')+'"')+'>'+(lesson.subtrack==='math'?'Back to Mathematics Companion':isPilot?'Legacy lesson library':lesson.subtrack==='geier'?'Back to DMM companion':lesson.subtrack==='guide'?'Back to CETa Study Guide':'Back to lab manual')+'</button></div></section>';
 }
+// Cite only page information actually present in the source record; no invented page numbers.
+function sourceAttribution(lesson){
+ if(lesson.subtrack==='geier'){
+  const matched=(lesson.module||'').match(/pp?\.\s*\d+(?:[–-]\d+)?/);
+  return 'Michael Jay Geier, How to Diagnose and Fix Everything Electronic, 3rd ed., Chapter 6, '+(matched?matched[0]:'pages not confirmed')+'. Original companion explanations; see those pages for the relevant DMM topic.';
+ }
+ if(lesson.id==='EIM-BEC-PRELAB')return 'EIM Basic Electric Circuits, PreLab, scanned pp. 1–12. Independently written lesson based on the supplied manual.';
+ if(lesson.id==='EIM-BEC-DC02')return 'EIM Basic Electric Circuits, DC 02, scanned pp. 21–27. Independently written lesson based on the supplied manual.';
+ if(lesson.subtrack==='guide')return 'Associate CET Study Guide, Unit 2, Chapter 3, table-of-contents reference p. 16. The chapter body was not scanned for this lesson; no claims about unseen pages are made.';
+ if(lesson.subtrack==='math')return 'Original mathematics instruction developed for connected electronics topics; no particular textbook pages were used.';
+ return 'Original foundational lesson; not derived from specific verified textbook pages. Related reading may be suggested separately, but exact page citations are unavailable.';
+}
 export function tabbedLesson(ctx) {
  const {lesson,isPilot,idx,score,passed,tab,activityIndex}=ctx;
  const active=lessonTabs.some(t=>t.id===tab)?tab:"overview";
@@ -52,6 +64,7 @@ export function tabbedLesson(ctx) {
  }
  return '<div class="learning learning-tabbed"><div class="bread">'+e(lesson.module)+' / '+(isPilot?'LEGACY LESSON '+(idx+1)+' OF 5':lesson.subtrack==='geier'?'TEXTBOOK · DMM COMPANION':lesson.subtrack==='guide'?'CETA · STUDY GUIDE COMPANION':lesson.subtrack==='math'?'CROSS-TRACK MATHEMATICS':'EIM LAB COMPANION')+'</div>'+
  '<div class="lesson-header"><h2>'+e(lesson.title)+'</h2><p class="muted">'+e(lesson.description)+'</p><span class="chip">About '+lesson.minutes+' minutes · '+graded+'/'+score.total+' graded</span></div>'+
- renderLessonTabs(active,graded,score.total)+
+ '<aside class="lesson-source-citation" aria-label="Lesson source reference"><strong>Source & page reference</strong><p>'+e(sourceAttribution(lesson))+'</p></aside>'+
+  renderLessonTabs(active,graded,score.total)+
  '<div class="lesson-stage" id="lesson-panel" role="tabpanel" tabindex="-1" aria-labelledby="lesson-tab-'+active+'">'+contents+'</div></div>';
 }
