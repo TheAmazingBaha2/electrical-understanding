@@ -102,11 +102,76 @@ function attemptLog(job){
  (a.output_text?'<details data-scan-expand="output-'+esc(a.id)+'"><summary>View unverified saved output</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere">'+esc(a.output_text)+'</pre></details>':'')+
  '<button class="outline small-button" data-download-attempt="'+esc(a.id)+'">Download saved response & error</button></details>').join('')+'</section>';
 }
+
+const SCAN_STAGE_DEFINITIONS=[
+ {label:'Astra interpretation',hint:'Sol plans · Astra extracts evidence'},
+ {label:'Sol lesson draft',hint:'Build a source-grounded lesson'},
+ {label:'Astra review',hint:'Verify accuracy and safety'},
+ {label:'Your approval',hint:'Add the reviewed lesson to your library'}
+];
+const SCAN_ATTEMPT_PENDING=new Set(['starting','running','received']);
+const SCAN_ATTEMPT_INTERRUPTED=new Set(['failed','incomplete','invalid','unknown']);
+function currentScanPhase(job){
+ return ({uploaded:job.analysis?.planning_brief?'analyze':'plan',
+  analyzed:'draft',drafted:'review',needs_revision:'draft',reviewed:'approve'})[job.state]||null;
+}
+function scanStageStates(job,livePhase=null){
+ const finishedThrough=({uploaded:-1,analyzed:0,drafted:1,needs_revision:0,reviewed:2,approved:3})[job.state]??-1;
+ const activeIndex=({uploaded:0,analyzed:1,drafted:2,needs_revision:1,reviewed:3})[job.state]??-1;
+ const phase=currentScanPhase(job);
+ const currentAttempt=job.attempts?.find(a=>a.base_revision===job.revision&&a.phase===phase);
+ return SCAN_STAGE_DEFINITIONS.map((definition,index)=>{
+  let state=index<=finishedThrough?'complete':'pending';
+  if(job.state==='needs_revision'&&index===2)state='revision';
+  if(index===activeIndex){
+   state='ready';
+   if(currentAttempt&&SCAN_ATTEMPT_PENDING.has(currentAttempt.status))state='running';
+   if(currentAttempt&&SCAN_ATTEMPT_INTERRUPTED.has(currentAttempt.status))state='failed';
+   if(livePhase===phase)state='running';
+  }
+  const statuses={
+   complete:'Complete',pending:'Upcoming',ready:'Ready',running:'Processing',
+   failed:'Interrupted',revision:'Changes requested'
+  };
+  let hint=definition.hint;
+  if(state==='complete')hint='Stage finished';
+  if(state==='failed')hint='Review the saved error or retry';
+  if(state==='revision')hint='Review requested corrections';
+  if(state==='ready'&&phase==='analyze'&&index===0)hint='Sol brief saved · Astra is next';
+  if(state==='running'&&phase==='plan'&&index===0)hint='Sol is preparing the teaching brief';
+  if(state==='running'&&phase==='analyze'&&index===0)hint='Astra is interpreting the source';
+  if(state==='running'&&phase==='draft')hint='Sol is drafting the lesson';
+  if(state==='running'&&phase==='review')hint='Astra is checking the draft';
+  if(state==='running'&&phase==='approve')hint='Saving your approval';
+  return {...definition,index,state,status:statuses[state],hint};
+ });
+}
+function scanTrackerMarkup(job,livePhase=null){
+ const stages=scanStageStates(job,livePhase);
+ return '<div class="scan-stage-tracker" role="list" aria-label="Scan pipeline progress">'+stages.map(stage=>{
+  const focused=['ready','running','failed'].includes(stage.state);
+  return '<div class="scan-stage-card '+stage.state+'" role="listitem"'+(focused?' aria-current="step"':'')+'>'+
+   '<div class="scan-stage-top"><span class="scan-stage-number" aria-hidden="true">'+(stage.state==='complete'?'✓':stage.index+1)+'</span>'+
+   '<span class="scan-stage-label">'+esc(stage.label)+'</span></div>'+
+   '<span class="scan-stage-status">'+esc(stage.status)+'</span>'+
+   '<span class="scan-stage-hint">'+esc(stage.hint)+'</span></div>';
+ }).join('')+'</div>';
+}
+function scanPhaseMessage(job,livePhase=null){
+ const stages=scanStageStates(job,livePhase);
+ if(job.state==='approved')return 'Pipeline complete · All four stages finished.';
+ const active=stages.find(stage=>['ready','running','failed'].includes(stage.state));
+ if(!active)return 'Scan pipeline status is available below.';
+ if(active.state==='running')return 'Stage '+(active.index+1)+' of 4 · '+active.label+' is processing.';
+ if(active.state==='failed')return 'Stage '+(active.index+1)+' of 4 · '+active.label+' was interrupted. Check Saved attempts & errors to resume or retry.';
+ if(job.state==='needs_revision')return 'Revision requested · Sol needs to revise the lesson before another Astra review.';
+ return 'Stage '+(active.index+1)+' of 4 · '+active.label+' is ready. No AI request is running.';
+}
 function detail(job){
  const provenance=job.lesson?.source?'<p class="muted sm">Stable lesson ID: '+esc(job.draft_id)+' · source '+esc(job.title)+'</p>':'';
  return '<section class="scan-source-card panel"><h2>'+esc(job.title)+'</h2><p class="muted sm">'+humanState(job.state)+' · '+new Date(job.created_at).toLocaleDateString()+' · '+Math.ceil(job.source_bytes/1024)+' KB</p>'+
  '<button class="outline small-button" id="scan-download-source">Download original private source</button> <button class="outline small-button" id="scan-delete-source">Delete scan & generated content</button>'+
- '<div class="scan-stages">'+['Astra interpretation','Sol lesson draft','Astra review','Your approval'].map((x,i)=>'<span class="'+(i<=({uploaded:-1,analyzed:0,drafted:1,needs_revision:2,reviewed:2,approved:3}[job.state]??-1)?'complete':'')+'">'+(i+1)+'. '+x+'</span>').join('')+'</div>'+
+ '<p class="scan-phase-banner" role="status">'+esc(scanPhaseMessage(job))+'</p>'+scanTrackerMarkup(job)+
  (job.analysis?.planning_brief?'<details data-scan-expand="sol-brief"><summary>Sol’s saved teaching brief</summary>'+bubble('Your instructions',job.analysis.planning_brief.learner_context||'Default teaching guidance')+bubble('Astra extraction',job.analysis.planning_brief.astra_guidance)+bubble('Lesson drafting',job.analysis.planning_brief.lesson_guidance)+bubble('Technical review',job.analysis.planning_brief.review_guidance)+'</details>':'')+
  (job.state==='uploaded'&&!job.analysis?.planning_brief?'<label>Additional instructions for Sol (optional)<textarea id="scan-learner-context" maxlength="2000" rows="4" placeholder="Leave blank for Sol to plan from the scanned pages."></textarea></label>':'')+
  explainAnalysis(job.analysis)+explainLesson(job.lesson)+explainReview(job.review)+provenance+
@@ -209,6 +274,13 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
     setTimeout(()=>URL.revokeObjectURL(url),1000);
    }catch(e){status('Download unavailable: '+e.message);}
   });
+  const updateLiveStage=(phase=null)=>{
+   if(renderedJobId!==job.id)return;
+   const tracker=div.querySelector('.scan-stage-tracker');
+   if(tracker)tracker.outerHTML=scanTrackerMarkup(job,phase);
+   const banner=div.querySelector('.scan-phase-banner');
+   if(banner)banner.textContent=scanPhaseMessage(job,phase);
+  };
   div.querySelector('[data-scan-action]')?.addEventListener('click',async e=>{
    if(operation)return;
    const action=e.currentTarget.dataset.scanAction;
@@ -216,6 +288,7 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
    if(retry&&!window.confirm('This starts one new paid request for the unfinished stage, using any saved output. Completed stages stay saved. Continue?'))return;
    if(action==='approve'&&!window.confirm('Approve this reviewed draft into your private study library? It will not affect graded lessons.'))return;
    operation=true;
+   updateLiveStage(action==='resume'?currentScanPhase(job):action);
    const button=e.currentTarget;button.disabled=true;
    status(action==='approve'?'Saving your approval…':action==='analyze'?'Running Sol planning → Astra analysis (up to two paid requests)…':'Running '+action+' — one paid AI request, please wait…');
    try{
@@ -224,6 +297,7 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
      const planned=await runStage({action:'plan',jobId:job.id,learnerContext:div.querySelector('#scan-learner-context')?.value||''});
      planningUsage=planned.usage;
      status('Sol brief saved. Running Astra source analysis…');
+     updateLiveStage('analyze');
     }
     const result=await runStage({action,jobId:job.id,retry});
     if(planningUsage&&result.usage)result.usage.estimatedUSD+=planningUsage.estimatedUSD;
@@ -231,7 +305,17 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
     await refresh(false);
     status('Completed '+action+'. '+(result.usage?'Estimated cost: $'+Number(result.usage.estimatedUSD).toFixed(5)+'. ':'')+'Review the results before moving on.');
    }catch(error){await refresh(false);status('Could not '+action+': '+error.message+' Any saved Sol brief will be reused on retry.');notify(error.message)}
-   finally{operation=false;if(button.isConnected)button.disabled=false;}
+   finally{
+    operation=false;
+    if(button.isConnected)button.disabled=false;
+    const latest=jobs.find(item=>item.id===selectedId);
+    if(latest&&renderedJobId===job.id){
+     const tracker=div.querySelector('.scan-stage-tracker');
+     if(tracker)tracker.outerHTML=scanTrackerMarkup(latest);
+     const banner=div.querySelector('.scan-phase-banner');
+     if(banner)banner.textContent=scanPhaseMessage(latest);
+    }
+   }
   });
  };
  const refresh=async announce=>{
