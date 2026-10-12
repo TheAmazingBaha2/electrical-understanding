@@ -6,7 +6,7 @@ Status: deployed private **staging-only** endpoint and browser tester; **paid pr
 
 - Frontend: `Account → Private AI model tests` in `draft/v2-dmm-companion` only. Module `ai-model-lab.js`. No progress or quizzes are modified.
 - Private backend: `https://hkwmtjhgrskidaizamwy.supabase.co/functions/v1/ai-model-lab` with JWT verification enabled, deployed only into **staging Supabase**.
-- OpenAI API: Responses API `POST https://api.openai.com/v1/responses`, `store:false`, no tools, output limited to 700 tokens, low reasoning. GPT model allowlist `gpt-6-luna` and `gpt-6.1-sol`. No arbitrary prompts, uploads or user-provided model IDs.
+- OpenAI API: Responses API `POST https://api.openai.com/v1/responses`, `store:false`, no tools, output limited to 700 tokens, low reasoning. GPT model allowlist `gpt-6-luna`, `gpt-6.1-sol`, and `gpt-6-astra` (premium, max 2 runs/rolling 24 hours). No arbitrary prompts, uploads or user-provided model IDs.
 - Evaluation fixtures: twelve original low-voltage electronics questions in `supabase/functions/ai-model-lab/cases.ts`, spanning basic CETa computations, DMMs, safety and audio. Simple string checks are **heuristics, not grading**; the actual response requires human review for truthfulness and physical safety. Costs shown are estimates based on published Standard API token prices and response usage.
 - The static site only receives UI code, never backend source or API key. The public staging Supabase publishable key is allowed by design; no elevated credentials in web assets.
 
@@ -28,7 +28,7 @@ Status: deployed private **staging-only** endpoint and browser tester; **paid pr
 2. Create one **project-scoped API secret key** for that project. Do not put it in the chat, GitHub, `config.js`, a screenshot or a website field.
 3. In **only the staging Supabase project** `hkwmtjhgrskidaizamwy`, visit [Edge Function Secrets](https://supabase.com/dashboard/project/hkwmtjhgrskidaizamwy/settings/functions) and add **`OPENAI_API_KEY`** with that value. If the dashboard navigates differently, use Edge Functions → Secrets. The Edge Function reads the secret dynamically without committing it anywhere.
 4. Refresh the staging site `https://eu-v2-staging.vanguardcorbett.workers.dev/`, open Account → Private AI model tests. Status should change to **Ready** once the secret is usable. A configured key is not itself evidence the account has credits/models; run one manual test and inspect its result or provider error.
-5. Compare the same fixed scenario first with Luna, then Sol. Results show answer, latency, tokens, cost estimate and rudimentary expected-string matches. Actual correctness and safety require manual reading.
+5. Compare the same fixed scenario with Luna, Sol, and Astra (premium). Astra's estimated Standard API cost is $10 per million input tokens and $50 per million output tokens for short context, before any applicable other fees. Results show answer, latency, tokens, cost estimate and rudimentary expected-string matches. Actual correctness and safety require manual reading.
 
 ## Regression checks and safeguards
 
@@ -46,3 +46,7 @@ Status: deployed private **staging-only** endpoint and browser tester; **paid pr
 - Review 12 scenario responses for factual accuracy and hazardous probing advice. A simple keyword match is not a formal evaluation.
 - Enforce additional monthly spend protection at the OpenAI project level; app quota is a second line of defense, not a billing stop.
 - Current backend is a private **evaluation endpoint only**, not an automatic lesson generator, automatic quiz grader, or general chatbot. Any future use of AI for production learning requires separate acceptance and versioned progress-safe rollout.
+
+## Astra evaluation update (2026-10-11)
+
+GPT-6 Astra was added to the server/model selector upon owner request. The original per-user request quotas remain 2/min, 6/hour and 24/rolling 24h, and an additional Astra-only maximum of **2 per rolling 24 hours** is enforced atomically at the DB reservation step. This change is versioned by `supabase/migrations/20261011214000_enable_astra_benchmarks.sql`; the original migration is retained. The OpenAI model ID is `gpt-6-astra`, with published standard short-context token rates $10 input / $50 output per million tokens. A visible warning accompanies the selection. Browser tests simulate all three models without incurring charges. Existing production and saved learning progress are unaffected.
