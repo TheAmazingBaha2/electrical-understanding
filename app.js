@@ -139,7 +139,7 @@ function render(){setNav();refreshAIChatContext();const names={dashboard:'Your l
  $('#page-title').textContent=names[view]||names.dashboard;
  const main=$('#main');
  main.innerHTML=view==='dashboard'?renderDashboard():view==='lesson'?renderLesson():view==='reviews'?renderReviews():view==='account'?renderAccount():view==='scan-inbox'?renderScanInbox(user):view==='ai-lab'?renderAIModelLab(user):view==='library'?renderLibrary():v2Page(view,v2Context(),activeLesson);
- const approvedFilter=view==='reviews'?'review':view==='textbooks'?'textbooks':view==='ceta'?'ceta':view==='labs'?'labs':
+ const approvedFilter=view==='reviews'?'review':view==='math'?'math':view==='textbooks'?'textbooks':view==='ceta'?'ceta':view==='labs'?'labs':
   view==='subtrack'?(['guide','core','exam'].includes(activeLesson)?'ceta':activeLesson):null;
  if(approvedFilter&&user)main.insertAdjacentHTML(view==='reviews'?'afterbegin':'beforeend',generatedLibrarySlot(approvedFilter));
  main.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>switchTo(b.dataset.goto,b.dataset.lesson||null,b.dataset.question||null)));
