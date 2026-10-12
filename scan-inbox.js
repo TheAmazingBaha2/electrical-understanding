@@ -136,7 +136,10 @@ function explainReview(data){
 export function buttonFor(job){
  const attempt=job.attempts?.find(a=>a.base_revision===job.revision);
  if(attempt&&["starting","running","received"].includes(attempt.status))return '<button class="primary" data-scan-action="resume">Resume / check saved request (no new AI call)</button>';
- if(attempt&&["failed","incomplete","invalid","unknown"].includes(attempt.status))return '<button class="primary" data-scan-action="resume" data-scan-retry="true">'+(attempt.output_text?'Continue from saved response':'Retry unfinished stage')+' (paid call)</button>';
+ if(attempt?.status==="invalid"&&attempt.output_text)
+  return '<button class="primary" data-scan-action="recover" data-scan-attempt="'+esc(attempt.id)+'">Revalidate saved '+esc(attempt.phase)+' response (free · no AI call)</button>';
+ if(attempt&&["failed","incomplete","invalid","unknown"].includes(attempt.status))
+  return '<button class="primary" data-scan-action="resume" data-scan-retry="true">Retry unfinished stage (new paid request)</button>';
  if(job.state==="uploaded"&&job.analysis?.planning_brief)return '<button class="primary" data-scan-action="analyze">Resume Astra analysis — Sol brief saved</button>';
  if(job.state==="uploaded")return '<button class="primary" data-scan-action="analyze">Run Sol planning → Astra analysis</button>';
  if(job.state==="analyzed")return '<button class="primary" data-scan-action="outline">Ask Sol to outline the full chapter (paid call)</button>';
@@ -400,7 +403,7 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
    operation=true;
    updateLiveStage(action==='resume'?currentScanPhase(job):action);
    const button=e.currentTarget;button.disabled=true;
-   status(action==='approve'?'Saving your lesson approval (free)…':action==='analyze'?'Running Sol planning → Astra analysis (up to two paid requests)…':action==='outline'?'Sol is planning an adaptable chapter curriculum — one paid request…':'Running '+action+' — one paid AI request, please wait…');
+   status(action==='recover'?'Revalidating saved model output locally (free, no AI call)…':action==='approve'?'Saving your lesson approval (free)…':action==='analyze'?'Running Sol planning → Astra analysis (up to two paid requests)…':action==='outline'?'Sol is planning an adaptable chapter curriculum — one paid request…':'Running '+action+' — one paid AI request, please wait…');
    try{
     let planningUsage=null;
     if(action==='analyze'&&!job.analysis?.planning_brief){
@@ -409,7 +412,8 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
      status('Sol brief saved. Running Astra source analysis…');
      updateLiveStage('analyze');
     }
-    const result=await runStage({action,jobId:job.id,retry});
+    const result=await runStage({action,jobId:job.id,retry,
+      ...(action==="recover"?{attemptId:button.dataset.scanAttempt}:{})});
     if(planningUsage&&result.usage)result.usage.estimatedUSD+=planningUsage.estimatedUSD;
     if(result.usage){lastUsage=result.usage;}
     await refresh(false);
