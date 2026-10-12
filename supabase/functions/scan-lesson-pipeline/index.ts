@@ -263,7 +263,7 @@ Deno.serve(async(req:Request)=>{
   if(stage==="complete")notes.push("This scan is already approved; no model call is needed.");
   if(!String(Deno.env.get("OPENAI_API_KEY")||"").startsWith("sk-"))
    errors.push("Staging model API key is not configured.");
-  if(["plan","draft","review"].includes(stage)){
+  if(["plan","analyze","draft","review"].includes(stage)){
    try{await existingLessonInventory(admin,userId,job.id)}
    catch(e){errors.push("Lesson inventory is unavailable: "+String(e));}
   }
