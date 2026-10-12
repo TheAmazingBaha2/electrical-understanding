@@ -355,19 +355,47 @@ Deno.serve(async(req:Request)=>{
   return fail("Wrong stage: "+job.state+". Refresh the Scan Inbox before continuing.",origin,409);
  if(action==="approve"){
   if(!plain(job.source_book,180)||!plain(job.source_pages,80))
-   return fail("This source lacks a publication title and page reference. Add attribution before approval.",origin,409);
-  try{verifyDraft(job.lesson,job.analysis)}catch(e){return fail(String(e),origin,409)}
+   return fail("A complete publication and printed page reference is required before approval.",origin,409);
+  const chapterOutline=job.analysis?.chapter_outline;
+  const current=chapterOutline?job.lesson?.current:job.lesson;
+  try{verifyDraft(current,job.analysis)}catch(e){return fail(String(e),origin,409)}
   if(!job.review?.ready||job.review.findings?.some((x:any)=>x.severity==="blocker"))
-   return fail("Technical review did not approve this draft",origin,409);
+   return fail("Astra's technical review has not approved this individual lesson.",origin,409);
   const stableId="GEN-"+String(job.id).toUpperCase();
-  const body={...job.lesson,id:stableId,source:{scanId:job.id,title:job.title,book:job.source_book,pages:job.source_pages,track:job.source_track,analysisRevision:job.revision},
-   questions:job.lesson.questions.map((q:any,i:number)=>({...q,id:stableId+"-Q"+String(i+1).padStart(2,"0")}))};
+  let body:any,nextState="approved",stamp:any=new Date().toISOString();
+  if(chapterOutline){
+   const finished=Array.isArray(job.lesson?.lessons)?job.lesson.lessons:[];
+   const unit=chapterOutline.units?.[finished.length];
+   if(!unit||current.plan?.id!==unit.id)return fail("Saved lesson order does not match the reviewed chapter outline.",origin,409);
+   const unitId=stableId+"-"+unit.id;
+   const accepted={...current,id:unitId,kind:unit.kind,destination:unit.destination,
+    ordering:unit.ordering,prerequisites:unit.prerequisites,
+    source:{scanId:job.id,title:job.title,book:job.source_book,pages:job.source_pages,
+      track:job.source_track,unit:unit.id},
+    questions:(current.questions||[]).map((q:any,i:number)=>({...q,id:unitId+"-Q"+String(i+1).padStart(2,"0")})),
+    technical_review:job.review};
+   const acceptedLessons=[...finished,accepted];
+   nextState=acceptedLessons.length===chapterOutline.units.length?"approved":"outlined";
+   body={id:stableId,chapter_title:chapterOutline.chapter_title,lessons:acceptedLessons,
+    current:null,source:{scanId:job.id,book:job.source_book,pages:job.source_pages,
+      track:job.source_track}};
+   if(nextState==="outlined")stamp=null;
+  }else{
+   body={...current,id:stableId,
+    source:{scanId:job.id,title:job.title,book:job.source_book,pages:job.source_pages,
+      track:job.source_track,analysisRevision:job.revision},
+    questions:current.questions.map((q:any,i:number)=>({...q,id:stableId+"-Q"+String(i+1).padStart(2,"0")}))};
+  }
   const {data,error}=await admin.from("scan_lesson_jobs")
-   .update({lesson:body,draft_id:stableId,state:"approved",approved_at:new Date().toISOString(),
+   .update({lesson:body,draft_id:nextState==="approved"?stableId:null,
+    state:nextState,review:nextState==="approved"?job.review:null,approved_at:stamp,
     revision:job.revision+1,updated_at:new Date().toISOString()})
-   .eq("id",job.id).eq("user_id",userId).eq("revision",job.revision).eq("state",job.state).select("id").maybeSingle();
-  if(error||!data)return fail("Approval conflicted with a newer revision. Refresh and review again.",origin,409);
-  return reply({state:"approved",lessonId:stableId},200,origin);
+   .eq("id",job.id).eq("user_id",userId).eq("revision",job.revision)
+   .eq("state","reviewed").select("id").maybeSingle();
+  if(error||!data)return fail("Approval conflicted with a newer revision; refresh and retry (no AI charge).",origin,409);
+  if(nextState==="approved")await admin.from("scan_quota_completion").update({closed:true}).eq("user_id",userId).eq("job_id",job.id);
+  return reply({state:nextState,lessonId:chapterOutline?stableId+"-"+current.plan.id:stableId,
+    chapterProgress:chapterOutline?body.lessons.length:null,chapterTotal:chapterOutline?.units?.length||null},200,origin);
  }
  if(action==="plan"&&job.analysis?.planning_brief)return reply({state:job.state,reused:true},200,origin);
  if(action==="analyze"&&!job.analysis?.planning_brief)return fail("Run Sol planning before Astra analysis.",origin,409);
