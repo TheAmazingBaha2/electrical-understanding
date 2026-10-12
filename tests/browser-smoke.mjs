@@ -11,8 +11,8 @@ try {
  await page.route('https://esm.sh/**',route=>route.abort());
  await page.goto('http://127.0.0.1:8080/',{waitUntil:'domcontentloaded'});
  await page.locator('.v2-hero').waitFor({timeout:30000});
- assert.equal(await page.locator('.workspace-top-tabs .workspace-tab').count(),6);
- assert.equal(await page.locator('.v2-frost-ring').count(),5);
+ assert.equal(await page.locator('.workspace-top-tabs .workspace-tab').count(),7);
+ assert.equal(await page.locator('.v2-frost-ring').count(),6);
  assert.equal(await page.locator('.v2-evidence-pie').count(),1);
  // Main CETa view is for current/future paths; the originals are in a quiet footer archive.
  await page.locator('.workspace-top-tabs [data-view="ceta"]').click();
