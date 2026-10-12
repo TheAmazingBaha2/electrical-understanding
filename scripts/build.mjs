@@ -16,7 +16,7 @@ const commitSha = process.env.WORKERS_CI_COMMIT_SHA || process.env.GITHUB_SHA ||
 const output = "dist";
 const publicFiles = [
   "index.html",
-  "app.js", "persistence.js", "ai-model-lab.js", "ai-chat-widget.js", "scan-inbox.js", "math-lessons.js", "math-widgets.js", "math-track.js",
+  "app.js", "persistence.js", "ai-model-lab.js", "ai-chat-widget.js", "scan-inbox.js", "generated-library.js", "legacy-groups.js", "math-lessons.js", "math-widgets.js", "math-track.js",
   "lessons.js",
   "course-catalog.js",
   "v2-panels.js",
@@ -53,6 +53,26 @@ for (const file of publicFiles) {
   const source = await (await import('node:fs/promises')).readFile(file, 'utf8');
   if (/wwvpzyqcgwlwcetwlime|sb_secret_[A-Za-z0-9_-]+/.test(source)) throw new Error('Production or secret configuration in public asset: ' + file);
   await copyFile(file, join(output, file));
+}
+// Verify every local ES module dependency makes it into the exact public assets
+// that Cloudflare serves. A missing imported module otherwise leaves the entire
+// page blank, including its navigation. Fail the build instead of shipping that.
+const published=new Set(publicFiles);
+const staticModule=/\\b(?:import|export)\\s+(?:[^'";]*?\\s+from\\s*)?["'](\\.[^"']+)["']/g;
+const dynamicModule=/\\bimport\\s*\\(\\s*["'](\\.[^"']+)["']\\s*\\)/g;
+for(const file of publicFiles.filter(name=>name.endsWith(".js"))){
+ const source=await (await import("node:fs/promises")).readFile(file,"utf8");
+ for(const expression of [staticModule,dynamicModule]){
+  expression.lastIndex=0;
+  for(const match of source.matchAll(expression)){
+   const relativeTarget=match[1].split(/[?#]/,1)[0];
+   const target=join(file.includes("/")?file.slice(0,file.lastIndexOf("/")):".",relativeTarget).replace(/\\\\/g,"/");
+   if(!published.has(target)){
+    throw new Error("Staging build missing imported module: "+file+" -> "+target+
+      ". Add the required file to publicFiles. The site would not start without it.");
+   }
+  }
+ }
 }
 await writeFile(join(output, "build-info.json"), JSON.stringify({
   site: "Electrical Understanding v2 staging",
