@@ -362,9 +362,15 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
    bookCatalogBusy=true;button.disabled=true;
    try{await loadBooks();status('Your saved book list has been refreshed. No AI charges.')}
    catch(error){status(error.message)}
-   finally{bookCatalogBusy=false;button.disabled=false}
+   finally{bookCatalogBusy=false;button.disabled=false;uploadButton.disabled=!bookCatalogReady||operation}
   });
   root.querySelector('#scan-cancel-new-book').addEventListener('click',()=>chooseBook(''));
+  bookPanel.addEventListener('keydown',event=>{
+   if(event.key==='Enter'&&event.target.matches('input')){
+    event.preventDefault();
+    root.querySelector('#scan-add-book').click();
+   }
+  });
   root.querySelector('#scan-add-book').addEventListener('click',async event=>{
    if(bookCatalogBusy||operation)return;
    const title=root.querySelector('#scan-new-book-title').value.trim();
@@ -388,7 +394,7 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
     root.querySelector('#scan-new-book-edition').value='';
     status('Book saved to your private study library. No AI charge.');
    }catch(error){status('Could not save book: '+error.message)}
-   finally{bookCatalogBusy=false;if(button.isConnected)button.disabled=false}
+   finally{bookCatalogBusy=false;if(button.isConnected)button.disabled=false;uploadButton.disabled=!bookCatalogReady||operation}
   });
  const invoke=async body=>{
   const {data,error}=await supabase.functions.invoke('scan-lesson-pipeline',{body});
@@ -462,7 +468,7 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
     await refresh(false);
     status('Book and page citation saved. No AI charges.'+catalogWarning);
    }catch(error){status('Source citation could not be saved: '+error.message)}
-   finally{operation=false;if(button.isConnected)button.disabled=false}
+   finally{operation=false;if(button.isConnected)button.disabled=false;uploadButton.disabled=!bookCatalogReady||bookCatalogBusy}
   });
   div.querySelector('#scan-delete-source')?.addEventListener('click',async e=>{
    if(operation)return;
