@@ -63,7 +63,7 @@ await page.locator('.legacy-minilink').click();
  await page.locator('.workspace-top-tabs [data-view="dashboard"]').click();
  await page.locator('#course-paths-trigger').click();
  assert.equal(await page.locator('#course-paths-menu').isVisible(),true);
- assert.equal(await page.locator('#course-paths-menu .course-menu-group').count(),3);
+ assert.equal(await page.locator('#course-paths-menu .course-menu-group').count(),4);
  await page.locator('#course-paths-menu [data-goto="subtrack"][data-lesson="basic"]').click();
  assert.match(await page.locator('main').innerText(),/Basic Electric Circuits/);
  await page.locator('[data-goto="lesson"][data-lesson="EIM-BEC-PRELAB"]').click();
