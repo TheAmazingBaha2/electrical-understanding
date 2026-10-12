@@ -10,6 +10,7 @@ import { labLessons } from './lab-lessons.js';
 import { bookLessons } from './book-lessons.js';
 import { cetaLessons } from './ceta-lessons.js';
 import {mathLessons, mathAvailability,relatedMath} from './math-lessons.js';
+import {legacyGroup,legacyReason,isArchivedLesson} from './legacy-groups.js';
 import {attachMathWidgets} from './math-widgets.js';
 import { attachLabWidgets } from './lab-widgets.js';
 import { attachDmmWidgets } from './dmm-widgets.js';
@@ -84,7 +85,7 @@ async function loadCloud(){
    syncLabel(count?`${count} sync conflict(s) · review Account`:'Cloud synced',!count);
    if(count)notify('Both copies are safe. Open Account to review sync conflicts.');
   }catch(error){if(store===currentStore){syncLabel('Sync paused · local copy retained');notify(error.message)}}
-  finally {if(store===currentStore&&!['lesson','scan-inbox','reviews','textbooks','subtrack','ceta','labs'].includes(view)&&!document.activeElement?.matches('input,textarea,select'))render()}
+  finally {if(store===currentStore&&!['lesson','scan-inbox','reviews','textbooks','subtrack','ceta','labs','legacy','math'].includes(view)&&!document.activeElement?.matches('input,textarea,select'))render()}
  })();
  try{await syncTask}finally{syncTask=null;if(syncAgain){syncAgain=false;void loadCloud()}}
 }
@@ -116,11 +117,22 @@ function bindNavigation(){document.querySelectorAll('[data-view]').forEach(b=>b.
  $('#account-pill').addEventListener('click',()=>switchTo('account'));
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&user&&supabase&&allowAutomaticCloudSync())void loadCloud()});
  window.addEventListener('online',()=>{if(user&&allowAutomaticCloudSync())void loadCloud()});
- window.addEventListener('storage',event=>{if(event.key===store.key){try{progress=store.read().progress;if(!['lesson','scan-inbox','reviews','textbooks','subtrack','ceta','labs'].includes(view)&&!document.activeElement?.matches('input,textarea,select'))render()}catch(error){storageError=error.message;notify(error.message)}}});
+ window.addEventListener('storage',event=>{if(event.key===store.key){try{progress=store.read().progress;if(!['lesson','scan-inbox','reviews','textbooks','subtrack','ceta','labs','legacy','math'].includes(view)&&!document.activeElement?.matches('input,textarea,select'))render()}catch(error){storageError=error.message;notify(error.message)}}});
  setInterval(()=>{if(user&&navigator.onLine&&document.visibilityState==='visible'&&allowAutomaticCloudSync())void loadCloud()},30000);
 }
-function v2Context(){return {lessons,progress,hasPassed,unlocked,reviews:reviewQueue().length,banner:cloudBanner(),coreRows:lessonRows(lessons),legacyRows:lessonRows(lessons.filter(l=>l.legacy===true||/^L\d{2,}$/.test(l.id))),labLessons,bookLessons,cetaLessons,mathLessons,sourceLessons,mathIsAvailable:l=>canOpenLesson(l,allLessons.indexOf(l)),sourceIsAvailable:l=>canOpenLesson(l,sourceLessons.indexOf(l))};}
-function setNav(){const current=view==='lesson'?(mathLessons.some(l=>l.id===activeLesson)?'math':lessons.some(l=>l.id===activeLesson)?'ceta':bookLessons.some(l=>l.id===activeLesson)?'textbooks':cetaLessons.some(l=>l.id===activeLesson)?'ceta':'labs'):(view==='legacy'||view==='curriculum')?'ceta':view==='subtrack'?(activeLesson==='core'||['guide','exam'].includes(activeLesson)?'ceta':['geier','teach','principles','cabling'].includes(activeLesson)?'textbooks':'labs'):view;
+function v2Context(){
+ const archivedPilotLessons=lessons.filter(l=>legacyGroup(l)==='pilot');
+ const archivedUnreferencedLessons=[...cetaLessons,...mathLessons].filter(l=>legacyGroup(l)==='unreferenced');
+ return {lessons,progress,hasPassed,unlocked,reviews:reviewQueue().length,banner:cloudBanner(),
+ coreRows:lessonRows(lessons),legacyRows:lessonRows(archivedPilotLessons),
+ archivedPilotLessons,archivedUnreferencedLessons,legacyReason,
+ canOpenArchive:l=>canOpenLesson(l,allLessons.indexOf(l)),
+ labLessons,bookLessons,cetaLessons,activeCetaLessons:cetaLessons.filter(l=>!isArchivedLesson(l)),
+ mathLessons,activeMathLessons:mathLessons.filter(l=>!isArchivedLesson(l)),
+ sourceLessons,mathIsAvailable:l=>canOpenLesson(l,allLessons.indexOf(l)),
+ sourceIsAvailable:l=>canOpenLesson(l,sourceLessons.indexOf(l))};
+}
+function setNav(){const current=view==='lesson'?(isArchivedLesson(activeLesson)?'legacy':mathLessons.some(l=>l.id===activeLesson)?'math':lessons.some(l=>l.id===activeLesson)?'ceta':bookLessons.some(l=>l.id===activeLesson)?'textbooks':cetaLessons.some(l=>l.id===activeLesson)?'ceta':'labs'):(view==='legacy'||view==='curriculum')?'legacy':view==='subtrack'?(activeLesson==='core'||['guide','exam'].includes(activeLesson)?'ceta':['geier','teach','principles','cabling'].includes(activeLesson)?'textbooks':'labs'):view;
  document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',current===b.dataset.view));}
 function render(){setNav();refreshAIChatContext();const names={dashboard:'Your learning dashboard',ceta:'Exam Preparation',curriculum:'Legacy lessons',legacy:'Legacy lessons',textbooks:'Textbook companions',labs:'Hands-on laboratory',math:'Mathematics Companion',subtrack:'Learning sub-track',lesson:'Lesson workbench',reviews:'Review & Reinforcement',library:'Textbook companions','scan-inbox':'Scan Inbox',account:'Your study account','ai-lab':'Private AI model tests'};
  $('#page-title').textContent=names[view]||names.dashboard;
@@ -167,9 +179,9 @@ function renderLibrary(){return v2Page('textbooks',v2Context());}
 function renderReviews(){const queue=reviewQueue();return `<p class="muted">Reviews are scheduled after each check: one day after a missed answer, seven days after an initial success, and 21 days after a successful retry. Open a question to answer again.</p>${cloudBanner()}<div class="panel"><h2>Scheduled quiz reviews · ${queue.length} review${queue.length===1?'':'s'} due</h2>${queue.length?queue.map(({lesson,q,a})=>`<div class="review-item"><div><b>${esc(lesson.title)}</b><p class="muted sm">${esc(q.prompt)}<br>Scheduled ${duration(a.reviewDue)}</p></div><button class="primary small-button" data-goto="lesson" data-lesson="${lesson.id}" data-question="${q.id}">Review →</button></div>`).join(''):`<div class="empty"><h3>You're caught up.</h3><p>When your completed questions become due, they'll appear here.</p></div>`}</div>`}
 function renderLesson(){const lesson=findLesson(activeLesson);if(!lesson)return '<p>Lesson not found.</p>';
  const idx=lessons.indexOf(lesson),isPilot=idx>=0;
- if(!canOpenLesson(lesson,allLessons.indexOf(lesson)))return '<div class="panel"><h2>Lesson not yet available</h2><p>'+ (lesson.subtrack==='math'?'Reach one of the linked electronics topics to unlock this mathematics companion.':'Complete the preceding lesson in this source track before continuing.')+'</p><button class="primary" data-goto="'+(lesson.subtrack==='math'?'math':isPilot?'legacy':'subtrack')+'" '+(lesson.subtrack==='math'||isPilot?'':'data-lesson="'+(lesson.subtrack||'basic')+'"')+'>Back</button></div>';
+ if(!canOpenLesson(lesson,allLessons.indexOf(lesson)))return '<div class="panel"><h2>Lesson not yet available</h2><p>'+ (lesson.subtrack==='math'?'Reach one of the linked electronics topics to unlock this mathematics companion.':'Complete the preceding lesson in this source track before continuing.')+'</p><button class="primary" data-goto="'+(isArchivedLesson(lesson)?'legacy':lesson.subtrack==='math'?'math':isPilot?'legacy':'subtrack')+'" '+(isArchivedLesson(lesson)||lesson.subtrack==='math'||isPilot?'':'data-lesson="'+(lesson.subtrack||'basic')+'"')+'>Back</button></div>';
  const score=getAccuracy(lesson),passed=hasPassed(lesson),nextLesson=lesson.subtrack==='math'?null:isPilot?lessons[idx+1]:lesson.subtrack==='geier'?bookLessons[bookLessons.indexOf(lesson)+1]:lesson.subtrack==='guide'?cetaLessons[cetaLessons.indexOf(lesson)+1]:labLessons[labLessons.indexOf(lesson)+1];
- const lessonView=tabbedLesson({lesson,isPilot,idx,score,passed,nextLesson,tab:lessonTab,activityIndex,learnIndex,quizIndex,answers:getState(lesson.id).answers||{},questionHtml});
+ const lessonView=tabbedLesson({lesson,isPilot,isLegacyArchived:isArchivedLesson(lesson),legacyGroup:legacyGroup(lesson),idx,score,passed,nextLesson,tab:lessonTab,activityIndex,learnIndex,quizIndex,answers:getState(lesson.id).answers||{},questionHtml});
  if(lesson.subtrack==='math')return lessonView;
  const math=relatedMath(lesson.id);
  return math.length?lessonView+'<aside class="math-related-panel panel"><div><strong>Math behind this topic</strong><p class="muted sm">Strengthen the equations and units that explain this lesson.</p></div>'+
