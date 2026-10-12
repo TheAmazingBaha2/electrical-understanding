@@ -237,11 +237,51 @@ Deno.serve(async(req:Request)=>{
   if(error||!created)return fail("Could not register private scan",origin,503);
   return reply({jobId:created.id},200,origin);
  }
- if(!["delete","update-source","plan","analyze","draft","review","approve","check","resume"].includes(action))return fail("Unknown action",origin);
+ if(!["delete","update-source","preflight","plan","analyze","draft","review","approve","check","resume"].includes(action))return fail("Unknown action",origin);
  if(typeof request.jobId!=="string"||!/^[a-f0-9-]{36}$/.test(request.jobId))return fail("Invalid job",origin);
  const {data:job,error:jobError}=await admin.from("scan_lesson_jobs").select("*").eq("user_id",userId).eq("id",request.jobId).maybeSingle();
  if(jobError)return fail("Source lookup failed",origin,503);
  if(!job)return action==="delete"?reply({deleted:true},200,origin):fail("Private source does not exist",origin,404);
+ if(action==="preflight"){
+  // Read-only diagnostics; never create a model attempt or consume the paid quota.
+  const stage=job.state==="uploaded"?(job.analysis?.planning_brief?"analyze":"plan"):
+   job.state==="analyzed"||job.state==="needs_revision"?"draft":
+   job.state==="drafted"?"review":job.state==="reviewed"?"approve":"complete";
+  const errors:string[]=[],notes:string[]=[];
+  if(!plain(job.source_book,180)||!plain(job.source_pages,80))
+   errors.push("Publication title and scanned printed-page reference are missing. Save them without AI charges.");
+  if(stage==="plan"||stage==="analyze"||stage==="review"){
+   try{await download(owner,job.source_path,job.source_kind)}
+   catch(e){errors.push("Source file check failed: "+String(e));}
+  }
+  if(stage==="draft"&&!Array.isArray(job.analysis?.facts))
+   errors.push("Verified source facts are missing.");
+  if(stage==="review"&&(!job.lesson||!job.analysis))
+   errors.push("Sol's draft or Astra's extraction is missing.");
+  if(stage==="approve"&&(!job.review?.ready||!job.lesson))
+   errors.push("Astra's technical review has not approved the draft.");
+  if(stage==="complete")notes.push("This scan is already approved; no model call is needed.");
+  if(!String(Deno.env.get("OPENAI_API_KEY")||"").startsWith("sk-"))
+   errors.push("Staging model API key is not configured.");
+  if(["plan","draft","review"].includes(stage)){
+   try{await existingLessonInventory(admin,userId,job.id)}
+   catch(e){errors.push("Lesson inventory is unavailable: "+String(e));}
+  }
+  const {data:previous,error:attemptError}=await admin.from("scan_model_attempts")
+   .select("phase,status,response_id,error_message").eq("user_id",userId).eq("job_id",job.id)
+   .eq("base_revision",job.revision).eq("phase",stage)
+   .order("created_at",{ascending:false}).limit(1).maybeSingle();
+  if(attemptError)errors.push("Saved attempt status could not be read.");
+  if(previous&&["running","received","starting"].includes(previous.status))
+   notes.push("A prior request may still be in progress. Resume/check it; do not start another.");
+  if(previous&&["failed","invalid","unknown","incomplete"].includes(previous.status))
+   notes.push("Previous "+stage+" attempt is "+previous.status+". A paid retry requires your explicit confirmation; earlier charges cannot be ruled out.");
+  notes.push("This check does not contact OpenAI, test model access, reserve quota, or guarantee provider availability.");
+  return reply({ready:errors.length===0,stage,errors,notes,
+   existingAttempt:previous?{status:previous.status,hasResponseId:!!previous.response_id}:null,
+   paidModelCallsStarted:0},200,origin);
+ }
+
  if(action==="update-source"){
   // Historical uploads may be attributed before Sol begins processing.
   if(job.state==="approved")
@@ -330,6 +370,15 @@ Deno.serve(async(req:Request)=>{
  }
  if(action==="draft"&&!job.analysis)return fail("Source analysis missing",origin,409);
  if(action==="review"&&(!job.analysis||!job.lesson))return fail("Source or draft missing",origin,409);
+ // Resolve all source metadata and lesson-inventory dependencies BEFORE quota
+ // reservation or model request. Existing in-flight checks bypass these checks.
+ let existingLessons:any=null;
+ if(!attempt){
+  if(!plain(job.source_book,180)||!plain(job.source_pages,80))
+   return fail("Before starting a paid request, save the source book/publication and scanned printed pages using Save citation metadata (free). Your saved Sol brief is retained.",origin,409);
+  try{existingLessons=await existingLessonInventory(admin,userId,job.id)}
+  catch(e){return fail(String(e)+" No paid request was started.",origin,503)}
+ }
  if(!attempt){
   // A unique active-job index prevents two devices from starting duplicate paid work.
   const claimed=await admin.from("scan_model_attempts").insert({job_id:job.id,user_id:userId,base_revision:job.revision,
@@ -343,9 +392,8 @@ Deno.serve(async(req:Request)=>{
   }
  }
  const brief=job.analysis?.planning_brief;
- let existingLessons:any;
- try{existingLessons=await existingLessonInventory(admin,userId,job.id)}
- catch(e){return fail(String(e),origin,503)}
+ // Existing active/received requests are resumed without a second reservation.
+ // The inventory is advisory context for new generation only.
  const sourceMetadata=sourceLabel(job);
  const input=action==="plan"
   ?[{role:"user",content:[{type:"input_text",text:JSON.stringify({source_metadata:sourceMetadata,existing_lessons:existingLessons,learner_context:attempt.learner_context})},sourceInput]}]
