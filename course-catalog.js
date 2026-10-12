@@ -28,7 +28,7 @@ export const eimBasicExperiments = [
 export const catalog = [
   {id:'ceta',title:'Exam Preparation',tagline:'Build toward certification exams, starting with Associate CET. More exam paths can be added here later.',subtracks:[
     {id:'core',title:'Core CETa Course',status:'planned',summary:'Rebuilding the new CETa core; earlier L01–L05 lessons are preserved separately in Legacy Lessons.',units:[{id:'pilot',title:'Pilot Unit 1 — Electrical Foundations',summary:'L01–L05; current working lessons and interactive experiments.'}]},
-    {id:'guide',title:'Associate CET Study Guide',status:'active',summary:'9 units · 22 chapters indexed. One new original interactive Chapter 3 fundamentals companion is live; the chapter text has not been scanned.',units:cetaGuideUnits},
+    {id:'guide',title:'Associate CET Study Guide',status:'indexed',summary:'9 units · 22 chapters indexed. The original Chapter 3 topic-only exercise is preserved in Legacy Group 2 while new source-backed lessons await scanned chapter pages.',units:cetaGuideUnits},
     {id:'exam',title:'Competency & Exam Practice',status:'planned',summary:'Mixed-topic assessments, diagnosis-based review and spaced retrieval.',units:[]}
   ]},
   {id:'textbooks',title:'Textbook Companions',tagline:'One private study path for each book.',subtracks:[
@@ -43,7 +43,7 @@ export const catalog = [
     {id:'fpga',title:'EIM — Fundamental Digital Design with FPGA',status:'waiting',summary:'Waiting until one of the two allocated manuals is finished or changed.',units:[]},
     {id:'rp2040',title:'EIM — Introduction to Microcontroller with RP2040',status:'waiting',summary:'Waiting; kit parts remain separate from active manuals.',units:[]}
   ]},
-  {id:'math',title:'Mathematics Companion',tagline:'Learn the calculations behind each topic as you reach it in another track.',subtracks:[]}
+  {id:'math',title:'Mathematics Companion',tagline:'New source-backed math lessons will connect to their textbook chapters; original math practice is preserved in Legacy Group 2.',subtracks:[]}
 ];
 export const catalogTrack = id => catalog.find(t=>t.id===id);
 export const catalogSubtrack = id => catalog.flatMap(t=>t.subtracks.map(s=>({...s,trackId:t.id,trackTitle:t.title}))).find(s=>s.id===id);
