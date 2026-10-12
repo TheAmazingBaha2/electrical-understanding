@@ -338,7 +338,7 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
    if(!root.isConnected)return;
    books=data||[];
    bookCatalogReady=true;
-   uploadButton.disabled=operation;
+   uploadButton.disabled=operation||bookCatalogBusy;
    renderBookChoices(preferredId);
   };
   const rememberBook=async(title,track)=>{
@@ -451,12 +451,16 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
    const button=event.currentTarget;
    operation=true;button.disabled=true;
    try{
+    const editedBook=div.querySelector('#scan-edit-book').value.trim();
+    const editedTrack=div.querySelector('#scan-edit-track').value;
     await invoke({action:'update-source',jobId:job.id,
-     book:div.querySelector('#scan-edit-book').value.trim(),
-     pages:div.querySelector('#scan-edit-pages').value.trim(),
-     track:div.querySelector('#scan-edit-track').value});
+     book:editedBook,pages:div.querySelector('#scan-edit-pages').value.trim(),
+     track:editedTrack});
+    let catalogWarning='';
+    try{await rememberBook(editedBook,editedTrack)}
+    catch(error){catalogWarning=' Book saved to scan but not to the dropdown: '+error.message}
     await refresh(false);
-    status('Book and page citation saved. No AI charges.');
+    status('Book and page citation saved. No AI charges.'+catalogWarning);
    }catch(error){status('Source citation could not be saved: '+error.message)}
    finally{operation=false;if(button.isConnected)button.disabled=false}
   });
@@ -567,11 +571,17 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
  root.querySelector('#scan-refresh').addEventListener('click',()=>void refresh(true));
  root.querySelector('#scan-upload-form').addEventListener('submit',async e=>{
   e.preventDefault();if(operation)return;
-  const name=root.querySelector('#scan-title').value.trim(),book=root.querySelector('#scan-book').value.trim(),
-    pages=root.querySelector('#scan-pages').value.trim(),track=root.querySelector('#scan-track').value,
-    file=root.querySelector('#scan-file').files[0],
-   approved=root.querySelector('#scan-share-consent').checked;
-  if(!approved||!name||!book||!pages||!file)return;
+  const name=root.querySelector('#scan-title').value.trim();
+  const selectedBook=books.find(item=>item.id===bookSelect.value);
+  const book=selectedBook?catalogBookTitle(selectedBook):'';
+  const pages=root.querySelector('#scan-pages').value.trim();
+  const track=root.querySelector('#scan-track').value;
+  const file=root.querySelector('#scan-file').files[0];
+  const approved=root.querySelector('#scan-share-consent').checked;
+  if(!bookCatalogReady){status('Load your saved books before uploading.');return}
+  if(!selectedBook){status('Select a saved book, or choose Add / import a new book to save one first.');return}
+  if(book.length>180){status('Book title plus edition is too long for a citation.');return}
+  if(!approved||!name||!pages||!file)return;
   operation=true;const button=root.querySelector('#scan-upload');button.disabled=true;
   let phase='reading the selected file';
   status('Reading scan from your device…');
@@ -597,18 +607,21 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
    phase='adding the scan to your library';status('Upload received. Adding to your private library…');
    const registered=await invoke({action:'register',path:pending.path,title:name,book,pages,track});
    selectedId=registered.jobId;root.querySelector('#scan-upload-form').reset();
-   preparedFile=null;preparing=null;pendingUpload=null;
+   chooseBook('');preparedFile=null;preparing=null;pendingUpload=null;
    await refresh(false);status('Source uploaded. No AI charges yet. Select Run Sol planning → Astra analysis when ready.');
    button.textContent='Upload privately (no AI charge)';
   }catch(error){
    status('Upload failed while '+phase+': '+error.message+'. Tap Retry upload to try again.');
    button.textContent='Retry upload (no AI charge)';notify(error.message);
   }
-  finally{operation=false;button.disabled=false}
+  finally{operation=false;button.disabled=!bookCatalogReady}
  });
  void (async()=>{
-  try{await invoke({action:'status'});await refresh(true)}
-  catch(e){status('Private scan authorization unavailable: '+e.message);root.querySelector('#scan-upload').disabled=true}
+  try{
+   await invoke({action:'status'});
+   await refresh(true);
+   try{await loadBooks()}catch(error){status(error.message)}
+  }catch(e){status('Private scan authorization unavailable: '+e.message);uploadButton.disabled=true}
  })();
 }
 
