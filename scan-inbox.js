@@ -207,7 +207,8 @@ function detail(job){
  (job.analysis?.planning_brief?'<details data-scan-expand="sol-brief"><summary>Sol’s saved teaching brief</summary>'+bubble('Your instructions',job.analysis.planning_brief.learner_context||'Default teaching guidance')+bubble('Astra extraction',job.analysis.planning_brief.astra_guidance)+bubble('Lesson drafting',job.analysis.planning_brief.lesson_guidance)+bubble('Technical review',job.analysis.planning_brief.review_guidance)+'</details>':'')+
  (job.state==='uploaded'&&!job.analysis?.planning_brief?'<label>Additional instructions for Sol (optional)<textarea id="scan-learner-context" maxlength="2000" rows="4" placeholder="Leave blank for Sol to plan from the scanned pages."></textarea></label>':'')+
  explainAnalysis(job.analysis)+explainLesson(job.lesson,job)+explainReview(job.review)+provenance+
- attemptLog(job)+'<div class="scan-approve-actions">'+buttonFor(job)+'</div>'+
+ attemptLog(job)+'<div class="scan-approve-actions"><button type="button" class="outline" id="scan-free-preflight">Check pipeline readiness (free)</button>'+buttonFor(job)+'</div>'+
+ '<div id="scan-free-preflight-result" class="scan-preflight-result" role="status" aria-live="polite" hidden></div>'+
  '<p class="muted sm">Model outputs are drafts, not definitive references. Compare important formulas and safety guidance against the actual scanned pages before approving. Approved lessons are read-only study companions; they do not award scores.</p></section>';
 }
 export function attachScanInbox(supabase,user,notify=()=>{}){
@@ -327,6 +328,25 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
    const banner=div.querySelector('.scan-phase-banner');
    if(banner)banner.textContent=scanPhaseMessage(job,phase);
   };
+  div.querySelector('#scan-free-preflight')?.addEventListener('click',async e=>{
+   const button=e.currentTarget,output=div.querySelector('#scan-free-preflight-result');
+   if(operation)return;
+   button.disabled=true;output.hidden=false;
+   output.textContent='Checking local pipeline prerequisites. No AI request will be started…';
+   try{
+    const check=await invoke({action:'preflight',jobId:job.id});
+    if(!output.isConnected)return;
+    const messages=[...(check.errors||[]),...(check.notes||[])];
+    output.classList.toggle('needs-attention',!check.ready);
+    output.innerHTML='<strong>'+(check.ready?'Preflight passed · no charge':'Fix these prerequisites before running AI')+'</strong>'+
+     '<p>Next stage: '+esc(check.stage||'unknown')+' · Paid model calls started by this check: 0</p>'+
+     '<ul>'+messages.map(message=>'<li>'+esc(message)+'</li>').join('')+'</ul>';
+    status(check.ready?'Preflight complete. No AI credits used.':'Preflight found issues. No AI credits used.');
+   }catch(error){
+    if(output.isConnected)output.textContent='Readiness check could not complete: '+error.message+' No AI request was started.';
+    status('Free readiness check failed: '+error.message);
+   }finally{if(button.isConnected)button.disabled=false;}
+  });
   div.querySelector('[data-scan-action]')?.addEventListener('click',async e=>{
    if(operation)return;
    const action=e.currentTarget.dataset.scanAction;
