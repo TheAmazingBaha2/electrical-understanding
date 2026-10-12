@@ -10,7 +10,7 @@ try{
  await page.locator('.v2-hero').waitFor({timeout:30000});
  await page.evaluate(async()=>{
   const {renderScanInbox,attachScanInbox}=await import('/scan-inbox.js');
-  let job=null;window.__uploadCount=0;window.__failRegistration=true;
+  let job=null;window.__attempts=[];window.__uploadCount=0;window.__failRegistration=true;
   const exampleAnalysis={
    overview:'A simulated low-voltage resistor circuit is illustrated.',
    facts:[{id:'S1',claim:'One 1 kΩ resistor is connected to 5 V.',location:'page 1',confidence:'high'},
@@ -29,6 +29,7 @@ try{
   const sampleReview={ready:true,summary:'No safety errors in this sample.',findings:[]};
   const client={
    from(table){
+    if(table==='scan_model_attempts')return {select(){return {order(){return {limit(){return Promise.resolve({data:window.__attempts,error:null})}}}}}};
     if(table!=='scan_lesson_jobs')throw new Error('Unauthorized table');
     return {select(){return{order(){return{limit(){return Promise.resolve({data:job?[job]:[],error:null})}}}}}};
    },
@@ -94,4 +95,5 @@ try{
  assert.deepEqual(errors,[],'No JS runtime errors');
  console.log('PASS: owner-only scan upload, manual Astra/Sol/Astra stages, preview, approval, and phone widths.');
 }finally{await browser.close()}
+
 

@@ -39,7 +39,7 @@ test('backend only accepts private owner path and sniffs source format',()=>{
 });
 test('models and steps are fixed, sequential, paid only through atomic quota',()=>{
  assert.match(source,/action==="plan"\|\|action==="draft"\?"gpt-6\.1-sol":"gpt-6-astra"/);
- assert.match(source,/owner\.rpc\("ai_test_reserve"/);
+ assert.match(source,/admin\.rpc\("scan_reserve_stage"/);
  assert.match(source,/\["analyze","draft","review","approve"\]/);
  assert.match(source,/if\(action==="approve"\)/);
  assert.match(source,/state:"approved"/);
@@ -68,3 +68,4 @@ test('bucket RLS restricts uploads to owner and no client write rights to drafts
  assert.match(schema,/grant select on public\.scan_lesson_jobs to authenticated/);
  assert.doesNotMatch(schema,/grant insert on public\.scan_lesson_jobs to authenticated/);
 });
+
