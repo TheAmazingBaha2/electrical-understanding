@@ -110,6 +110,7 @@ function switchTo(next,id=null,qid=null){
  view=next;activeLesson=id;focusQuestion=qid;
  $('.sidebar').classList.remove('open');render();window.scrollTo({top:0,behavior:'instant'});
  if(qid)setTimeout(()=>document.getElementById('question-'+qid)?.scrollIntoView({behavior:'smooth',block:'center'}),70);
+ if(next==='legacy'&&id==='unreferenced')setTimeout(()=>document.getElementById('legacy-unreferenced')?.scrollIntoView({behavior:'smooth',block:'start'}),90);
 }
 function allowAutomaticCloudSync(){return view!=='scan-inbox'||!scanInboxAutoUpdatesPaused()}
 function bindNavigation(){document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>switchTo(b.dataset.view)));
