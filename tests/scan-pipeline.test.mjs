@@ -38,7 +38,7 @@ test('backend only accepts private owner path and sniffs source format',()=>{
  assert.match(source,/sourceInput=.*job\.source_kind/);
 });
 test('models and steps are fixed, sequential, paid only through atomic quota',()=>{
- assert.match(source,/action==="draft"\?"gpt-6\.1-sol":"gpt-6-astra"/);
+ assert.match(source,/action==="plan"\|\|action==="draft"\?"gpt-6\.1-sol":"gpt-6-astra"/);
  assert.match(source,/owner\.rpc\("ai_test_reserve"/);
  assert.match(source,/\["analyze","draft","review","approve"\]/);
  assert.match(source,/if\(action==="approve"\)/);
