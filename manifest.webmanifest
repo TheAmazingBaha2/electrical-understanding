@@ -1,7 +1,7 @@
 {
-  "name": "Electrical Understanding — Electronics Learning Center",
-  "short_name": "Electrical",
-  "description": "CETa study, interactive circuits, textbook companions and hands-on labs",
+  "name": "Electronic Learning Workbench",
+  "short_name": "Learning Workbench",
+  "description": "Exam preparation, interactive electronics, textbook companions and hands-on labs",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#101B2A",
