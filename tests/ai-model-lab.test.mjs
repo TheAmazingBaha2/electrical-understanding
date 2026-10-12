@@ -5,6 +5,7 @@ import {renderAIModelLab} from '../ai-model-lab.js';
 const edge=readFileSync(new URL('../supabase/functions/ai-model-lab/index.ts',import.meta.url),'utf8');
 const fixtures=readFileSync(new URL('../supabase/functions/ai-model-lab/cases.ts',import.meta.url),'utf8');
 const schema=readFileSync(new URL('../supabase/migrations/20261011_private_ai_model_lab.sql',import.meta.url),'utf8');
+const astraMigration=readFileSync(new URL('../supabase/migrations/20261011214000_enable_astra_benchmarks.sql',import.meta.url),'utf8');
 const app=readFileSync(new URL('../app.js',import.meta.url),'utf8');
 const build=readFileSync(new URL('../scripts/build.mjs',import.meta.url),'utf8');
 test('anonymous visitors cannot use the test interface',()=>{
@@ -22,9 +23,9 @@ test('model endpoint validates JWT and matches an owner row before test requests
  assert.match(edge,/ai_test_allowed_users/);
  assert.match(edge,/if\(!allowed\)return response\(\{error:"Private AI lab/);
 });
-test('endpoint has a fixed model allowlist and no Astra',()=>{
- assert.match(fixtures,/"gpt-6-luna","gpt-6\.1-sol"/);
- assert.doesNotMatch(fixtures,/gpt-6-astra/);
+test('model allowlist includes Luna, Sol and Astra with published premium cost',()=>{
+ assert.ok(fixtures.includes('export const MODELS = ["gpt-6-luna","gpt-6.1-sol","gpt-6-astra"]'));
+ assert.ok(edge.includes('"gpt-6-astra":{input:10,output:50}'));
  assert.match(edge,/MODELS\.includes\(input\.model/);
 });
 test('paid calls fail closed without server-side API key',()=>{
@@ -41,6 +42,9 @@ test('staging project and origin are exact; no production URL is embedded',()=>{
 test('quota SQL serializes and caps owner requests',()=>{
  assert.match(schema,/pg_advisory_xact_lock/);
  assert.match(schema,/ai_test_reserve/);
+ assert.match(astraMigration,/model='gpt-6-astra'/);
+ assert.ok(astraMigration.includes("interval '24 hours') >= 2"));
+ assert.match(astraMigration,/ai_test_reserve/);
  for(const str of ['1 minute','1 hour','24 hours'])assert.ok(schema.includes(str));
  assert.match(schema,/grant select on public\.ai_test_allowed_users to authenticated/);
  assert.match(schema,/revoke all on public\.ai_test_request_log from public, anon, authenticated/);
