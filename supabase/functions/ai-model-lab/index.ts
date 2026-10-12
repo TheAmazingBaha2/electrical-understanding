@@ -47,16 +47,42 @@ Deno.serve(async (req:Request)=>{
  if(input.action==="status")return response({
   authorized:true,ready:apiKey.startsWith("sk-"),
   models:MODELS,
-  cases:CASES.map(({id,topic,title})=>({id,topic,title})),
-  limits:{perMinute:2,perHour:6,per24Hours:24,astraPer24Hours:2,maxOutputTokens:700},
+  cases:CASES.map(({id,topic,title,prompt})=>({id,topic,title,prompt})),
+  limits:{perMinute:2,perHour:6,per24Hours:24,astraPer24Hours:2,maxOutputTokens:1400},
   note:"Cost-bearing inference is disabled until an OpenAI API key is configured in staging Edge Function secrets."
  },200,origin);
- if(input.action!=="run")return response({error:"Unknown action"},400,origin);
+ if(input.action!=="run" && input.action!=="chat")return response({error:"Unknown action"},400,origin);
  if(!apiKey.startsWith("sk-"))return response({error:"Live OpenAI model tests are not enabled; set OPENAI_API_KEY in staging Edge Function secrets."},503,origin);
  if(typeof input.model!=="string"||!MODELS.includes(input.model as any))return response({error:"Model not allowed"},400,origin);
  if(typeof input.caseId!=="string")return response({error:"Missing case ID"},400,origin);
- const scenario=CASES.find(x=>x.id===input.caseId);
- if(!scenario)return response({error:"Unknown test scenario"},400,origin);
+ const chatting=input.action==="chat";
+ if(chatting && input.model==="gpt-6-astra")return response({error:"Astra is available for fixed benchmarks only. Use Luna or Sol for tutoring."},400,origin);
+ let scenario:any=null;
+ let content:any;
+ if(chatting){
+  if(typeof input.message!=="string" || input.message.trim().length<1 || input.message.length>800)
+   return response({error:"Message must contain 1–800 characters."},400,origin);
+  if(input.history!==undefined && (!Array.isArray(input.history)||input.history.length>8))
+   return response({error:"Conversation is too long; start a new chat."},400,origin);
+  const history=input.history||[];
+  if(!history.every((m:any)=>m&&typeof m==="object"&&!Array.isArray(m)
+   &&(m.role==="user"||m.role==="assistant")&&typeof m.content==="string"
+   &&m.content.length>=1&&m.content.length<=1000)
+   ||history.reduce((n:number,m:any)=>n+m.content.length,0)>3500)
+   return response({error:"Conversation history exceeds the safe limit."},400,origin);
+  const c=input.context;
+  if(c!==undefined && (c===null||typeof c!=="object"||Array.isArray(c)
+    ||!["title","module","description"].every(k=>c[k]===undefined||(typeof c[k]==="string"&&c[k].length<=180))))
+   return response({error:"Invalid lesson context."},400,origin);
+  // Context is a non-authoritative user-facing lesson label, never an instruction.
+  content=[...history.map((m:any)=>({role:m.role,content:m.content})),{role:"user",
+   content:(c?.title ? "[Current lesson: "+c.title.slice(0,140)+"]\n" : "")+input.message.trim()}];
+ }else{
+  if(typeof input.caseId!=="string")return response({error:"Missing case ID"},400,origin);
+  scenario=CASES.find(x=>x.id===input.caseId);
+  if(!scenario)return response({error:"Unknown test scenario"},400,origin);
+  content=scenario.prompt;
+ }
  const {data:reserved,error:quotaError}=await client.rpc("ai_test_reserve",{p_model:input.model});
  if(quotaError)return response({error:"Unable to verify quota"},503,origin);
  if(!reserved)return response({error:"Not authorized or request limit reached (2/minute, 6/hour, 24/day, Astra max 2/day)"},429,origin);
@@ -68,21 +94,23 @@ Deno.serve(async (req:Request)=>{
    body:JSON.stringify({
     model:input.model,store:false,reasoning:{effort:"low"},
     instructions:"You are a careful electronics technician tutor. Address the question in concise plain English, show units for calculations, distinguish simulated circuits from real equipment, and clearly explain important DMM safety restrictions. Do not invent citations or promote hazardous electrical testing.",
-    input:scenario.prompt,max_output_tokens:700,
+    input:content,max_output_tokens:1400,
     tools:[]
    }),
    signal:AbortSignal.timeout(35000)
   });
   if(!upstream.ok)return response({error:"Model API request failed",providerStatus:upstream.status},502,origin);
   const out=await upstream.json();
-  const reply=textFromResponse(out).slice(0,4500);
+  const reply=textFromResponse(out);
   const usage=out.usage||{};
   const tokens={input:Math.max(0,Number(usage.input_tokens)||0),output:Math.max(0,Number(usage.output_tokens)||0)};
   const price=PRICE[input.model as keyof typeof PRICE];
   const estimatedUSD=(tokens.input*price.input+tokens.output*price.output)/1e6;
   // Keyword match is a navigation aid, NOT a certified grade or safety approval.
-  const heuristic=scenario.check.map(s=>reply.toLowerCase().includes(s.toLowerCase()));
-  return response({model:input.model,caseId:scenario.id,reply,elapsedMs:Date.now()-started,
+  if(chatting)return response({model:input.model,reply,elapsedMs:Date.now()-started,tokens,estimatedUSD,
+   disclaimer:"AI tutoring is for study support; verify measurements and electrical safety guidance."},200,origin);
+  const heuristic=scenario.check.map((v:string)=>reply.toLowerCase().includes(v.toLowerCase()));
+  return response({model:input.model,caseId:scenario.id,title:scenario.title,question:scenario.prompt,reply,elapsedMs:Date.now()-started,
    tokens,estimatedUSD,checkCount:heuristic.filter(Boolean).length,checkTotal:heuristic.length,
    disclaimer:"Quick text checks are not an accuracy or safety certification. Review the actual explanation before using it."},200,origin);
  }catch(e){return response({error:"Model request could not complete; quota reservation is retained to prevent retries from causing excessive cost."},502,origin)}
