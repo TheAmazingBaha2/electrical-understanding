@@ -203,6 +203,10 @@ Deno.serve(async(req:Request)=>{
   note:"Every paid stage requires a separate click; uploads are private and reviewed lessons are not inserted into graded study progress."},200,origin);
  if(action==="register"){
   const path=request.path,title=String(request.title||"").trim();
+  const book=String(request.book||"").trim(),pages=String(request.pages||"").trim();
+  const track=String(request.track||"other").trim();
+  if(!plain(book,180)||!plain(pages,80)||!["geier","teach","principles","cabling","guide","basic","other"].includes(track))
+   return fail("A book or publication, printed page range, and destination study track are required.",origin);
   if(!plain(title,140)||typeof path!=="string"||!path.startsWith(userId+"/")
      || !/^[a-f0-9-]{36}\.(pdf|png|jpg|jpeg|webp)$/.test(path.slice(userId.length+1)))
    return fail("Invalid private scan path or title",origin);
@@ -222,16 +226,28 @@ Deno.serve(async(req:Request)=>{
    if(!contentType)throw Error("Only PDF, JPEG, PNG and WebP scans are supported");
   }catch(e){return fail(String(e),origin)}
   const {data:created,error}=await admin.from("scan_lesson_jobs").insert({
-   user_id:userId,title,source_kind:contentType,source_path:path,source_bytes:size,state:"uploaded"
+   user_id:userId,title,source_book:book,source_pages:pages,source_track:track,source_kind:contentType,source_path:path,source_bytes:size,state:"uploaded"
   }).select("id").single();
   if(error||!created)return fail("Could not register private scan",origin,503);
   return reply({jobId:created.id},200,origin);
  }
- if(!["delete","plan","analyze","draft","review","approve","check","resume"].includes(action))return fail("Unknown action",origin);
+ if(!["delete","update-source","plan","analyze","draft","review","approve","check","resume"].includes(action))return fail("Unknown action",origin);
  if(typeof request.jobId!=="string"||!/^[a-f0-9-]{36}$/.test(request.jobId))return fail("Invalid job",origin);
  const {data:job,error:jobError}=await admin.from("scan_lesson_jobs").select("*").eq("user_id",userId).eq("id",request.jobId).maybeSingle();
  if(jobError)return fail("Source lookup failed",origin,503);
  if(!job)return action==="delete"?reply({deleted:true},200,origin):fail("Private source does not exist",origin,404);
+ if(action==="update-source"){
+  // Historical uploads may be attributed before Sol begins processing.
+  if(job.state!=="uploaded"||job.analysis?.planning_brief)
+   return fail("Source details are locked once Sol planning begins.",origin,409);
+  const book=String(request.book||"").trim(),pages=String(request.pages||"").trim(),track=String(request.track||"other").trim();
+  if(!plain(book,180)||!plain(pages,80)||!["geier","teach","principles","cabling","guide","basic","other"].includes(track))
+   return fail("Publication, scanned pages and destination track are required.",origin);
+  const {error}=await admin.from("scan_lesson_jobs").update({source_book:book,source_pages:pages,source_track:track})
+   .eq("user_id",userId).eq("id",job.id).eq("state","uploaded");
+  if(error)return fail("Could not save source information.",origin,503);
+  return reply({saved:true},200,origin);
+ }
  if(action==="delete"){
   // Only the authenticated owner's stored path can be removed; never accept a path from the browser.
   if(!job.source_path.startsWith(userId+"/"))return fail("Invalid source ownership",origin,403);
@@ -258,11 +274,13 @@ Deno.serve(async(req:Request)=>{
  if(action==="draft"&&job.state==="needs_revision"){}else if(job.state!==targetState[action])
   return fail("Wrong stage: "+job.state+". Refresh the Scan Inbox before continuing.",origin,409);
  if(action==="approve"){
+  if(!plain(job.source_book,180)||!plain(job.source_pages,80))
+   return fail("This source lacks a publication title and page reference. Add attribution before approval.",origin,409);
   try{verifyDraft(job.lesson,job.analysis)}catch(e){return fail(String(e),origin,409)}
   if(!job.review?.ready||job.review.findings?.some((x:any)=>x.severity==="blocker"))
    return fail("Technical review did not approve this draft",origin,409);
   const stableId="GEN-"+String(job.id).toUpperCase();
-  const body={...job.lesson,id:stableId,source:{scanId:job.id,title:job.title,analysisRevision:job.revision},
+  const body={...job.lesson,id:stableId,source:{scanId:job.id,title:job.title,book:job.source_book,pages:job.source_pages,track:job.source_track,analysisRevision:job.revision},
    questions:job.lesson.questions.map((q:any,i:number)=>({...q,id:stableId+"-Q"+String(i+1).padStart(2,"0")}))};
   const {data,error}=await admin.from("scan_lesson_jobs")
    .update({lesson:body,draft_id:stableId,state:"approved",approved_at:new Date().toISOString(),
@@ -319,13 +337,17 @@ Deno.serve(async(req:Request)=>{
   }
  }
  const brief=job.analysis?.planning_brief;
+ let existingLessons:any;
+ try{existingLessons=await existingLessonInventory(admin,userId,job.id)}
+ catch(e){return fail(String(e),origin,503)}
+ const sourceMetadata=sourceLabel(job);
  const input=action==="plan"
-  ?[{role:"user",content:[{type:"input_text",text:JSON.stringify({source_title:job.title,learner_context:attempt.learner_context})},sourceInput]}]
+  ?[{role:"user",content:[{type:"input_text",text:JSON.stringify({source_metadata:sourceMetadata,existing_lessons:existingLessons,learner_context:attempt.learner_context})},sourceInput]}]
   :action==="analyze"
-  ?[{role:"user",content:[{type:"input_text",text:JSON.stringify({task:"Extract visible, verifiable electronics and mathematics concepts.",planning_brief:brief})},sourceInput]}]
+  ?[{role:"user",content:[{type:"input_text",text:JSON.stringify({task:"Extract visible, verifiable electronics and mathematics concepts.",source_metadata:sourceMetadata,planning_brief:brief})},sourceInput]}]
   :action==="draft"
-  ?JSON.stringify({source_title:job.title,planning_brief:brief,analysis:job.analysis,previous_review:job.state==="needs_revision"?job.review:null})
-  :[{role:"user",content:[{type:"input_text",text:JSON.stringify({planning_brief:brief,analysis:job.analysis,draft:job.lesson})},sourceInput]}];
+  ?JSON.stringify({source_metadata:sourceMetadata,existing_lessons:existingLessons,planning_brief:brief,analysis:job.analysis,previous_review:job.state==="needs_revision"?job.review:null})
+  :[{role:"user",content:[{type:"input_text",text:JSON.stringify({source_metadata:sourceMetadata,existing_lessons:existingLessons,planning_brief:brief,analysis:job.analysis,draft:job.lesson})},sourceInput]}];
  let result:any;
  try{
   result=attempt.status==="received"?decodeSaved(attempt):await modelCall(key,model,action==="analyze"?"analysis":action,
