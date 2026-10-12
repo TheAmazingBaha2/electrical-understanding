@@ -351,7 +351,15 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
    if(operation)return;
    const action=e.currentTarget.dataset.scanAction;
    const retry=e.currentTarget.dataset.scanRetry==='true';
-   if(retry&&!window.confirm('This starts one new paid request for the unfinished stage, using any saved output. Completed stages stay saved. Continue?'))return;
+   if(retry){
+    const failedAttempt=job.attempts?.find(a=>a.base_revision===job.revision&&
+     ['failed','incomplete','invalid','unknown'].includes(a.status));
+    const uncertainCharge=failedAttempt&&!failedAttempt.response_id;
+    const warning=uncertainCharge
+     ?'The last request has no saved provider response ID. It may already have incurred a charge, and its output cannot be recovered. A retry starts an ADDITIONAL paid request. The saved Sol brief and earlier stages remain intact. Continue anyway?'
+     :'This starts one NEW paid request for the unfinished stage. Any saved output is reference material, not a guaranteed free continuation. Earlier charges still apply. Continue?';
+    if(!window.confirm(warning))return;
+   }
    if(action==='approve'&&!window.confirm('Approve this reviewed draft into your private study library? It will not affect graded lessons.'))return;
    operation=true;
    updateLiveStage(action==='resume'?currentScanPhase(job):action);
