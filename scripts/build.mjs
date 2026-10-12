@@ -58,15 +58,15 @@ for (const file of publicFiles) {
 // that Cloudflare serves. A missing imported module otherwise leaves the entire
 // page blank, including its navigation. Fail the build instead of shipping that.
 const published=new Set(publicFiles);
-const staticModule=/\\b(?:import|export)\\s+(?:[^'";]*?\\s+from\\s*)?["'](\\.[^"']+)["']/g;
-const dynamicModule=/\\bimport\\s*\\(\\s*["'](\\.[^"']+)["']\\s*\\)/g;
+const staticModule=/\b(?:import|export)\s+(?:[^'";]*?\s+from\s*)?["'](\.[^"']+)["']/g;
+const dynamicModule=/\bimport\s*\(\s*["'](\.[^"']+)["']\s*\)/g;
 for(const file of publicFiles.filter(name=>name.endsWith(".js"))){
  const source=await (await import("node:fs/promises")).readFile(file,"utf8");
  for(const expression of [staticModule,dynamicModule]){
   expression.lastIndex=0;
   for(const match of source.matchAll(expression)){
    const relativeTarget=match[1].split(/[?#]/,1)[0];
-   const target=join(file.includes("/")?file.slice(0,file.lastIndexOf("/")):".",relativeTarget).replace(/\\\\/g,"/");
+   const target=join(file.includes("/")?file.slice(0,file.lastIndexOf("/")):".",relativeTarget).replace(/\\/g,"/");
    if(!published.has(target)){
     throw new Error("Staging build missing imported module: "+file+" -> "+target+
       ". Add the required file to publicFiles. The site would not start without it.");
