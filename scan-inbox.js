@@ -284,6 +284,7 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
  if(!root||!supabase||!user)return;
  const id=user.id;
  let jobs=[],preparedFile=null,preparing=null,pendingUpload=null;
+  let books=[],bookCatalogReady=false,bookCatalogBusy=false;
  let renderedJobId=null,renderedSignature=null;
  const openedPanelsByJob=new Map();
  const pauseToggle=root.querySelector("#scan-pause-updates");
@@ -299,6 +300,96 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
   preparing?.catch(error=>status(error.message));
  });
  const status=(text)=>{if(root.isConnected)root.querySelector('#scan-status').textContent=text;};
+  const bookSelect=root.querySelector('#scan-book');
+  const bookPanel=root.querySelector('#scan-new-book-panel');
+  const bookHint=root.querySelector('#scan-books-hint');
+  const uploadButton=root.querySelector('#scan-upload');
+  const setBookPanelVisible=visible=>{
+   bookPanel.hidden=!visible;
+   if(visible)root.querySelector('#scan-new-book-track').value=root.querySelector('#scan-track').value;
+  };
+  const chooseBook=id=>{
+   bookSelect.value=id||'';
+   const book=books.find(item=>item.id===bookSelect.value);
+   if(book)root.querySelector('#scan-track').value=book.source_track||'other';
+   setBookPanelVisible(bookSelect.value==='__new__');
+  };
+  const renderBookChoices=preferredId=>{
+   const keep=preferredId||bookSelect.value;
+   bookSelect.innerHTML='<option value="">Choose a saved book…</option>'+
+    books.map(item=>'<option value="'+esc(item.id)+'">'+esc(catalogBookTitle(item))+
+     (item.author?' · '+esc(item.author):'')+'</option>').join('')+
+    '<option value="__new__">＋ Add / import a new book…</option>';
+   chooseBook(books.some(book=>book.id===keep)?keep:(keep==='__new__'?keep:''));
+   bookHint.textContent=books.length+' saved book'+(books.length===1?'':'s')+
+    ' · Synced with your study account on phone and desktop.';
+  };
+  const loadBooks=async preferredId=>{
+   if(!root.isConnected)return;
+   bookCatalogReady=false;
+   uploadButton.disabled=true;
+   const {data,error}=await supabase.from('study_books')
+    .select('id,title,author,edition,source_track').eq('user_id',id)
+    .order('title',{ascending:true}).limit(200);
+   if(error){
+    bookHint.textContent='Could not load your book library. Use Refresh books to retry.';
+    throw Error('Private book library unavailable: '+error.message);
+   }
+   if(!root.isConnected)return;
+   books=data||[];
+   bookCatalogReady=true;
+   uploadButton.disabled=operation;
+   renderBookChoices(preferredId);
+  };
+  const rememberBook=async(title,track)=>{
+   const clean=String(title||'').trim();
+   if(!clean||books.some(item=>catalogBookTitle(item).toLowerCase()===clean.toLowerCase()))return;
+   const {error}=await supabase.from('study_books').insert({
+    user_id:id,title:clean,source_track:catalogTracks.has(track)?track:'other'
+   });
+   if(error&&error.code!=='23505')throw Error(error.message);
+   await loadBooks();
+  };
+  bookSelect.addEventListener('change',()=>{
+   const chosen=books.find(book=>book.id===bookSelect.value);
+   if(chosen)root.querySelector('#scan-track').value=chosen.source_track;
+   setBookPanelVisible(bookSelect.value==='__new__');
+   if(bookSelect.value==='__new__')root.querySelector('#scan-new-book-title').focus();
+  });
+  root.querySelector('#scan-book-refresh').addEventListener('click',async event=>{
+   const button=event.currentTarget;
+   if(bookCatalogBusy)return;
+   bookCatalogBusy=true;button.disabled=true;
+   try{await loadBooks();status('Your saved book list has been refreshed. No AI charges.')}
+   catch(error){status(error.message)}
+   finally{bookCatalogBusy=false;button.disabled=false}
+  });
+  root.querySelector('#scan-cancel-new-book').addEventListener('click',()=>chooseBook(''));
+  root.querySelector('#scan-add-book').addEventListener('click',async event=>{
+   if(bookCatalogBusy||operation)return;
+   const title=root.querySelector('#scan-new-book-title').value.trim();
+   const author=root.querySelector('#scan-new-book-author').value.trim();
+   const edition=root.querySelector('#scan-new-book-edition').value.trim();
+   const source_track=root.querySelector('#scan-new-book-track').value;
+   const citation=catalogBookTitle({title,edition});
+   if(!title||citation.length>180||!catalogTracks.has(source_track)){
+    status('Enter a book title. The combined title and edition must be 180 characters or fewer.');return;
+   }
+   const button=event.currentTarget;
+   bookCatalogBusy=true;button.disabled=true;
+   try{
+    const {data,error}=await supabase.from('study_books').insert({
+     user_id:id,title,author:author||null,edition:edition||null,source_track
+    }).select('id').single();
+    if(error)throw Error(error.code==='23505'?'This book and edition are already in your library. Select it above.':error.message);
+    await loadBooks(data.id);
+    root.querySelector('#scan-new-book-title').value='';
+    root.querySelector('#scan-new-book-author').value='';
+    root.querySelector('#scan-new-book-edition').value='';
+    status('Book saved to your private study library. No AI charge.');
+   }catch(error){status('Could not save book: '+error.message)}
+   finally{bookCatalogBusy=false;if(button.isConnected)button.disabled=false}
+  });
  const invoke=async body=>{
   const {data,error}=await supabase.functions.invoke('scan-lesson-pipeline',{body});
   if(error){
