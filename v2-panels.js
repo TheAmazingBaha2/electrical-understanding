@@ -130,10 +130,23 @@ function unreferencedRows(c){
    (mastered?'Revisit archived lesson →':available?'Open original lesson →':'Complete a linked topic first')+'</button></article>';
  }).join('');
 }
+function archivedChapterRows(c){
+ const rows=sourceRows(c.archivedGeneratedLessons,c);
+ if(!rows.length)return '<p class="muted">Loading approved source-backed legacy companions…</p>';
+ return rows.map((r,i)=>{
+  const label=r.lesson.kind==='math'?'MATHEMATICS':r.lesson.libraryView==='reviews'?'REINFORCEMENT':'SOURCE-BASED STUDY';
+  return '<article class="legacy-source-row"><div class="legacy-source-row-head"><span class="v2-pill">'+safe(label)+'</span><span class="legacy-lesson-state">'+(r.done?'Mastered':'Available')+'</span></div>'+
+   '<h3>'+safe(r.title)+'</h3><p class="muted sm">'+safe(r.lesson.description)+'</p>'+
+   '<p class="legacy-source-meta">'+safe(r.lesson.module)+' · '+r.answered+' / '+r.total+' answered · '+r.correct+' correct</p>'+
+   '<p class="legacy-source-reason">Approved scan-derived workbench preserved in Legacy; source citations and interactive activities are retained.</p>'+
+   '<button type="button" class="'+(r.done?'outline':'primary')+' small-button" data-goto="generated-lesson" data-lesson="'+safe(r.id)+'">'+(r.done?'Revisit':'Study archived lesson')+' →</button></article>';
+ }).join('');
+}
 function legacyView(c){
  const pilot=c.archivedPilotLessons||c.lessons.filter(l=>l.legacy===true||/^L\d{2,}$/.test(l.id));
  const unreferenced=c.archivedUnreferencedLessons||[];
  const pilotDone=pilot.filter(c.hasPassed).length,unrefDone=unreferenced.filter(c.hasPassed).length;
+ const archivedChapter=c.archivedGeneratedLessons||[],chapterDone=archivedChapter.filter(c.hasPassed).length;
  return '<header class="legacy-heading"><p class="v2-kicker">PRESERVED STUDY MATERIAL</p><h2>Legacy Lessons</h2>'+
   '<p class="muted">Original teaching stays available without being mistaken for verified textbook-derived material. Both groups retain the same lesson IDs, worked examples, scores and scheduled reviews.</p>'+
   '<button class="legacy-back" type="button" data-goto="ceta">← Back to Exam Preparation</button></header>'+
@@ -148,6 +161,11 @@ function legacyView(c){
   '<p class="muted sm">Lessons without verified supporting textbook chapter pages. These remain useful for learning, but are no longer presented as source-backed chapters.</p>'+
   '<div class="legacy-group-summary"><strong>'+unrefDone+' / '+unreferenced.length+'</strong><span>lessons mastered</span></div>'+bar(percent(unrefDone,unreferenced.length))+
   '<div class="legacy-list">'+unreferencedRows(c)+'</div></section></div>'+
+  '<section id="legacy-scanned-chapter" class="v2-panel legacy-listing legacy-group-panel" aria-labelledby="legacy-scanned-title">'+
+  '<div class="legacy-group-eyebrow"><span>03</span> APPROVED CHAPTER ARCHIVE</div><h3 id="legacy-scanned-title">CETa Study Guide · Chapter 3 · Math for Electronics</h3>'+
+  '<p class="muted sm">All 16 approved source and reinforcement lessons are archived here by request. The five-tab workbenches, existing quizzes, interactions, textbook citations and synced progress stay available. This does not archive future chapters from the book.</p>'+
+  '<div class="legacy-group-summary"><strong>'+chapterDone+' / '+archivedChapter.length+'</strong><span>approved lessons mastered</span></div>'+bar(percent(chapterDone,archivedChapter.length))+
+  '<div class="legacy-list">'+archivedChapterRows(c)+'</div></section>'+
   '<p class="legacy-archive-note">Archiving changes organization only. No lesson, quiz result, achievement, or review schedule is erased or reset. Future source-grounded replacements can be built in the active tracks.</p>';
 }
 function guideView(c){
