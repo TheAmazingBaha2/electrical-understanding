@@ -6,6 +6,10 @@ const item=(label,min,max,value,unit,step=1)=>({label,min,max,value,unit,step});
 const experiments={
  prefixes:{title:"SI prefix scale",inputs:[item("Capacitance",100,10000,1000,"pF",100)],
   solve:([p])=>["1 pF = 10⁻¹² F",fmt(p)+" pF = "+fmt(p/1000000)+" µF = "+fmt(p*1e-12)+" F","The pico- and micro-prefixes refer to the same quantity at different scales."]},
+ algebra:{title:"Rearrange an equation",inputs:[item("Coefficient",1,20,4,""),item("Right-hand side",1,40,2,"")],
+  solve:([b,a])=>["If "+fmt(b)+" × y = "+fmt(a)+", divide both sides by "+fmt(b),
+   "y = "+fmt(a)+"/"+fmt(b)+" = "+fmt(a/b),
+   "An inverse operation isolates the unknown without changing the equality."]},
  ohm:{title:"Ideal Ohm's law",inputs:[item("Voltage",1,24,5,"V"),item("Resistance",100,10000,1000,"Ω",100)],
   solve:([v,r])=>["I = V / R",fmt(v/r*1000)+" mA","Increasing voltage increases current; increasing resistance lowers it."]},
  network:{title:"Resistor combinations",inputs:[item("R1",100,10000,1000,"Ω",100),item("R2",100,10000,2000,"Ω",100)],
@@ -48,7 +52,7 @@ const experiments={
 };
 export function simulationFor(title){
  const s=String(title||"").toLowerCase();
- const matches=[[/scientific notation|prefix conversions/,"prefixes"],[/variables|formula rearrangement/,"ohm"],
+ const matches=[[/scientific notation|prefix conversions/,"prefixes"],[/variables|formula rearrangement/,"algebra"],
  [/resistor network/,"network"],[/internal resistance|terminal voltage/,"internal"],
  [/sinusoid|amplitude measure/,"sine"],[/period and frequency/,"period"],[/charge and stored energy/,"energy"],
  [/capacitor network/,"capnetwork"],[/time constant|exponential response/,"rc"],[/capacitive reactance/,"xc"],
