@@ -25,6 +25,9 @@ try{
   assert.equal(await page.locator('.content-chapter').count(),22);assert.equal(await page.locator('[data-disclosure="contents:associate-cet:3"]').getAttribute('open'),'');
   assert.equal(await page.locator('[data-disclosure="contents:associate-cet:3"] .chapter-lesson').count(),16);
   if(width===390){const bytes=await page.screenshot({path:'test-artifacts/chapter-contents-phone.jpg',type:'jpeg',quality:65});console.log('SOURCE_QA_IMAGE:contents:'+bytes.toString('base64'));}
+  await page.locator('.workspace-top-tabs [data-view="dashboard"]').click();await page.locator('.dashboard-chapter').waitFor();
+  assert.match(await page.locator('.dashboard-chapter > summary [role="img"]').getAttribute('aria-label'),/1 correct, 0 needs review, 159 unanswered out of 160/);
+  await page.locator('.dashboard-chapter > summary').focus();await page.locator('.dashboard-chapter > summary').press('Enter');assert.equal(await page.locator('.dashboard-lesson-list').isVisible(),true);
   await page.locator('.workspace-top-tabs [data-view="math"]').click();assert.equal(await page.locator('.chapter-lesson').count(),0);
   await page.locator('.workspace-top-tabs [data-view="textbooks"]').click();assert.equal(await page.locator('.source-book').count(),1);await page.locator('[data-disclosure="contents:geier:6"] > summary').click();assert.equal(await page.locator('[data-lesson="BDMM-01"]').count(),1);
   await page.locator('.workspace-top-tabs [data-view="labs"]').click();assert.equal(await page.locator('.source-book').count(),4);assert.equal(await page.locator('.content-chapter').count(),21);

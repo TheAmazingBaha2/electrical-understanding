@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {authoredSeries} from './chapter3-series-fixture.mjs';
 import {approvedWorkbenchLessons} from '../generated-library.js';
 import {sourceIndex,learningProgress,studyInventory,sourcePlacement} from '../learning-structure.js';
-import {renderSourceSection,renderChapterDashboard,renderMathPractice} from '../source-navigation.js';
+import {renderSourceSection,renderChapterDashboard,renderMathPractice,renderSavedReinforcement} from '../source-navigation.js';
 import {setup} from './scan-harness.mjs';
 const {source,series}=authoredSeries();
 const lessons=approvedWorkbenchLessons([{...source,state:'approved',lesson:{lessons:[],curated_series:series}}]);
@@ -64,4 +64,9 @@ test('availability is keyed by immutable lesson ID rather than object identity a
  const create=new Function('lessons','labLessons','unlocked','bookUnlocked','guideUnlocked','labUnlocked',app.slice(start,end)+';return canOpenLesson;');
  const can=create([{id:'L01'}],[{id:'LAB',subtrack:'basic'}],i=>i===0,l=>l.id==='BOOK',()=>false,l=>l.id==='LAB');
  assert.equal(can({id:'LAB',subtrack:'basic'}),true);assert.equal(can({id:'BOOK',subtrack:'geier'}),true);assert.equal(can({id:'L01'}),true);assert.equal(can({id:'UNKNOWN'}),false);assert.equal(can({id:'REFRESH',subtrack:'math'}),true);
+});
+
+test('saved reinforcement remains reachable without imposing a new review algorithm or source chart',()=>{
+ const l={...lessons[0],id:'SAVED-REVIEW',seriesId:null,curatedSeries:false,curriculum:{section:'reviews',source_id:'associate-cet',chapter_id:'3'}};
+ const c={...ctx,activeGeneratedLessons:[l]};assert.match(renderSavedReinforcement(c),/data-lesson="SAVED-REVIEW"/);assert.doesNotMatch(renderChapterDashboard(c),/chapter-pie/);
 });

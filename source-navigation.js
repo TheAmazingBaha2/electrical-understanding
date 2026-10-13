@@ -21,6 +21,10 @@ export function renderMathPractice(c={}){
  const lessons=studyInventory(c).filter(l=>l.curriculum.section==='math');
  return '<header class="source-heading"><p class="v2-kicker">KEEP THE FOUNDATIONS FRESH</p><h2>Math Practice</h2><p>Periodic refreshers on the mathematics behind electricity. These stand on their own, without requiring a book.</p></header><section class="source-book">'+(lessons.length?lessonRows(lessons,c):'<div class="chapter-empty"><h3>A place for your math refreshers</h3><p>Chapter 3’s full lessons are in Exam Practice → Associate CET. Refresher lessons will appear here as we add them.</p><button class="outline small-button" data-goto="ceta" data-lesson="associate-cet:3">Open Associate CET · Chapter 3 →</button></div>')+'</section>';
 }
+export function renderSavedReinforcement(c={}){
+ const lessons=studyInventory(c).filter(l=>l.curriculum.section==='reviews');
+ return lessons.length?'<section class="source-book"><header class="source-book-heading"><div><p class="v2-kicker">PREVIOUSLY PUBLISHED PRACTICE</p><h3>Saved reinforcement lessons</h3><p>These existing lessons remain available while the broader review format is decided.</p></div></header><div class="source-chapters">'+lessonRows(lessons,c)+'</div></section>':'';
+}
 export function renderChapterDashboard(c={}){
  const sources=sourceIndex(c).map(s=>({...s,chapters:s.chapters.filter(ch=>ch.lessons.some(l=>l.curriculum.dashboard!==false)).map(ch=>({...ch,lessons:ch.lessons.filter(l=>l.curriculum.dashboard!==false)}))})).filter(s=>s.chapters.length);
  const refreshers=studyInventory(c).filter(l=>l.curriculum.section==='math');
