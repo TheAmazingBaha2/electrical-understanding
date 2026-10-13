@@ -128,3 +128,19 @@ test('next unit and revision receive earlier approvals, citations, original brie
  await h.invoke({action:'draft'});assert.deepEqual(JSON.parse(h.calls.at(-1).input).previous_review,h.job.review===null?{ready:false,summary:'Explain sign',findings:[{severity:'blocker',description:'Explain sign',source_id:'S1'}]}:h.job.review);
  assert.deepEqual(h.job.lesson.lessons[0],approved);
 });
+
+test('saved multi-evidence technical review recovers free with every citation and raw response retained',async()=>{
+ const h=setup();h.job.state='drafted';h.job.analysis=structuredClone(extraction);h.job.lesson=draft;
+ const review={ready:true,summary:'The calculations are correct; qualify the coverage claim.',findings:[{severity:'warning',source_id:'S1,S2',description:'Prior coverage is not evidence of learner mastery.'},{severity:'note',source_id:'S1, S2',description:'Arithmetic follows both saved source facts.'}]};
+ const a=saved(h,'review',review),raw=a.raw_response;
+ assert.equal((await h.invoke({action:'recover',attemptId:a.id})).status,200);
+ assert.equal(h.job.state,'reviewed');assert.deepEqual(structuredClone(h.job.review),review);assert.equal(a.raw_response,raw);
+ assert.equal(h.calls.length,0);assert.equal(h.spending.length,0);
+});
+test('composite review citations reject unknown, empty, duplicate and malformed IDs without spending',async()=>{
+ for(const source_id of ['S1,S999','S1,','S1,S1','S1 S2']){
+  const h=setup();h.job.state='drafted';h.job.analysis=structuredClone(extraction);h.job.lesson=draft;
+  const a=saved(h,'review',{ready:true,summary:'Check.',findings:[{severity:'warning',source_id,description:'A finding.'}]});
+  assert.equal((await h.invoke({action:'recover',attemptId:a.id})).status,422);assert.equal(h.calls.length,0);assert.equal(a.status,'invalid');
+ }
+});
