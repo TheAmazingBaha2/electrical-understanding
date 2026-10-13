@@ -1,6 +1,6 @@
 {
-  "name": "Electronic Learning Workbench",
-  "short_name": "Learning Workbench",
+  "name": "Electrical Workbench",
+  "short_name": "Electrical Workbench",
   "description": "Exam preparation, interactive electronics, textbook companions and hands-on labs",
   "start_url": "./",
   "display": "standalone",
