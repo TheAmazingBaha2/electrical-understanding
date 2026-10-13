@@ -17,6 +17,8 @@ export function setup(options={}){
    if(table==='scan_model_attempts')rows=[...rows].reverse();
    if(limit)rows=rows.slice(0,limit);
    if(isDelete){deleted=true;return {error:null};}
+   if(table==='scan_lesson_jobs'&&patch?.state==='approved'&&rows.some(row=>!(patch.lesson??row.lesson)||!(Object.hasOwn(patch,'review')?patch.review:row.review)||!(patch.approved_at??row.approved_at)))return {data:null,error:{code:'23514',message:'scan_lesson_jobs_check'}};
+   if(table==='scan_lesson_jobs'&&patch?.state==='approved'&&options.approvalSaveError)return {data:null,error:{code:'XX000',message:'simulated database failure'}};
    if(patch)rows.forEach(row=>Object.assign(row,patch));
    return {data:structuredClone(single?rows[0]||null:rows),error:null};
   };

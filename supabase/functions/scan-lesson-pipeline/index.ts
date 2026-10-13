@@ -365,7 +365,7 @@ Deno.serve(async(req:Request)=>{
   if(request.expectedRevision!==job.revision||job.state!=="reviewed")return fail("Chapter checkpoint changed; refresh. No AI call started.",origin,409);
   const outline=job.analysis?.chapter_outline,finished=job.lesson?.lessons||[],pending=job.lesson?.pending||[];
   if(!outline?.units?.length)return fail("Chapter outline required.",origin,409);
-  let body:any,nextState:string,stamp:any=null;
+  let body:any,nextState:string,stamp:any=null,chapterReview:any=null;
   if(action==="queue-reviewed"){
    const unit=outline.units[chapterDone(job)],current=job.lesson?.current;
    try{verifyUnitDraft(current,job.analysis,unit);verifyReview(job.review,job.analysis)}catch(e){return fail(String(e),origin,409)}
@@ -385,11 +385,15 @@ Deno.serve(async(req:Request)=>{
    body={...job.lesson,id:"GEN-"+String(job.id).toUpperCase(),chapter_title:outline.chapter_title,lessons:[...finished,...accepted],pending:[],current:null,
     source:{scanId:job.id,book:job.source_book,pages:job.source_pages,track:job.source_track}};
    nextState="approved";stamp=new Date().toISOString();
+   chapterReview={ready:true,summary:"Human-approved chapter of "+body.lessons.length+" individually reviewed lessons. This summary aggregates saved unit reviews; no additional model review was generated.",
+    findings:body.lessons.flatMap((unit:any)=>(unit.technical_review?.findings||[]).map((finding:any)=>({...finding,unit_id:unit.plan?.id||unit.source?.unit}))),
+    unit_reviews:body.lessons.map((unit:any)=>({unit_id:unit.plan?.id||unit.source?.unit,review:unit.technical_review}))};
   }
-  const saved=await admin.from("scan_lesson_jobs").update({lesson:body,state:nextState,review:null,approved_at:stamp,
+  const saved=await admin.from("scan_lesson_jobs").update({lesson:body,state:nextState,review:chapterReview,approved_at:stamp,
    draft_id:nextState==="approved"?body.id:null,revision:job.revision+1,updated_at:new Date().toISOString()})
    .eq("id",job.id).eq("user_id",userId).eq("revision",job.revision).eq("state","reviewed").select("id").maybeSingle();
-  if(saved.error||!saved.data)return fail("Chapter checkpoint conflict; refresh. No AI call made.",origin,409);
+  if(saved.error)return fail("Could not save chapter approval checkpoint. All reviewed drafts remain saved; no AI call made.",origin,503);
+  if(!saved.data)return fail("Chapter checkpoint conflict; refresh. No AI call made.",origin,409);
   if(nextState==="approved")await admin.from("scan_quota_completion").update({closed:true}).eq("user_id",userId).eq("job_id",job.id);
   return reply({state:nextState,paidModelCallsStarted:0},200,origin);
  }

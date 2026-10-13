@@ -20,6 +20,7 @@ test('batch reviews every unit without human approval, then explicit free approv
  const stale=h.job.revision-1;assert.equal((await h.invoke({action:'approve-batch',expectedRevision:stale})).status,409);
  assert.equal((await h.invoke({action:'approve-batch'})).status,200);
  assert.equal(h.job.state,'approved');assert.equal(h.job.lesson.pending.length,0);assert.equal(h.job.lesson.lessons.length,3);
+ assert.equal(h.job.review.ready,true);assert.equal(h.job.review.unit_reviews.length,3);assert.ok(h.job.approved_at);
  assert.equal(h.calls.length,9);assert.equal(h.spending.length,9);
  assert.deepEqual(h.job.lesson.lessons[0].sections,saved[0].sections);
 });
@@ -67,4 +68,13 @@ test('explicit batch restart can retry one proven pre-submission budget denial b
  const options={budgetDenied:true,payloads:{eu_outline:{chapter_title:'Chapter',rationale:'Three skills.',units},eu_draft:draft,eu_review:{ready:true,summary:'Checked.',findings:[]}}};
  const h=await chapter();h.attempts.push({id:'denied',job_id:h.job.id,user_id:'owner',base_revision:h.job.revision,phase:'draft',status:'failed',error_message:'Budget reservation refused. No provider request was sent.'});
  await runChapterBatch({...controller(h),initialRetryOf:'denied'});assert.equal(h.job.lesson.pending.length,3);assert.equal(h.calls.length,9);
+});
+
+
+test('approval retains every unit warning and database rejection preserves all pending work',async()=>{
+ const h=await chapter({approvalSaveError:true,payloads:{eu_outline:{chapter_title:'Chapter',rationale:'Three skills.',units},eu_draft:draft,eu_review:{ready:true,summary:'Checked with notes.',findings:[{severity:'warning',source_id:'S1',description:'Verify the contextual claim.'}]}}});
+ await runChapterBatch(controller(h));const pending=structuredClone(h.job.lesson.pending),calls=h.calls.length;
+ const r=await h.invoke({action:'approve-batch'});assert.equal(r.status,503);assert.equal(h.job.state,'reviewed');assert.deepEqual(structuredClone(h.job.lesson.pending),pending);assert.equal(h.calls.length,calls);
+ const good=await chapter({payloads:{eu_outline:{chapter_title:'Chapter',rationale:'Three skills.',units},eu_draft:draft,eu_review:{ready:true,summary:'Checked with notes.',findings:[{severity:'warning',source_id:'S1',description:'Verify the contextual claim.'}]}}});
+ await runChapterBatch(controller(good));assert.equal((await good.invoke({action:'approve-batch'})).status,200);assert.equal(good.job.review.findings.length,3);assert.equal(good.job.review.findings[0].unit_id,'U01');assert.equal(good.calls.length,9);
 });
