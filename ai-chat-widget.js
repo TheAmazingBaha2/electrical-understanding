@@ -36,11 +36,35 @@ function syncLessonLabel(){
  const ctx=lessonGetter?.();
  by('ai-chat-context').textContent=ctx?.title?'Discussing: '+ctx.title:'General electronics questions';
 }
+function bindLauncherDrag(button){
+ const key='eu_tutor_position_v1',positions={};let drag=null,suppressClick=false;
+ try{Object.assign(positions,JSON.parse(localStorage.getItem(key)||'{}'))}catch{}
+ const mode=()=>innerWidth<=700?'mobile':'desktop';
+ function bounds(){return {x:Math.max(8,innerWidth-button.offsetWidth-8),y:Math.max(8,innerHeight-button.offsetHeight-8)}}
+ function place(x,y){const b=bounds();button.style.left=Math.max(8,Math.min(b.x,x))+'px';button.style.top=Math.max(8,Math.min(b.y,y))+'px';button.style.right='auto';button.style.bottom='auto'}
+ function restore(){const p=positions[mode()];if(!p||!Number.isFinite(p.x)||!Number.isFinite(p.y))return;const b=bounds();place(8+p.x*(b.x-8),8+p.y*(b.y-8))}
+ button._restoreDragPosition=restore;
+ button.title='Tap to open; hold and drag to move. Alt + arrow keys also move it.';
+ button.addEventListener('pointerdown',event=>{
+  if(event.button!==0)return;const box=button.getBoundingClientRect();drag={id:event.pointerId,x:event.clientX,y:event.clientY,left:box.left,top:box.top,start:Date.now(),touch:event.pointerType==='touch',moved:false};button.setPointerCapture(event.pointerId);
+ });
+ button.addEventListener('pointermove',event=>{
+  if(drag?.id!==event.pointerId)return;const dx=event.clientX-drag.x,dy=event.clientY-drag.y;
+  if(!drag.moved&&(Math.hypot(dx,dy)<6||drag.touch&&Date.now()-drag.start<220))return;
+  drag.moved=true;button.classList.add('is-dragging');place(drag.left+dx,drag.top+dy);
+ });
+ function save(){const box=button.getBoundingClientRect(),b=bounds();positions[mode()]={x:(box.left-8)/Math.max(1,b.x-8),y:(box.top-8)/Math.max(1,b.y-8)};try{localStorage.setItem(key,JSON.stringify(positions))}catch{}}
+ function finish(event){if(drag?.id!==event.pointerId)return;if(drag.moved){save();suppressClick=true;setTimeout(()=>{suppressClick=false},250)}drag=null;button.classList.remove('is-dragging')}
+ button.addEventListener('pointerup',finish);button.addEventListener('pointercancel',finish);button.addEventListener('lostpointercapture',finish);
+ button.addEventListener('click',event=>{if(suppressClick){event.preventDefault();event.stopImmediatePropagation()}},true);
+ button.addEventListener('keydown',event=>{if(!event.altKey||!['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(event.key))return;event.preventDefault();const box=button.getBoundingClientRect();place(box.left+(event.key==='ArrowLeft'?-16:event.key==='ArrowRight'?16:0),box.top+(event.key==='ArrowUp'?-16:event.key==='ArrowDown'?16:0));save()});
+ window.addEventListener('resize',restore);window.visualViewport?.addEventListener('resize',restore);
+}
 export function mountAIChat(getLesson=()=>null){
  lessonGetter=getLesson;
  if(root)return;
  root=document.createElement('div');root.className='ai-chat-root';
- root.innerHTML=`<button type="button" id="ai-chat-launch" class="ai-chat-launch" aria-controls="ai-chat-panel" aria-expanded="false" hidden>⚡ Study tutor</button>
+ root.innerHTML=`<button type="button" id="ai-chat-launch" class="ai-chat-launch" aria-controls="ai-chat-panel" aria-expanded="false" hidden><img src="./icon.svg?v=3" width="24" height="24" alt=""> Study tutor</button>
  <section id="ai-chat-panel" class="ai-chat-panel" role="dialog" aria-label="Private AI study tutor" hidden>
   <div class="ai-chat-head">
    <div><strong>Private study tutor</strong><small id="ai-chat-context">General electronics questions</small></div>
@@ -55,6 +79,7 @@ export function mountAIChat(getLesson=()=>null){
   <p class="ai-chat-footnote">Private to your account · API usage is billed · Chats are temporary and never change lesson grades.</p>
  </section>`;
  document.body.append(root);
+ bindLauncherDrag(by('ai-chat-launch'));
  by('ai-chat-launch').addEventListener('click',()=>toggleAIChat(true));
  by('ai-chat-close').addEventListener('click',()=>toggleAIChat(false));
  by('ai-chat-new').addEventListener('click',()=>{
@@ -119,6 +144,7 @@ export function updateAIChatSession(user,supabase){
   setStatus(id?'Open the tutor to verify private access.':'Sign in to unlock your private tutor.');
  }else if(supabase)client=supabase;
  by('ai-chat-launch').hidden=!id||!client;
+ if(id&&client)by('ai-chat-launch')._restoreDragPosition?.();
  if(open)syncLessonLabel();
  setControls();
 }

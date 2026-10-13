@@ -36,7 +36,7 @@ const publicFiles = [
   "lesson-overviews.js",
   "styles.css",
   "config.js", // Public Supabase URL and publishable key only; NEVER a secret/service_role key.
-  "icon.svg",
+  "icon.svg", "icon-192.png", "icon-512.png", "icon-180.png", "icon-maskable-512.png",
   "manifest.webmanifest",
 ];
 

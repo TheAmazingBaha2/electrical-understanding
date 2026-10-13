@@ -65,3 +65,9 @@ Category and book headers have two sibling buttons: the title/description opens 
 ## Compact card dimensions — October 13 final sizing
 
 User requested card heights at about 60% of the previous layout and an arrow division about half as wide. Tighten category/book/chapter header padding and gaps; use brief one-line category descriptions and 54px phone category headers where text fits. Category/book arrow columns are 44px wide (down from 72/76px), preserving a separate touch target. Long titles wrap naturally rather than clip. Keep both functions, state persistence, category order and all learning data unchanged.
+
+## Icy electric styling and movable tutor — October 13
+
+User requested less dominant blue, frosted cyan/white panel highlights with restrained lightning yellow accents, and three nonuniform branching bolts converging from different angles. Use charcoal/neutral frosted surfaces, bright icy cyan illuminated borders and yellow focus/selected accents. Keep current compact geometry and all learner data unchanged. Redrawn SVG branding plus 192/512px PNG, maskable and Apple touch icons serve site and phone launchers.
+
+Tutor launcher supports mouse dragging, short touch hold/drag and Alt+arrow keyboard movement. A completed drag suppresses opening the tutor. Positions are local UI preferences, separate for phone/desktop, restored on reload and clamped inside the viewport. Dragging never invokes a paid request or changes grading. Preserve owner-only visibility, chat authorization and existing paid send flow.

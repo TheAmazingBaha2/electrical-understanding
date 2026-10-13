@@ -77,8 +77,12 @@ test('navigation and script imports are wired up',()=>{
 test('colors and site icon match approved branding',()=>{
  const icon=readFileSync(new URL('../icon.svg',import.meta.url),'utf8');
  const css=readFileSync(new URL('../styles.css',import.meta.url),'utf8');
- for(const color of ['#FFF0A6','#FFD84D','#F5AF27'])assert.ok(icon.includes(color));
- for(const color of ['#83CFFF','#35E0F2'])assert.ok(css.includes(color));
+ for(const color of ['#ffe66e','#ffe98e','#fffce0'])assert.ok(icon.includes(color));
+ for(const color of ['#8df6ff','#ffe269','#0b1217'])assert.ok(css.includes(color));
+ assert.match(icon,/Three branching lightning bolts converging/);
+ for(const size of [192,512,180]){const png=readFileSync(new URL('../icon-'+size+'.png',import.meta.url));assert.equal(png.readUInt32BE(16),size);assert.equal(png.readUInt32BE(20),size);}
+ const manifest=JSON.parse(readFileSync(new URL('../manifest.webmanifest',import.meta.url),'utf8'));assert.ok(manifest.icons.some(i=>i.purpose==='maskable'&&i.sizes==='512x512'));
+
 });
 
 test('each source-backed lab has five concept interactions and ten assessed questions',()=>{
