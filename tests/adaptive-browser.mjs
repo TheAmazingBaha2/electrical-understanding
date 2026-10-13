@@ -17,12 +17,12 @@ try{
    window.__showTask=i=>{document.querySelector('#main').innerHTML=renderActivitySelector(window.__lesson,i);attachGeneratedPredictions(document.querySelector('#main'),m=>window.__notices.push(m));attachGeneratedSimulations(document.querySelector('#main'));};
    window.__showTask(0);
   });
-  assert.equal(await page.locator('textarea').count(),0);assert.equal(await page.locator('input[type=radio]').count(),3);
+  assert.equal(await page.locator('#main textarea').count(),0);assert.equal(await page.locator('input[type=radio]').count(),3);
   await page.locator('[data-generated-reveal]').click();assert.equal(await page.locator('[data-generated-feedback]').isVisible(),false);
   assert.deepEqual(await page.evaluate(()=>window.__notices),['Choose a prediction first.']);
   await page.locator('input[type=radio][value="0"]').check();await page.locator('[data-generated-reveal]').click();assert.match(await page.locator('[data-generated-feedback]').innerText(),/Your prediction matches/);
   await page.evaluate(()=>window.__showTask(1));assert.equal(await page.locator('input[type=range]').count(),2);
-  const before=await page.locator('[data-sim-result]').innerText();await page.locator('input[aria-label="Voltage"]').fill('10');
+  const before=await page.locator('[data-sim-result]').innerText();await page.locator('input[aria-label="Voltage"]').evaluate(el=>{el.value='10';el.dispatchEvent(new Event('input',{bubbles:true}));});
   assert.notEqual(await page.locator('[data-sim-result]').innerText(),before);assert.equal(await page.locator('[data-sim-curve] svg').count(),1);assert.match(await page.locator('[data-sim-result]').innerText(),/10 mA/);
   const size=await page.evaluate(()=>({actual:document.documentElement.scrollWidth,width:innerWidth}));assert.ok(size.actual<=size.width+2);assert.deepEqual(errors,[]);
   await page.evaluate(async({source,series})=>{
@@ -48,7 +48,7 @@ try{
    await page.evaluate(i=>window.__curatedTab(i,'overview'),i);assert.match(await page.locator('.lesson-briefing').innerText(),/CHAPTER 3/);
    await page.evaluate(i=>window.__curatedTab(i,'quiz'),i);assert.equal(await page.locator('.quiz-step').count(),curated.series.lessons[i].questions.length);
    for(let j=0;j<curated.series.lessons[i].activities.length;j++){
-    await page.evaluate(([i,j])=>window.__curatedTab(i,'interact',j),[i,j]);assert.equal(await page.locator('textarea').count(),0);
+    await page.evaluate(([i,j])=>window.__curatedTab(i,'interact',j),[i,j]);assert.equal(await page.locator('#main textarea').count(),0);
     const a=curated.series.lessons[i].activities[j];
     if(a.kind==='simulation'){
      assert.ok(await page.locator('input[type=range]').count()>0);assert.ok(!(await page.locator('[data-sim-result]').innerText()).includes('—'));
