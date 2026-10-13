@@ -15,7 +15,7 @@ try{
  assert.equal(await page.locator('.legacy-source-row').count(),7);
  await page.locator('[data-lesson="MATH-001"][data-goto="lesson"]').click();
  assert.match(await page.locator('.lesson-header').innerText(),/Scale, Prefixes/);
- assert.match(await page.locator('.bread').innerText(),/MATHEMATICS/);
+ assert.match(await page.locator('.bread').innerText(),/Mathematics Companion.*LEGACY GROUP 2/);
  await page.locator('.lesson-tabs [data-lesson-tab="learn"]').click();
  assert.match(await page.locator('.learning-concept').innerText(),/milli/i);
  assert.equal(await page.locator('.concept-step').count(),4);
