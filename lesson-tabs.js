@@ -40,10 +40,10 @@ export function renderLearnSteps(lesson,step=0){
 export function lessonActivities(lesson) {
   if (lesson.experiment==="generated") {
     const checks=(lesson.activities||[]).map((a,i)=>({
-      kind:"generated-check",title:a.title||"Prediction "+(i+1),description:"Make a prediction, explain your reasoning, then compare it with the approved reference.",
+      kind:a.kind==="simulation"?"generated-simulation":a.kind==="choice"?"generated-choice":"generated-check",simulator:a.simulator,choices:a.choices||[],correct:a.correct,title:a.title||"Prediction "+(i+1),description:"Make a prediction, explain your reasoning, then compare it with the approved reference.",
       prompt:a.prompt,answer:a.answer,explanation:a.explanation,source_ids:a.source_ids||[]
     }));
-    if(lesson.simulator)checks.push({kind:"generated-simulation",title:"Adjust the virtual experiment",description:"Change an ideal circuit value and predict how the result responds.",simulator:lesson.simulator});
+    if(lesson.simulator&&!checks.some(a=>a.kind==="generated-simulation"&&a.simulator===lesson.simulator))checks.push({kind:"generated-simulation",title:"Adjust the virtual experiment",description:"Change an ideal circuit value and predict how the result responds.",simulator:lesson.simulator});
     return checks;
   }
   if (lesson.experiment!=="embedded") return [{kind:"legacy",title:"Circuit workbench",description:"Adjust the circuit, predict the result, then compare your answer with the calculated values."}];
@@ -103,7 +103,8 @@ export function renderActivitySelector(lesson,selected=0) {
   '<div class="activity-steps" role="group" aria-label="Choose an activity">'+activities.map((a,i)=>
     '<button type="button" class="activity-step'+(i===selectedIndex?' selected':'')+'" data-activity-index="'+i+'" aria-current="'+(i===selectedIndex?'step':'false')+'" title="'+escapeHtml(a.title)+'">'+(i+1)+'</button>').join('')+'</div>'+
   '<h3>'+escapeHtml(current.title)+'</h3><p class="muted">'+escapeHtml(current.description)+'</p>'+
-  (current.kind==="generated-simulation"?'<div data-generated-simulator="'+escapeHtml(current.simulator)+'"><p class="muted sm">Loading virtual experiment…</p></div>':
+  (current.kind==="generated-simulation"?'<p>'+escapeHtml(current.prompt||'Predict how changing an input changes the result.')+'</p><div data-generated-simulator="'+escapeHtml(current.simulator)+'"><p class="muted sm">Loading virtual experiment…</p></div>':
+  current.kind==="generated-choice"?'<section class="generated-activity-check" data-generated-correct="'+current.correct+'"><p><strong>Choose your prediction:</strong> '+escapeHtml(current.prompt)+'</p><div class="options">'+current.choices.map((choice,i)=>'<label class="option"><input type="radio" name="generated-prediction" value="'+i+'">'+escapeHtml(choice)+'</label>').join('')+'</div><button type="button" class="primary small-button" data-generated-reveal>Check prediction</button><div class="feedback" data-generated-feedback hidden><strong data-generated-verdict></strong><p><b>Expected:</b> '+escapeHtml(current.answer)+'</p><p>'+escapeHtml(current.explanation)+'</p><p class="muted sm">Practice feedback; scored checks are in Quiz.</p></div></section>':
   current.kind==="generated-check"?'<section class="generated-activity-check"><p><strong>Predict before checking:</strong> '+escapeHtml(current.prompt)+'</p>'+
     '<label class="question-meta">YOUR PREDICTION<textarea class="short-answer" aria-label="Your prediction" placeholder="Write what you expect and why, then check the reference."></textarea></label>'+
     '<button type="button" class="primary small-button" data-generated-reveal>Compare with the approved explanation</button>'+
@@ -112,4 +113,19 @@ export function renderActivitySelector(lesson,selected=0) {
   current.kind==="legacy"?'<section id="experiment" class="experiment"><h3>Interactive circuit lab</h3><p class="muted sm" id="experiment-caption">Make a prediction, adjust a value, and test what happens.</p><div id="experiment-body"></div></section>':
     '<div class="lab-widget" data-lab-kind="'+escapeHtml(current.kind)+'"><p class="muted sm">Loading interactive experiment…</p></div>')+
   '<div class="activity-nav"><button class="outline small-button" type="button" data-activity-index="'+Math.max(0,selectedIndex-1)+'" '+(selectedIndex===0?'disabled':'')+'>← Previous</button><span class="muted sm">'+(selectedIndex+1)+' of '+activities.length+'</span><button class="primary small-button" type="button" '+(selectedIndex===activities.length-1?'data-lesson-tab="quiz"':'data-activity-index="'+(selectedIndex+1)+'"')+'>'+(selectedIndex===activities.length-1?'Ready for the quiz →':'Next challenge →')+'</button></div></div>';
+}
+
+export function attachGeneratedPredictions(scope=document,notify=()=>{}){
+ scope.querySelectorAll('[data-generated-reveal]').forEach(button=>button.addEventListener('click',()=>{
+  const widget=button.closest('.generated-activity-check'),feedback=widget?.querySelector('[data-generated-feedback]');
+  if(!feedback)return;
+  if(widget.hasAttribute('data-generated-correct')){
+   const selected=widget.querySelector('input[type="radio"]:checked');
+   if(!selected){notify('Choose a prediction first.');return;}
+   const correct=Number(selected.value)===Number(widget.dataset.generatedCorrect);
+   widget.querySelector('[data-generated-verdict]').textContent=correct?'Your prediction matches.':'Compare your prediction with the explanation.';
+   feedback.classList.toggle('good',correct);
+  }else if(!widget.querySelector('textarea')?.value.trim()){notify('Write your prediction before revealing the reference.');return;}
+  feedback.hidden=false;button.textContent='Reference revealed';button.disabled=true;
+ }));
 }

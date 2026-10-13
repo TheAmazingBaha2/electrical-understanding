@@ -17,6 +17,7 @@ import { attachLabWidgets } from './lab-widgets.js';
 import { attachDmmWidgets } from './dmm-widgets.js';
 import { attachCetaWidgets } from './ceta-widgets.js';
 import { tabbedLesson } from './lesson-view.js';
+import { attachGeneratedPredictions } from './lesson-tabs.js';
 
 const $ = (s) => document.querySelector(s);
 const esc = (value='') => String(value).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -190,14 +191,7 @@ function render(){setNav();refreshAIChatContext();const names={'generated-lesson
  }));
  if(['lesson','generated-lesson'].includes(view)){attachQuiz();if(lessonTab==='interact'){
   renderExperiment();attachLabWidgets();attachDmmWidgets();attachCetaWidgets();attachMathWidgets();attachGeneratedSimulations(main);
-  main.querySelectorAll('[data-generated-reveal]').forEach(button=>button.addEventListener('click',()=>{
-    const feedback=button.closest('.generated-activity-check')?.querySelector('[data-generated-feedback]');
-    const input=button.closest('.generated-activity-check')?.querySelector('textarea');
-    if(!feedback)return;
-    if(!input?.value.trim()){notify('Write your prediction before revealing the reference.');return;}
-    feedback.hidden=false;button.textContent='Reference revealed';
-    button.disabled=true;
-  }));
+  attachGeneratedPredictions(main,notify);
 }}
  if(view==='account')attachAuth();
  if(view==='ai-lab'&&user)attachAIModelLab(supabase,notify);

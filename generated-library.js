@@ -14,10 +14,11 @@ export function cleanGeneratedPrompt(value){
 function attribution(job,ids=[]){
  const book=job.source_book||job.lesson?.source?.book||"Publication not recorded";
  const pages=job.source_pages||job.lesson?.source?.pages||"Page reference not recorded";
- const facts=safeList(job.analysis?.facts);
+ const facts=[...safeList(job.analysis?.facts),...safeList(job.analysis?.continuity?.sources).flatMap(s=>safeList(s.facts))];
  const evidence=safeList(ids).map(id=>{
   const loc=facts.find(f=>f.id===id)?.location;
-  return String(id)+(loc?" ("+String(loc)+")":"");
+  const f=facts.find(f=>f.id===id);
+  return String(id)+(f?.source_job_id?" — "+f.book+" · "+f.pages:"")+(loc?" ("+String(loc)+")":"");
  }).join("; ");
  return esc(book+" · "+pages+(evidence?" · Evidence "+evidence:""));
 }
@@ -58,7 +59,9 @@ export function makeWorkbenchLesson(job, unit, content, kind, order) {
      type:"reflection",prompt:cleanGeneratedPrompt(q.prompt),explain:String(q.explanation||""),
      rubric:"Expected answer: "+String(q.answer||"")+"\nReasoning: "+String(q.explanation||""),
      safety:false,source_ids:safeList(q.source_ids)};
-   if(parsed&&Number.isFinite(Number(parsed[1]))){
+   if(q.type==="choice"&&Array.isArray(q.choices)&&Number.isInteger(q.correct)&&q.correct>=0&&q.correct<q.choices.length){
+     result.type="choice";result.choices=q.choices.map(String);result.correct=q.correct;
+   }else if(q.type!=="reflection"&&parsed&&Number.isFinite(Number(parsed[1]))){
      result.type="number";result.answer=Number(parsed[1]);result.unit=parsed[2]||"";
      result.tolerance=Math.max(1e-10,Math.abs(result.answer)*0.01);
    }
@@ -72,7 +75,7 @@ export function makeWorkbenchLesson(job, unit, content, kind, order) {
    heading=>"What assumptions, quantities or definitions matter under “"+heading+"”?",
    heading=>"How would you check that you understood “"+heading+"” correctly?"
  ];
- for(let i=prompts.length;i<10;i++){
+ for(let i=prompts.length;!original.some(q=>q.type)&&i<10;i++){
    const part=sections.length?sections[(i-original.length)%sections.length]:null;
    const sample=original.length?original[(i-original.length)%original.length]:null;
    const prompt=part?styles[(i-original.length)%styles.length](String(part.heading)):
@@ -86,7 +89,7 @@ export function makeWorkbenchLesson(job, unit, content, kind, order) {
  const activities=activitySource.length?activitySource.map((a,i)=>({
    title:String(a.title||"Guided activity "+(i+1)),prompt:cleanGeneratedPrompt(a.prompt||"Make a prediction."),
    answer:String(a.expected||a.answer||""),explanation:String(a.explanation||""),
-   source_ids:safeList(a.source_ids)})):
+   source_ids:safeList(a.source_ids),kind:a.kind,choices:safeList(a.choices),correct:a.correct,simulator:a.simulator})):
    original.slice(0,Math.max(2,Math.min(4,original.length))).map((q,i)=>({
      title:"Prediction "+(i+1),prompt:cleanGeneratedPrompt(q.prompt),answer:String(q.answer),
      explanation:String(q.explanation||""),source_ids:safeList(q.source_ids)}));

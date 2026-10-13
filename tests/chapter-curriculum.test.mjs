@@ -16,7 +16,7 @@ function verifyOutlineFunction(){
  assert.ok(from>=0&&until>from,'source outline validator present');
  const js=backend.slice(from,until).replace(/:any|:string|:number/g,'')
   .replace(/new Map<string,string>\(\)/g,'new Map()').replace(/new Set<string>\(\)/g,'new Set()');
- return new Function('plain',js+';return verifyOutline;')((v,max)=>typeof v==='string'&&v.trim().length>0&&v.trim().length<=max);
+ return new Function('plain','evidenceFacts',js+';return verifyOutline;')((v,max)=>typeof v==='string'&&v.trim().length>0&&v.trim().length<=max,a=>[...(a?.facts||[]),...(a?.continuity?.sources||[]).flatMap(s=>s.facts||[])]);
 }
 const verify=verifyOutlineFunction();
 const unit=(i,kind='concept')=>({key:'U'+String(i+1).padStart(2,'0'),title:'Grounded topic '+i,

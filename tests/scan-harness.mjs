@@ -9,6 +9,9 @@ export function setup(options={}){
   let patch,insert,isDelete=false,limit=null,single=false;const filters=[];
   const execute=()=>{
    let rows=table==='ai_spend_ledger'?[]:table==='ai_price_versions'?[{model:'gpt-6-astra',input_rate:10,cached_rate:1,write_rate:12.5,output_rate:50,long_threshold:272000,long_input:2,long_output:1.5},{model:'gpt-6.1-sol',input_rate:2,cached_rate:.1,write_rate:2.5,output_rate:10,long_threshold:272000,long_input:2,long_output:1.5}]:table==='ai_test_allowed_users'?[{user_id:'owner'}]:table==='scan_model_attempts'?attempts:table==='scan_quota_completion'?[]:deleted?[]:[job,...(options.otherJobs||[])];
+   if(insert&&table==='scan_lesson_jobs'){
+    Object.assign(job,insert,{id:job.id,revision:0,created_at:new Date().toISOString()});return {data:structuredClone(job)};
+   }
    if(insert){
     if(attempts.some(a=>a.job_id===insert.job_id&&['starting','running','received'].includes(a.status)))return {error:{code:'23505'}};
     const value={...insert,id:'attempt-'+(++seq),created_at:new Date(Date.now()+seq).toISOString(),updated_at:new Date().toISOString()};attempts.push(value);return {data:structuredClone(value)};

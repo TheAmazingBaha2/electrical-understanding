@@ -74,11 +74,15 @@ export function renderScanInbox(user){
       <button type="button" class="outline small-button" id="scan-cancel-new-book">Cancel</button></div>
     </div>
    </div>
+   <label>Chapter / shared theme (optional)<input id="scan-chapter-group" type="text" maxlength="180" placeholder="e.g. Chapter 4 — DC circuits"></label>
+   <p class="muted sm">Use the same chapter/theme for subsequent uploads. Earlier interpreted parts supply context and keep their original citations; new parts add lessons without replacing them.</p>
+   <label>How this part is grouped<select id="scan-part-kind"><option value="subsection">Complete subsection</option><option value="theme">Complete common theme</option><option value="partial">Partial / continuing material</option></select></label>
+   <label>Part number (optional; assigned automatically)<input id="scan-part-number" type="number" min="1" max="999" step="1" placeholder="Next part automatically"></label>
    <label>Printed pages shown in this scan<input id="scan-pages" type="text" maxlength="80" required placeholder="e.g. pp. 104–106 or Figure 3.2, p. 45"></label>
    <label>Destination track<select id="scan-track"><option value="other">Other book / source</option><option value="geier">How to Diagnose and Fix Everything Electronic</option><option value="teach">Teach Yourself Electricity and Electronics</option><option value="principles">Electronics: Principles and Applications</option><option value="cabling">Cabling / Networking</option><option value="guide">Associate CET Study Guide</option><option value="basic">Hands-On Laboratory</option></select></label>
    <p class="muted sm">Use the printed page numbers, not the PDF reader's position. These source details will accompany every generated lesson and review exercise.</p>
    <label>Private scanned pages<input id="scan-file" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp" required></label>
-   <label class="scan-consent"><input id="scan-share-consent" type="checkbox" required> I authorize sending this particular scan to OpenAI when I explicitly start Sol planning, Sol analysis or review. My files stay private in Supabase; they are not automatically published.</label>
+   <label class="scan-consent"><input id="scan-share-consent" type="checkbox" required> I authorize sending this scan and earlier interpreted context from this book to OpenAI when I explicitly start Sol planning, Sol analysis or review. My files stay private in Supabase; they are not automatically published.</label>
    <button class="primary" type="submit" id="scan-upload">Upload privately (no AI charge)</button>
   </form></div>
  <div class="scan-library-panel panel"><div class="scan-heading"><h3>2 · Your scan library</h3><button type="button" id="scan-refresh" class="outline small-button">Refresh</button></div>
@@ -103,10 +107,10 @@ function explainAnalysis(data){
 function scanCite(job,ids=[]){
  const book=job?.source_book||"Source publication not recorded";
  const pages=job?.source_pages||"Printed pages not recorded";
- const facts=job?.analysis?.facts||[];
+ const facts=[...(job?.analysis?.facts||[]),...(job?.analysis?.continuity?.sources||[]).flatMap(source=>source.facts||[])];
  const refs=(ids||[]).map(id=>{
   const fact=facts.find(row=>row.id===id);
-  return id+(fact?.location?" — "+fact.location:"");
+  return id+(fact?.source_job_id?" — "+fact.book+" · "+fact.pages:"")+(fact?.location?" — "+fact.location:"");
  }).join("; ");
  return book+" · "+pages+(refs?" · Evidence: "+refs:"");
 }
@@ -114,7 +118,7 @@ function lessonSections(sections,job,namespace){
  return (sections||[]).map((part,i)=>'<section class="scan-lesson-section"><h4>'+(i+1)+'. '+esc(part.heading)+'</h4><p>'+esc(part.body)+'</p><small>Source: '+esc(scanCite(job,part.source_ids))+'</small></section>').join('');
 }
 function lessonExercises(questions,job,namespace){
- return (questions||[]).map((q,i)=>'<details class="scan-quiz-item" data-scan-expand="'+esc(namespace)+'-quiz-'+i+'"><summary>Exercise '+(i+1)+': '+esc(cleanGeneratedPrompt(q.prompt))+'</summary><div>'+bubble('Expected answer',q.answer)+bubble('Explanation',q.explanation)+'<small>Source: '+esc(scanCite(job,q.source_ids))+'</small></div></details>').join('');
+ return (questions||[]).map((q,i)=>'<details class="scan-quiz-item" data-scan-expand="'+esc(namespace)+'-quiz-'+i+'"><summary>Exercise '+(i+1)+': '+esc(cleanGeneratedPrompt(q.prompt))+'</summary><div>'+ (q.type==='choice'?'<ol>'+q.choices.map(choice=>'<li>'+esc(choice)+'</li>').join('')+'</ol>':'')+bubble('Expected answer',q.answer)+bubble('Explanation',q.explanation)+'<small>Source: '+esc(scanCite(job,q.source_ids))+'</small></div></details>').join('');
 }
 function lessonPredictions(activities,job){
  return (activities||[]).map((a,i)=>'<details class="scan-quiz-item"><summary>Interactive activity '+(i+1)+': '+esc(a.title)+'</summary>'+
@@ -135,13 +139,13 @@ function explainLesson(data,job){
  const unique=(data.sections||[]).length>0;
  const original='<section class="scan-lesson"><p class="v2-kicker">Source-specific material · '+esc(job.source_track||"other")+'</p>'+
   (unique?'<h3>'+esc(data.title)+'</h3><p>'+esc(data.description)+'</p><h4>Learning goals</h4><ul>'+(data.objectives||[]).map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>'+
-   lessonSections(data.sections,job,'unique')+'<h4>Planned interactions</h4>'+lessonPredictions(data.activities,job)+((data.questions||[]).length===10?'<h4>Ten quiz checks</h4>':'<h4>Source-specific practice</h4>')+lessonExercises(data.questions,job,'unique'):
+   lessonSections(data.sections,job,'unique')+'<h4>Planned interactions</h4>'+lessonPredictions(data.activities,job)+'<h4>'+ (data.questions||[]).length+' quiz checks</h4>'+lessonExercises(data.questions,job,'unique'):
    '<h3>No separate source-specific lesson needed</h3><p>This material overlaps existing concepts. Look below for distinct reinforcement perspectives and exercises.</p>')+
   '<p class="muted sm">Reference: '+esc(scanCite(job))+'. Printed pages are supplied by you; compare them against the scan before approval.</p></section>';
  const reviews=(data.review_lessons||[]).map((part,i)=>'<section class="scan-lesson"><p class="v2-kicker">Review & Reinforcement · Lesson '+(i+1)+'</p>'+
   '<h3>'+esc(part.title)+'</h3><p><strong>New perspective:</strong> '+esc(part.new_perspective)+'</p>'+
   (part.related_lessons?.length?'<p class="muted sm">Related coverage: '+esc(part.related_lessons.join('; '))+'</p>':'')+
-  lessonSections(part.sections,job,'review-'+i)+'<h4>Planned interactions</h4>'+lessonPredictions(part.activities,job)+((part.questions||[]).length===10?'<h4>Ten reinforcement checks</h4>':'<h4>Different-angle practice</h4>')+lessonExercises(part.questions,job,'review-'+i)+'</section>').join('');
+  lessonSections(part.sections,job,'review-'+i)+'<h4>Planned interactions</h4>'+lessonPredictions(part.activities,job)+'<h4>'+ (part.questions||[]).length+' reinforcement checks</h4>'+lessonExercises(part.questions,job,'review-'+i)+'</section>').join('');
  return original+reviews;
 }
 function explainOutline(job){
@@ -367,7 +371,7 @@ function detail(job){
  '<div id="scan-free-preflight-result" class="scan-preflight-result" role="status" aria-live="polite" hidden></div>'+
  (job.analysis?.planning_brief?'<details data-scan-expand="sol-brief"><summary>Sol’s saved teaching brief</summary>'+bubble('Your instructions',job.analysis.planning_brief.learner_context||'Default teaching guidance')+bubble('Sol extraction',job.analysis.planning_brief.astra_guidance)+bubble('Lesson drafting',job.analysis.planning_brief.lesson_guidance)+bubble('Technical review',job.analysis.planning_brief.review_guidance)+'</details>':'')+
  (job.state==='uploaded'&&!job.analysis?.planning_brief?'<label>Additional instructions for Sol (optional)<textarea id="scan-learner-context" maxlength="2000" rows="4" placeholder="Leave blank for Sol to plan from the scanned pages."></textarea></label>':'')+
- explainAnalysis(job.analysis)+explainOutline(job)+explainLesson(job.lesson,job)+explainReview(job.review)+provenance+
+ (job.analysis?.intake_context?'<p class="muted sm">Source unit: '+esc(job.analysis.intake_context.group||job.source_book)+' · part '+esc(job.analysis.intake_context.part)+' · '+esc(job.analysis.intake_context.kind)+' · '+(job.analysis.continuity?.sources||[]).length+' earlier interpreted parts in context.</p>':'')+explainAnalysis(job.analysis)+explainOutline(job)+explainLesson(job.lesson,job)+explainReview(job.review)+provenance+
  '<p class="muted sm">Model outputs are source drafts, not definitive references. Verify formulas and safety guidance against the original pages. After approval, use the five-stage lesson workbench from the appropriate learning track; the Quiz tab saves scored self-checks separately from your source approval.</p>'+attemptLog(job)+'</section>';
 }
 export function attachScanInbox(supabase,user,notify=()=>{}){
@@ -777,7 +781,7 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
     }
    }
    phase='adding the scan to your library';status('Upload received. Adding to your private library…');
-   const registered=await invoke({action:'register',path:pending.path,title:name,book,pages,track});
+   const registered=await invoke({action:'register',path:pending.path,title:name,book,pages,track,chapterGroup:root.querySelector('#scan-chapter-group').value.trim(),partKind:root.querySelector('#scan-part-kind').value,partNumber:Number(root.querySelector('#scan-part-number').value)||0});
    selectedId=registered.jobId;root.querySelector('#scan-upload-form').reset();
    chooseBook('');preparedFile=null;preparing=null;pendingUpload=null;
    await refresh(false);status('Source uploaded. No AI charges yet. Select Run scan & build lessons when ready.');
