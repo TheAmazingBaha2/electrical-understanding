@@ -64,7 +64,7 @@ export function mountAIChat(getLesson=()=>null){
  lessonGetter=getLesson;
  if(root)return;
  root=document.createElement('div');root.className='ai-chat-root';
- root.innerHTML=`<button type="button" id="ai-chat-launch" class="ai-chat-launch" aria-controls="ai-chat-panel" aria-expanded="false" hidden><img src="./icon.svg?v=4" width="24" height="24" alt=""> Study tutor</button>
+ root.innerHTML=`<button type="button" id="ai-chat-launch" class="ai-chat-launch" aria-controls="ai-chat-panel" aria-expanded="false" hidden>Study tutor</button>
  <section id="ai-chat-panel" class="ai-chat-panel" role="dialog" aria-label="Private AI study tutor" hidden>
   <div class="ai-chat-head">
    <div><strong>Private study tutor</strong><small id="ai-chat-context">General electronics questions</small></div>
