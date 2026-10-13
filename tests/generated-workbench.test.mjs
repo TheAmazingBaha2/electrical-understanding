@@ -1,0 +1,20 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {makeWorkbenchLesson,approvedWorkbenchLessons} from '../generated-library.js';
+import {lessonActivities,renderLearnSteps,renderActivitySelector} from '../lesson-tabs.js';
+const source_ids=['S1'];
+const q=Array.from({length:6},(_,i)=>({prompt:'Explain example '+i,answer:'Use the equation',explanation:'Check units',source_ids}));
+const s=[{heading:'First concept',body:'Work through the first idea carefully.',source_ids},{heading:'Second concept',body:'Check the meaning and assumptions.',source_ids}];
+const unit={id:'GEN-EXAMPLE-U06',kind:'mixed',destination:'source',title:'Battery EMF, Internal Resistance and Terminal Voltage',description:'Practice safely.',sections:s,questions:q};
+const job={state:'approved',source_track:'guide',source_book:'Study Guide',source_pages:'pp. 10-20',lesson:{lessons:[unit]}};
+test('approved chapter uses ten stable checks, stepped learning and real activities',()=>{
+ const lesson=makeWorkbenchLesson(job,unit,unit,'unique',0);
+ assert.equal(lesson.questions.length,10);
+ assert.equal(new Set(lesson.questions.map(x=>x.id)).size,10);
+ assert.match(renderLearnSteps(lesson,0),/CONCEPT 1 OF 2/);
+ assert.match(renderLearnSteps(lesson,1),/CONCEPT 2 OF 2/);
+ assert.equal(lesson.simulator,'internal');
+ assert.match(renderActivitySelector(lesson,0),/data-generated-reveal/);
+ assert.match(renderActivitySelector(lesson,lessonActivities(lesson).length-1),/data-generated-simulator/);
+ assert.equal(approvedWorkbenchLessons([job]).length,1);
+});
