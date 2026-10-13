@@ -98,7 +98,7 @@ export function makeWorkbenchLesson(job, unit, content, kind, order) {
    module:job.source_book||job.title||"Source-backed chapter",sourceAttribution:citation,
    objectives:safeList(content.objectives),html,experiment:"generated",activities,questions:prompts,
    minutes:Math.max(10,sections.length*6+10),simulator:simulationForTitle(unit.plan?.title||content.title),kind:unit.plan?.kind||unit.kind||"concept",
-   ordering:unit.plan?.ordering||unit.ordering||"independent",sourceUnitId:rawId,scanId:String(job.id),archived:isArchivedScanChapter(job),sourceTrack:job.source_track||"other",libraryView:isArchivedScanChapter(job)?"legacy":kind==="review"?"reviews":(unit.plan?.kind||unit.kind)==="math"?"math":job.source_track==="guide"?"ceta":job.source_track==="basic"?"labs":"textbooks"};
+   ordering:unit.plan?.ordering||unit.ordering||"independent",sourceUnitId:rawId,scanId:String(job.id),archived:isArchivedScanChapter(job),sourceTrack:job.source_track||"other",libraryView:isArchivedScanChapter(job)?"legacy":kind==="review"?"reviews":(["math","ceta","labs","textbooks"].includes(unit.dashboard_track)?unit.dashboard_track:(unit.plan?.kind||unit.kind)==="math"?"math":job.source_track==="guide"?"ceta":job.source_track==="basic"?"labs":"textbooks")};
 }
 
 
