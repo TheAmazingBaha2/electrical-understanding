@@ -1,3 +1,4 @@
+import {go} from './navigation-helper.mjs';
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {mkdir} from 'node:fs/promises';
@@ -10,9 +11,9 @@ try{for(const width of [320,390,1440]){
  await page.goto('http://127.0.0.1:8080/');
  const book=page.locator('[data-dashboard-source="geier"]');await book.waitFor();
  assert.equal(await page.locator('.workspace-top-tabs').count(),0);
- assert.equal(await page.locator('.dashboard-area').count(),6);
- assert.match(await page.locator('.dashboard-area[data-goto="math"]').innerText(),/TBD/);
- assert.match(await page.locator('.dashboard-area[data-goto="reviews"]').innerText(),/TBD/);
+ assert.equal(await page.locator('.dashboard-area').count(),0);
+ assert.match(await page.locator('[data-nav-status="math"]').textContent(),/TBD/);
+ assert.match(await page.locator('[data-nav-status="reviews"]').textContent(),/TBD/);
  assert.equal(await book.getAttribute('open'),null);
  assert.equal(await book.locator('.chapter-pie').first().isVisible(),false);
  if(width===390||width===1440)await page.screenshot({path:'test-artifacts/compact-dashboard-'+width+'.png',fullPage:true});
@@ -28,7 +29,7 @@ try{for(const width of [320,390,1440]){
  assert.ok((await lesson.locator('button').boundingBox()).height>=44 || width>700);
  if(width===390)await page.screenshot({path:'test-artifacts/compact-dashboard-expanded-phone.png',fullPage:true});
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));
- await page.locator('.dashboard-area[data-goto="math"]').click();assert.match(await page.locator('#main').innerText(),/Math Practice/);
- await page.locator('.dashboard-home').click();await book.waitFor();
+ await go(page,'math');assert.match(await page.locator('#main').innerText(),/Math Practice/);
+ await go(page,'dashboard');await book.waitFor();
  assert.deepEqual(errors,[]);await page.close();
-}console.log('PASS: compact dashboard, nested keyboard/touch disclosures, TBD sections, dashboard links, 320/390/1440px without overflow.');}finally{await browser.close();}
+}console.log('PASS: compact dashboard, nested keyboard/touch disclosures, TBD sidebar labels, sidebar navigation, 320/390/1440px without overflow.');}finally{await browser.close();}

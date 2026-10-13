@@ -1,3 +1,4 @@
+import {go} from './navigation-helper.mjs';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 import {chromium} from 'playwright';
@@ -15,7 +16,7 @@ try {
  const page=await context.newPage();const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.goto('http://127.0.0.1:8080/');
  await page.evaluate(()=>localStorage.setItem('eu_demo_v1',JSON.stringify({L01:{answers:{u1:{value:'legacy',correct:true,extra:'preserve'}},complete:false},archived:{answers:{old:{value:42}}}})));
- await page.reload();await page.locator('#account-pill').click();
+ await page.reload();await go(page,'account');
  const input={version:2,progress:{L01:{answers:{u1:{value:'imported',correct:false,extra:'preserve'}},complete:false},retired:{answers:{q:{value:'archived'}}}}};
  await page.locator('#import-file').setInputFiles({name:'progress.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(input))});
  await page.locator('[data-resolve="L01"][data-incoming="true"]').waitFor();
@@ -33,7 +34,7 @@ try {
  assert.equal(await page.evaluate(k=>JSON.parse(localStorage.getItem(k)).progress.L01.answers.u2.value,key),'second tab');
  // Unknown future cache remains raw and exportable, with a visible warning.
  await page.evaluate(k=>{const d=JSON.parse(localStorage.getItem(k));d.schemaVersion=4;localStorage.setItem(k,JSON.stringify(d))},key);
- await page.reload();await page.locator('#account-pill').click();assert.match(await page.locator('main').innerText(),/Unsupported progress version/);
+ await page.reload();await go(page,'account');assert.match(await page.locator('main').innerText(),/Unsupported progress version/);
  const future=await exportProgress(page);assert.equal(JSON.parse(future.raw).schemaVersion,4);
  assert.deepEqual(errors,[]);console.log('PASS: browser legacy migration, import conflicts, resolution, complete export, archived data, cross-tab edit, future-schema recovery.');
 }finally{await browser.close()}

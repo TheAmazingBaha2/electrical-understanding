@@ -31,15 +31,8 @@ export function renderSavedReinforcement(c={}){
 }
 const legend='<span class="pie-legend"><i class="legend-correct"></i>Correct <i class="legend-retry"></i>Needs review <i class="legend-unanswered"></i>Unanswered</span>';
 export function renderChapterDashboard(c={}){
- const inventory=studyInventory(c);
  const sources=sourceIndex(c).map(s=>({...s,chapters:s.chapters.filter(ch=>ch.lessons.some(l=>l.curriculum.dashboard!==false)).map(ch=>({...ch,lessons:ch.lessons.filter(l=>l.curriculum.dashboard!==false)}))})).filter(s=>s.chapters.length);
- const next=sources.flatMap(s=>s.chapters.flatMap(ch=>ch.lessons)).find(l=>!c.hasPassed?.(l));
- const areas=studySections.map(section=>{
-  const lessons=inventory.filter(l=>l.curriculum.section===section.section),p=learningProgress(lessons,c);
-  const status=p.total?lessons.length+' lessons':section.id==='reviews'&&c.reviews?c.reviews+' checks due':'TBD';
-  return '<button class="dashboard-area" data-goto="'+section.id+'"><strong>'+esc(section.title)+'</strong><span>'+status+'</span><span aria-hidden="true">→</span></button>';
- }).join('')+'<button class="dashboard-area" data-goto="account"><strong>Account &amp; sync</strong><span>Cloud sync</span><span aria-hidden="true">→</span></button>';
- return '<div class="chapter-dashboard"><header class="dashboard-welcome"><h2>Your learning dashboard</h2>'+(next?'<button class="outline small-button dashboard-continue" '+openLesson(next)+'>Continue '+esc(next.title)+' →</button>':'')+'</header><nav class="dashboard-areas" aria-label="Study areas">'+areas+'</nav><div class="dashboard-books">'+sources.map(s=>
+ return '<div class="chapter-dashboard"><header class="dashboard-welcome"><h2>Your learning dashboard</h2></header><div class="dashboard-books">'+sources.map(s=>
  '<details class="dashboard-book source-book" data-dashboard-source="'+esc(s.id)+'" data-disclosure="book:'+esc(s.id)+'"><summary class="source-book-heading"><span class="dashboard-book-copy"><span class="v2-kicker">'+esc(studySections.find(x=>x.section===s.section)?.title)+'</span><strong>'+esc(s.book)+'</strong><span>'+s.chapters.length+' chapter'+(s.chapters.length===1?'':'s')+' with lessons</span></span><span class="disclosure-chevron" aria-hidden="true">⌄</span></summary><div class="dashboard-book-body"><button class="outline small-button" data-goto="'+sectionView(s.section)+'">Browse contents →</button><div class="dashboard-chapters">'+s.chapters.map(ch=>{
  const p=learningProgress(ch.lessons,c);
  return '<details class="dashboard-chapter" data-disclosure="dashboard:'+esc(s.id+':'+ch.id)+'"><summary><span class="dashboard-chapter-copy"><small>'+esc(chapterLabel(ch))+'</small><strong>'+esc(ch.title)+'</strong><span>'+p.mastered+' / '+p.lessons+' lessons mastered · '+p.total+' checks</span></span><span class="disclosure-chevron" aria-hidden="true">⌄</span></summary><div class="dashboard-lesson-list"><div class="dashboard-chapter-progress">'+progressPie(p,chapterLabel(ch))+'<div>'+legend+(ch.coverage?'<p class="dashboard-coverage">'+esc(ch.coverage)+'</p>':'')+'</div></div>'+lessonRows(ch.lessons,c,true)+'</div></details>';

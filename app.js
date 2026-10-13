@@ -1,5 +1,5 @@
 import {renderSavedReinforcement} from './source-navigation.js';
-import {placementForLesson,sectionView,nextSourceLesson,lessonReferencePages} from './learning-structure.js';
+import {placementForLesson,sectionView,nextSourceLesson,lessonReferencePages,studySections,studyInventory,learningProgress} from './learning-structure.js';
 import { ProgressStore, cloudTransport } from './persistence.js';
 import { renderAIModelLab, attachAIModelLab } from './ai-model-lab.js';
 import { renderScanInbox, attachScanInbox, scanInboxAutoUpdatesPaused } from './scan-inbox.js';
@@ -73,7 +73,7 @@ function finishedCount(){return lessons.filter(hasPassed).length}
 function reviewQueue(){return [...allLessons,...generatedLessons.values()].flatMap((lesson,index)=>!canOpenLesson(lesson,index)?[]:lesson.questions.flatMap(q=>{
  const a=getState(lesson.id).answers?.[q.id];return a&&typeof a.correct==='boolean'&&a.reviewDue<=now()?[{lesson,q,a}]:[];
 })).sort((a,b)=>a.a.reviewDue-b.a.reviewDue)}
-function syncLabel(text,isOnline=false){$('#sync-status').textContent=text;$('#status-dot').classList.toggle('online',isOnline);$('#account-pill').textContent=user?'Cloud account':configured?'Sign in':'Local practice'}
+function syncLabel(text,isOnline=false){$('#sync-status').textContent=text;$('#status-dot').classList.toggle('online',isOnline)}
 async function connect(){
  progress=localLoad();
  if(!configured){syncLabel(stagingPreview?'Staging · sign in to sync':'Staging sync unavailable on this hostname');render();return}
@@ -150,16 +150,51 @@ function switchTo(next,id=null,qid=null){
  const startingLesson=['lesson','generated-lesson'].includes(next)&&(view!==next||activeLesson!==id);
  if(startingLesson){lessonTab=qid?'quiz':'overview';activityIndex=0;learnIndex=0;quizIndex=Math.max(0,findLesson(id)?.questions.findIndex(q=>q.id===qid)||0);}
  view=next;activeLesson=id;focusQuestion=qid;
- $('.sidebar').classList.remove('open');render();window.scrollTo({top:0,behavior:'instant'});
+ setSidebarOpen(false);render();window.scrollTo({top:0,behavior:'instant'});
  if(qid)setTimeout(()=>document.getElementById('question-'+qid)?.scrollIntoView({behavior:'smooth',block:'center'}),70);
  if(next==='legacy'&&id==='unreferenced')setTimeout(()=>document.getElementById('legacy-unreferenced')?.scrollIntoView({behavior:'smooth',block:'start'}),90);
  if(next==='legacy'&&id==='chapter')setTimeout(()=>document.getElementById('legacy-scanned-chapter')?.scrollIntoView({behavior:'smooth',block:'start'}),90);
  if(view!=='scan-inbox'&&user&&supabase&&['dashboard','legacy','reviews','ceta','textbooks','math','labs','subtrack'].includes(next))void loadApprovedInventory();
 }
 function allowAutomaticCloudSync(){return view!=='scan-inbox'||!scanInboxAutoUpdatesPaused()}
+function setSidebarOpen(open){
+ $('.sidebar').classList.toggle('open',open);
+ $('#menu-toggle').setAttribute('aria-expanded',String(open));
+}
+function bindSidebarResize(){
+ const sidebar=$('.sidebar'),handle=$('#sidebar-resize'),root=document.documentElement;
+ const media=window.matchMedia('(max-width:920px)'),key='eu_sidebar_width_v1';
+ const preferred={desktop:245,mobile:250};
+ try{const saved=JSON.parse(localStorage.getItem(key)||'{}');for(const mode of ['desktop','mobile'])if(Number.isFinite(saved[mode])&&saved[mode]>=200&&saved[mode]<=480)preferred[mode]=saved[mode]}catch{}
+ const mode=()=>media.matches?'mobile':'desktop';
+ const bounds=()=>({min:200,max:media.matches?Math.min(420,window.innerWidth-44):Math.min(480,window.innerWidth-480)});
+ function apply(width,remember=false){
+  const {min,max}=bounds(),value=Math.round(Math.max(min,Math.min(max,width)));
+  root.style.setProperty('--sidebar-width',value+'px');
+  handle.setAttribute('aria-valuemin',String(min));handle.setAttribute('aria-valuemax',String(max));handle.setAttribute('aria-valuenow',String(value));handle.setAttribute('aria-valuetext',value+' pixels');
+  if(remember){preferred[mode()]=value;try{localStorage.setItem(key,JSON.stringify(preferred))}catch{}}
+ }
+ let drag=null;
+ handle.addEventListener('pointerdown',event=>{
+  if(event.button!==0)return;
+  drag={id:event.pointerId,start:event.clientX,width:sidebar.getBoundingClientRect().width};
+  handle.setPointerCapture(event.pointerId);handle.focus();root.classList.add('sidebar-resizing');event.preventDefault();
+ });
+ handle.addEventListener('pointermove',event=>{if(drag?.id===event.pointerId)apply(drag.width+event.clientX-drag.start)});
+ function finish(event){if(drag?.id!==event.pointerId)return;apply(Number(handle.getAttribute('aria-valuenow')),true);drag=null;root.classList.remove('sidebar-resizing')}
+ handle.addEventListener('pointerup',finish);handle.addEventListener('pointercancel',finish);handle.addEventListener('lostpointercapture',finish);
+ handle.addEventListener('keydown',event=>{
+  const {min,max}=bounds(),width=Number(handle.getAttribute('aria-valuenow')),step=event.shiftKey?40:10;
+  const next={ArrowLeft:width-step,ArrowRight:width+step,Home:min,End:max}[event.key];
+  if(next!==undefined){event.preventDefault();apply(next,true)}
+ });
+ window.addEventListener('resize',()=>apply(preferred[mode()]));apply(preferred[mode()]);
+}
 function bindNavigation(){document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>switchTo(b.dataset.view)));
- $('#menu-toggle').addEventListener('click',()=>$('.sidebar').classList.toggle('open'));
- $('#account-pill').addEventListener('click',()=>switchTo('account'));
+ $('#menu-toggle').addEventListener('click',()=>setSidebarOpen(!$('.sidebar').classList.contains('open')));
+ $('#sidebar-close').addEventListener('click',()=>{setSidebarOpen(false);$('#menu-toggle').focus()});
+ bindSidebarResize();
+ document.addEventListener('keydown',event=>{if(event.key==='Escape'&&$('.sidebar').classList.contains('open')){setSidebarOpen(false);$('#menu-toggle').focus()}});
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&user&&supabase&&allowAutomaticCloudSync())void loadCloud()});
  window.addEventListener('online',()=>{if(user&&allowAutomaticCloudSync())void loadCloud()});
  window.addEventListener('storage',event=>{if(event.key===store.key){try{progress=store.read().progress;if(!['lesson','scan-inbox','reviews','textbooks','subtrack','ceta','labs','legacy','math'].includes(view)&&!document.activeElement?.matches('input,textarea,select'))render()}catch(error){storageError=error.message;notify(error.message)}}});
@@ -181,7 +216,10 @@ function v2Context(){
  sourceIsAvailable:l=>canOpenLesson(l,sourceLessons.indexOf(l))};
 }
 function setNav(){const current=view==='generated-lesson'?(generatedLessons.get(activeLesson)?.archived?'account':sectionView(placementForLesson(generatedLessons.get(activeLesson)||{}).section)):view==='lesson'?(isArchivedLesson(activeLesson)?'account':mathLessons.some(l=>l.id===activeLesson)?'math':lessons.some(l=>l.id===activeLesson)?'ceta':bookLessons.some(l=>l.id===activeLesson)?'textbooks':cetaLessons.some(l=>l.id===activeLesson)?'ceta':'labs'):(view==='legacy'||view==='curriculum')?'account':view==='subtrack'?(activeLesson==='core'||['guide','exam'].includes(activeLesson)?'ceta':['geier','teach','principles','cabling'].includes(activeLesson)?'textbooks':'labs'):view;
- document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',current===b.dataset.view));}
+ document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',current===b.dataset.view));
+ const context=v2Context(),inventory=studyInventory(context);
+ for(const section of studySections){const status=$('[data-nav-status="'+section.id+'"]');if(status){const graded=learningProgress(inventory.filter(l=>l.curriculum.section===section.section),context).total;status.textContent=graded||(section.id==='reviews'&&context.reviews)?'':'TBD'}}
+}
 function render(){setNav();refreshAIChatContext();const names={'generated-lesson':'Approved lesson workbench',dashboard:'Your learning dashboard',ceta:'Exam Practice',curriculum:'Legacy lessons',legacy:'Legacy lessons',textbooks:'Textbook companions',labs:'Labs',math:'Math Practice',subtrack:'Learning sub-track',lesson:'Lesson workbench',reviews:'Review',library:'Textbook companions','scan-inbox':'Scan Inbox',account:'Your study account','ai-lab':'Private AI model tests'};
  $('#page-title').textContent=names[view]||names.dashboard;
  const main=$('#main');

@@ -8,7 +8,7 @@ try{
  for(const width of [390,1440]){
   const page=await browser.newPage({viewport:{width,height:1000}}),errors=[];page.on('pageerror',e=>{errors.push(e.message);console.log('BROWSER_ERROR',e.stack);});
   await page.route('https://esm.sh/**',r=>r.abort());await page.goto('http://127.0.0.1:8080/');await page.locator('.dashboard-welcome').waitFor();
-  assert.equal(await page.locator('.dashboard-area').count(),6);assert.equal(await page.locator('.v2-frost-ring,.v2-evidence-pie').count(),0);assert.equal(await page.locator('[data-view="scan-inbox"],[data-view="legacy"]').count(),0);
+  assert.equal(await page.locator('.dashboard-area').count(),0);assert.equal(await page.locator('.v2-frost-ring,.v2-evidence-pie').count(),0);assert.equal(await page.locator('[data-view="scan-inbox"],[data-view="legacy"]').count(),0);
   await go(page,'ceta');assert.equal(await page.locator('.content-chapter').count(),22);assert.equal(await page.locator('.source-book').count(),1);
   await go(page,'account');await page.locator('.account-maintenance > summary').click();await page.locator('[data-goto="legacy"]').click();
   await page.locator('[data-goto="lesson"][data-lesson="CETA-G03-01"]').click();await page.locator('.lesson-tabs [data-lesson-tab="interact"]').click();assert.equal(await page.locator('.ceta-illustration').count(),1);await page.locator('[data-x="p"]').selectOption('kilo');assert.match(await page.locator('.ceta-illustration').textContent(),/1 kA = 1,000 A/);
