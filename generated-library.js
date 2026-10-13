@@ -82,7 +82,7 @@ export function makeWorkbenchLesson(job, unit, content, kind, order) {
    module:job.source_book||job.title||"Source-backed chapter",sourceAttribution:citation,
    objectives:safeList(content.objectives),html,experiment:"generated",activities,questions:prompts,
    minutes:Math.max(10,sections.length*6+10),simulator:simulationForTitle(unit.plan?.title||content.title),kind:unit.plan?.kind||unit.kind||"concept",
-   ordering:unit.plan?.ordering||unit.ordering||"independent",sourceUnitId:rawId};
+   ordering:unit.plan?.ordering||unit.ordering||"independent",sourceUnitId:rawId,sourceTrack:job.source_track||"other",libraryView:kind==="review"?"reviews":(unit.plan?.kind||unit.kind)==="math"?"math":job.source_track==="guide"?"ceta":job.source_track==="basic"?"labs":"textbooks"};
 }
 
 
@@ -97,14 +97,15 @@ function cards(jobs,filter,register=()=>{}){
    const kind=unit.plan?.kind||unit.kind||"concept";
    const destination=unit.plan?.destination||unit.destination||"source";
    const meta=unit.plan||unit;
-   if(filter==="review"){
+   if(filter==="review"||(filter==="math"&&kind==="math")){
     for(const [i,review] of safeList(unit.review_lessons).entries()){
      entries.push({job,unit,lesson:review,kind:"review",order:i,meta});
     }
-   }else if((filter==="math"&&kind==="math")||
+   }
+   if(filter!=="review"&&((filter==="math"&&kind==="math")||
     (filter==="textbooks"&&BOOK_TRACKS.has(track))||
     (filter==="ceta"&&track==="guide")||
-    (filter==="labs"&&track==="basic")||filter===track){
+    (filter==="labs"&&track==="basic")||filter===track)){
     if(destination==="source"&&safeList(unit.sections).length){
      entries.push({job,unit,lesson:unit,kind:"unique",order:0,meta});
     }
@@ -124,10 +125,25 @@ function cards(jobs,filter,register=()=>{}){
   return '<details class="generated-library-entry"><summary><span class="generated-library-title">'+esc(lesson.title)+'</span>'+
    '<small>'+attribution(job)+'</small><small>'+esc(sequence)+' · '+esc(meta?.kind||"concept")+'</small></summary>'+
    '<div class="generated-library-body"><button type="button" class="primary small-button" data-generated-lesson="'+esc(workbench.id)+'">Study in the five-tab workbench →</button>'+insight+related+
-   '<p class="muted sm">The page range is user-entered. Evidence positions come from the saved Astra extraction; compare against the original pages.</p>'+
+   '<p class="muted sm">The page range is user-entered. Evidence positions come from the saved model extraction; compare against the original pages.</p>'+
    lessonContent(lesson,job,kind+'-'+order)+'</div></details>';
  }).join("");
 }
+
+// Full private learning inventory (only approved units; never pending model drafts).
+export function approvedWorkbenchLessons(jobs){
+ const lessons=[];
+ for(const job of safeList(jobs)){
+  const approvedUnits=Array.isArray(job.lesson?.lessons)?job.lesson.lessons:
+   job.state==="approved"&&job.lesson?[job.lesson]:[];
+  for(const unit of approvedUnits){
+   if(safeList(unit.sections).length)lessons.push(makeWorkbenchLesson(job,unit,unit,"unique",0));
+   safeList(unit.review_lessons).forEach((review,i)=>lessons.push(makeWorkbenchLesson(job,unit,review,"review",i)));
+  }
+ }
+ return lessons;
+}
+
 export function generatedLibrarySlot(filter){
  const review=filter==="review";
  return '<section class="generated-library-panel panel" aria-label="'+(review?'Review and Reinforcement':'Approved source-specific lessons')+'">'+
