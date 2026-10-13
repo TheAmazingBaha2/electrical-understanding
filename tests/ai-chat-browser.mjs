@@ -24,6 +24,10 @@ try{
   }}};
   updateAIChatSession({id:'mock-owner'},client);
  });
+ const compact=page.locator('#ai-chat-launch'),compactBox=await compact.boundingBox();
+ assert.equal(await compact.locator('img').count(),0,'Tutor launcher is text-only');
+ assert.equal((await compact.innerText()).trim(),'Study tutor');
+ assert.ok(compactBox.width<=115&&compactBox.height<=38,'Compact desktop tutor size '+JSON.stringify(compactBox));
  await page.locator('#ai-chat-launch').click();
  await page.waitForFunction(()=>!document.querySelector('#ai-chat-send').disabled);
  assert.equal(await page.locator('#ai-chat-panel').isVisible(),true);
@@ -51,6 +55,7 @@ try{
  assert.ok(dimensions.available>0&&dimensions.scroll>dimensions.available,'Long response should scroll inside the chat panel');
  await page.locator('#ai-chat-close').click();
  const launcher=page.locator('#ai-chat-launch');let box=await launcher.boundingBox();
+ assert.ok(box.width<=115&&box.height<=38,'Compact phone tutor size '+JSON.stringify(box));
  const cdp=await page.context().newCDPSession(page);
  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:box.x+box.width/2,y:box.y+box.height/2,id:3}]});
  await page.waitForTimeout(240);
