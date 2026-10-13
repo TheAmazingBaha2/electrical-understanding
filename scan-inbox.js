@@ -115,6 +115,11 @@ function lessonSections(sections,job,namespace){
 function lessonExercises(questions,job,namespace){
  return (questions||[]).map((q,i)=>'<details class="scan-quiz-item" data-scan-expand="'+esc(namespace)+'-quiz-'+i+'"><summary>Exercise '+(i+1)+': '+esc(q.prompt)+'</summary><div>'+bubble('Expected answer',q.answer)+bubble('Explanation',q.explanation)+'<small>Source: '+esc(scanCite(job,q.source_ids))+'</small></div></details>').join('');
 }
+function lessonPredictions(activities,job){
+ return (activities||[]).map((a,i)=>'<details class="scan-quiz-item"><summary>Interactive activity '+(i+1)+': '+esc(a.title)+'</summary>'+
+  '<p>'+esc(a.prompt)+'</p>'+bubble('Expected observation',a.expected)+bubble('Feedback',a.explanation)+
+  '<small>Source: '+esc(scanCite(job,a.source_ids))+'</small></details>').join('');
+}
 function explainLesson(data,job){
  if(!data)return "";
  if(Array.isArray(data.lessons)){
@@ -129,13 +134,13 @@ function explainLesson(data,job){
  const unique=(data.sections||[]).length>0;
  const original='<section class="scan-lesson"><p class="v2-kicker">Source-specific material · '+esc(job.source_track||"other")+'</p>'+
   (unique?'<h3>'+esc(data.title)+'</h3><p>'+esc(data.description)+'</p><h4>Learning goals</h4><ul>'+(data.objectives||[]).map(x=>'<li>'+esc(x)+'</li>').join('')+'</ul>'+
-   lessonSections(data.sections,job,'unique')+'<h4>Source-specific practice</h4>'+lessonExercises(data.questions,job,'unique'):
+   lessonSections(data.sections,job,'unique')+'<h4>Planned interactions</h4>'+lessonPredictions(data.activities,job)+'<h4>Ten quiz checks</h4>'+lessonExercises(data.questions,job,'unique'):
    '<h3>No separate source-specific lesson needed</h3><p>This material overlaps existing concepts. Look below for distinct reinforcement perspectives and exercises.</p>')+
   '<p class="muted sm">Reference: '+esc(scanCite(job))+'. Printed pages are supplied by you; compare them against the scan before approval.</p></section>';
  const reviews=(data.review_lessons||[]).map((part,i)=>'<section class="scan-lesson"><p class="v2-kicker">Review & Reinforcement · Lesson '+(i+1)+'</p>'+
   '<h3>'+esc(part.title)+'</h3><p><strong>New perspective:</strong> '+esc(part.new_perspective)+'</p>'+
   (part.related_lessons?.length?'<p class="muted sm">Related coverage: '+esc(part.related_lessons.join('; '))+'</p>':'')+
-  lessonSections(part.sections,job,'review-'+i)+'<h4>Different-angle practice</h4>'+lessonExercises(part.questions,job,'review-'+i)+'</section>').join('');
+  lessonSections(part.sections,job,'review-'+i)+'<h4>Planned interactions</h4>'+lessonPredictions(part.activities,job)+'<h4>Ten reinforcement checks</h4>'+lessonExercises(part.questions,job,'review-'+i)+'</section>').join('');
  return original+reviews;
 }
 function explainOutline(job){
