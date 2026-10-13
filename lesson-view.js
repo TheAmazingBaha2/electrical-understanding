@@ -29,10 +29,11 @@ function reviewPanel(ctx){
   return '<button type="button" class="lesson-review-item" data-quiz-jump="'+i+'"><span><b>'+e("Question "+(i+1))+'</b> '+e(q.prompt)+'</span><small>'+label+' →</small></button>';
  }).join("")+'</div><div class="actions"><button class="outline" data-lesson-tab="quiz">Return to quiz</button>'+
  (passed&&nextLesson?'<button class="primary" data-goto="lesson" data-lesson="'+e(nextLesson.id)+'">Next lesson →</button>':'')+
- '<button class="outline" data-goto="'+(isLegacyArchived?'legacy':lesson.subtrack==='math'?'math':isPilot?'legacy':'subtrack')+'" '+(isLegacyArchived||lesson.subtrack==='math'||isPilot?'':'data-lesson="'+e(lesson.subtrack||'basic')+'"')+'>'+(isLegacyArchived?'Back to Legacy Lessons':lesson.subtrack==='math'?'Back to Mathematics Companion':isPilot?'Legacy lesson library':lesson.subtrack==='geier'?'Back to DMM companion':lesson.subtrack==='guide'?'Back to CETa Study Guide':'Back to lab manual')+'</button></div></section>';
+ '<button class="outline" data-goto="'+(lesson.generated?'textbooks':isLegacyArchived?'legacy':lesson.subtrack==='math'?'math':isPilot?'legacy':'subtrack')+'" '+(isLegacyArchived||lesson.subtrack==='math'||isPilot?'':'data-lesson="'+e(lesson.subtrack||'basic')+'"')+'>' +(lesson.generated?'Back to textbook companions':isLegacyArchived?'Back to Legacy Lessons':lesson.subtrack==='math'?'Back to Mathematics Companion':isPilot?'Legacy lesson library':lesson.subtrack==='geier'?'Back to DMM companion':lesson.subtrack==='guide'?'Back to CETa Study Guide':'Back to lab manual')+'</button></div></section>';
 }
 // Cite only page information actually present in the source record; no invented page numbers.
 function sourceAttribution(lesson){
+ if(lesson.generated)return lesson.sourceAttribution||'Saved private source reference unavailable.';
  if(lesson.subtrack==='geier'){
   const matched=(lesson.module||'').match(/pp?\.\s*\d+(?:[–-]\d+)?/);
   return 'Michael Jay Geier, How to Diagnose and Fix Everything Electronic, 3rd ed., Chapter 6, '+(matched?matched[0]:'pages not confirmed')+'. Original companion explanations; see those pages for the relevant DMM topic.';
@@ -62,7 +63,7 @@ export function tabbedLesson(ctx) {
  } else {
   contents=reviewPanel(ctx);
  }
- return '<div class="learning learning-tabbed"><div class="bread">'+e(lesson.module)+' / '+(isPilot?'LEGACY GROUP 1 · PILOT '+(idx+1)+' OF 5':isLegacyArchived?'LEGACY GROUP 2 · ORIGINAL / UNREFERENCED':lesson.subtrack==='geier'?'TEXTBOOK · DMM COMPANION':lesson.subtrack==='guide'?'CETA · STUDY GUIDE COMPANION':lesson.subtrack==='math'?'CROSS-TRACK MATHEMATICS':'EIM LAB COMPANION')+'</div>'+
+ return '<div class="learning learning-tabbed"><div class="bread">'+e(lesson.module)+' / '+(isPilot?'LEGACY GROUP 1 · PILOT '+(idx+1)+' OF 5':isLegacyArchived?'LEGACY GROUP 2 · ORIGINAL / UNREFERENCED':lesson.subtrack==='geier'?'TEXTBOOK · DMM COMPANION':lesson.subtrack==='guide'?'CETA · STUDY GUIDE COMPANION':lesson.subtrack==='math'?'CROSS-TRACK MATHEMATICS':lesson.generated?'APPROVED SOURCE-BACKED WORKBENCH':'EIM LAB COMPANION')+'</div>'+
  '<div class="lesson-header"><h2>'+e(lesson.title)+'</h2><p class="muted">'+e(lesson.description)+'</p><span class="chip">About '+lesson.minutes+' minutes · '+graded+'/'+score.total+' graded</span></div>'+
  '<aside class="lesson-source-citation" aria-label="Lesson source reference"><strong>Source & page reference</strong><p>'+e(sourceAttribution(lesson))+'</p></aside>'+
   renderLessonTabs(active,graded,score.total)+
