@@ -68,7 +68,7 @@ try{
  await page.reload();await page.locator('.dashboard-welcome').waitFor();
  await page.evaluate(async()=>{const {updateAIChatSession}=await import('/ai-chat-widget.js');updateAIChatSession({id:'mock-owner'},{functions:{invoke:async()=>({data:{authorized:true,ready:true},error:null})}})});
  const restored=await launcher.boundingBox();assert.ok(Math.abs(restored.x-desktop.x)<2&&Math.abs(restored.y-desktop.y)<2,'Position survives reload');
- await page.setViewportSize({width:320,height:650});box=await launcher.boundingBox();assert.ok(box.x>=8&&box.x+box.width<=312&&box.y>=8&&box.y+box.height<=642,'Position clamps to phone viewport');
+ await page.setViewportSize({width:320,height:650});await page.waitForFunction(()=>{const r=document.querySelector('#ai-chat-launch').getBoundingClientRect();return r.left>=7.5&&r.right<=innerWidth-7.5&&r.top>=7.5&&r.bottom<=innerHeight-7.5});box=await launcher.boundingBox();assert.ok(box.x>=7.5&&box.x+box.width<=312.5&&box.y>=7.5&&box.y+box.height<=642.5,'Position clamps to phone viewport '+JSON.stringify(box));
  await launcher.click();await page.waitForFunction(()=>!document.querySelector('#ai-chat-send').disabled);
  await page.locator('#ai-chat-new').click();
  assert.doesNotMatch(await page.locator('#ai-chat-messages').innerText(),/Detailed explanation/);

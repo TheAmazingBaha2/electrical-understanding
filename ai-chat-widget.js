@@ -40,7 +40,7 @@ function bindLauncherDrag(button){
  const key='eu_tutor_position_v1',positions={};let drag=null,suppressClick=false;
  try{Object.assign(positions,JSON.parse(localStorage.getItem(key)||'{}'))}catch{}
  const mode=()=>innerWidth<=700?'mobile':'desktop';
- function bounds(){return {x:Math.max(8,innerWidth-button.offsetWidth-8),y:Math.max(8,innerHeight-button.offsetHeight-8)}}
+ function bounds(){const box=button.getBoundingClientRect();return {x:Math.max(8,innerWidth-box.width-8),y:Math.max(8,innerHeight-box.height-8)}}
  function place(x,y){const b=bounds();button.style.left=Math.max(8,Math.min(b.x,x))+'px';button.style.top=Math.max(8,Math.min(b.y,y))+'px';button.style.right='auto';button.style.bottom='auto'}
  function restore(){const p=positions[mode()];if(!p||!Number.isFinite(p.x)||!Number.isFinite(p.y))return;const b=bounds();place(8+p.x*(b.x-8),8+p.y*(b.y-8))}
  button._restoreDragPosition=restore;
