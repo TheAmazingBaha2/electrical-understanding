@@ -108,6 +108,10 @@ function verifyDraft(x:any,analysis:any){
    throw Error("Reinforcement lesson must contribute a new insight and exercises.");
   review.sections.forEach(section);review.questions.forEach(question);review.activities.forEach(activity);
  }
+ const distinct=(items:any[],key:string)=>new Set(items.map((x:any)=>String(x[key]||"").trim().toLowerCase())).size===items.length;
+ if(!distinct(x.questions,"prompt")||!distinct(x.activities,"prompt")||
+  reviews.some((r:any)=>!distinct(r.questions,"prompt")||!distinct(r.activities,"prompt")))
+  throw Error("A lesson contains duplicate quiz questions or prediction activities.");
  if(!x.sections.length&&!reviews.length)throw Error("Neither a new concept nor a useful reinforcement lesson was found.");
  x.review_lessons=reviews;
  return x;
