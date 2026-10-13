@@ -3,8 +3,10 @@ import assert from 'node:assert/strict';
 import {setup} from './scan-harness.mjs';
 import {runChapterBatch} from '../scan-inbox.js';
 const section={heading:'Worked example',body:'Explain the known values, symbols, units and the calculation step by step. '.repeat(3),source_ids:['S1']};
-const q={prompt:'Find the result.',answer:'2',explanation:'Substitute the known values.',source_ids:['S1']};
-const draft={title:'Practice',description:'Apply the equation.',objectives:['Explain','Calculate'],sections:[section,section],questions:[q,q],review_lessons:[]};
+const qs=Array.from({length:10},(_,i)=>({prompt:'Calculate and explain example '+(i+1)+'.',answer:'2',explanation:'Substitute the supplied values and check units.',source_ids:['S1']}));
+const activities=[{title:'Predict the result',prompt:'What result do you expect?',expected:'2',explanation:'Substitute and calculate.',source_ids:['S1']},
+ {title:'Predict the effect of changing a value',prompt:'Which input determines the result?',expected:'The given independent value',explanation:'Trace the given quantities first.',source_ids:['S1']}];
+const draft={title:'Practice',description:'Apply the equation.',objectives:['Explain','Calculate'],sections:[section,section],questions:qs,activities,review_lessons:[]};
 const units=[1,2,3].map(i=>({key:'U0'+i,title:'Unit '+i,goal:'Use the equation',focus:'Teach the method',kind:'math',destination:'source',ordering:'independent',prerequisites:[],source_ids:['S1']}));
 async function chapter(options={}){
  const h=setup({payloads:{eu_outline:{chapter_title:'Chapter',rationale:'Three skills.',units},eu_draft:draft,eu_review:{ready:true,summary:'Checked arithmetic.',findings:[]}},...options});
@@ -57,7 +59,7 @@ test('saved reviewed drafts enter the next unit prompt but are not treated as hu
 import {chapterBatchExposure} from '../scan-inbox.js';
 const price={model:'gpt-6.1-sol',tier:'default',valid_until:'2099-01-01',context_tokens:1050000,input_rate:2,cached_rate:.1,write_rate:2.5,long_input:2,output_rate:10,long_output:1.5,safety_multiplier:1.1};
 test('batch exposure counts only unfinished calls and fails closed on pricing',async()=>{
- const h=await chapter();const e=chapterBatchExposure(h.job,price);assert.equal(e.requests,6);assert.ok(e.requiredUSD>=35.046&&e.requiredUSD<=35.0460001);
+ const h=await chapter();const e=chapterBatchExposure(h.job,price);assert.equal(e.requests,6);assert.ok(e.requiredUSD>=35.15984&&e.requiredUSD<=35.15986);
  await h.invoke({action:'draft'});assert.equal(chapterBatchExposure(h.job,price).requests,5);
  await h.invoke({action:'review'});assert.equal(chapterBatchExposure(h.job,price).requests,4);
  await h.invoke({action:'queue-reviewed'});assert.equal(chapterBatchExposure(h.job,price).requests,4);
