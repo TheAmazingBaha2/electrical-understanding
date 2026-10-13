@@ -25,6 +25,8 @@ test('batch reviews every unit without human approval, then explicit free approv
  assert.equal(h.job.review.ready,true);assert.equal(h.job.review.unit_reviews.length,3);assert.ok(h.job.approved_at);
  assert.equal(h.calls.length,9);assert.equal(h.spending.length,9);
  assert.deepEqual(h.job.lesson.lessons[0].sections,saved[0].sections);
+ assert.equal(h.job.lesson.lessons[0].dashboard_track,'math');
+ assert.equal(h.job.lesson.lessons[0].dashboard_ready,true);
 });
 test('pause and restart retain reviewed pending units and earlier approved objects exactly',async()=>{
  const h=await chapter();for(const action of ['draft','review','approve'])await h.invoke({action});
