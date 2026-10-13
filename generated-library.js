@@ -43,11 +43,19 @@ export function makeWorkbenchLesson(job, unit, content, kind, order) {
  const rawId=String(unit.id||job.draft_id||job.id);
  const id=kind==="review"?rawId+"-R"+String(order+1).padStart(2,"0"):rawId;
  const sections=safeList(content.sections), original=safeList(content.questions);
- const prompts=original.map((q,i)=>({
-   id:id+"-Q"+String(i+1).padStart(2,"0"),type:"reflection",prompt:String(q.prompt),
-   explain:String(q.explanation||""),rubric:"Expected answer: "+String(q.answer||"")+"\\nReasoning: "+String(q.explanation||""),
-   safety:false,source_ids:safeList(q.source_ids)
- }));
+ const prompts=original.map((q,i)=>{
+   const value=String(q.answer||"").trim().replace(/,/g,"");
+   const parsed=value.match(/^([+-]?(?:[0-9]+(?:\\.[0-9]*)?|\\.[0-9]+)(?:e[+-]?[0-9]+)?)\\s*([a-zA-ZµμΩ%°/]+)?$/i);
+   const result={id:id+"-Q"+String(i+1).padStart(2,"0"),
+     type:"reflection",prompt:String(q.prompt),explain:String(q.explanation||""),
+     rubric:"Expected answer: "+String(q.answer||"")+"\\nReasoning: "+String(q.explanation||""),
+     safety:false,source_ids:safeList(q.source_ids)};
+   if(parsed&&Number.isFinite(Number(parsed[1]))){
+     result.type="number";result.answer=Number(parsed[1]);result.unit=parsed[2]||"";
+     result.tolerance=Math.max(1e-10,Math.abs(result.answer)*0.01);
+   }
+   return result;
+ });
  // Older approved drafts have 2–9 questions. Add source-grounded, explicitly
  // self-graded retrieval checks without generating new technical facts or AI costs.
  const styles=[
