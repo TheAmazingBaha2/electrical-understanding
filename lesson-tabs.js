@@ -35,6 +35,10 @@ export function renderLearnSteps(lesson,step=0){
 }
 
 export function lessonActivities(lesson) {
+  if (lesson.experiment==="generated") return (lesson.activities||[]).map((a,i)=>({
+    kind:"generated-check",title:a.title||"Prediction "+(i+1),description:"Make a prediction, explain your reasoning, then compare it with the approved reference.",
+    prompt:a.prompt,answer:a.answer,explanation:a.explanation,source_ids:a.source_ids||[]
+  }));
   if (lesson.experiment!=="embedded") return [{kind:"legacy",title:"Circuit workbench",description:"Adjust the circuit, predict the result, then compare your answer with the calculated values."}];
   const headings=[...lesson.html.matchAll(/<h3>([\s\S]*?)<\/h3>/g)].map(m=>m[1].replace(/<[^>]+>/g,"").replace(/^\d+\.\s*/,""));
   const placeholders=[...lesson.html.matchAll(widgetPattern)].map(m=>m[1]);
@@ -92,7 +96,12 @@ export function renderActivitySelector(lesson,selected=0) {
   '<div class="activity-steps" role="group" aria-label="Choose an activity">'+activities.map((a,i)=>
     '<button type="button" class="activity-step'+(i===selectedIndex?' selected':'')+'" data-activity-index="'+i+'" aria-current="'+(i===selectedIndex?'step':'false')+'" title="'+escapeHtml(a.title)+'">'+(i+1)+'</button>').join('')+'</div>'+
   '<h3>'+escapeHtml(current.title)+'</h3><p class="muted">'+escapeHtml(current.description)+'</p>'+
-  (current.kind==="legacy"?'<section id="experiment" class="experiment"><h3>Interactive circuit lab</h3><p class="muted sm" id="experiment-caption">Make a prediction, adjust a value, and test what happens.</p><div id="experiment-body"></div></section>':
+  (current.kind==="generated-check"?'<section class="generated-activity-check"><p><strong>Predict before checking:</strong> '+escapeHtml(current.prompt)+'</p>'+
+    '<label class="question-meta">YOUR PREDICTION<textarea class="short-answer" aria-label="Your prediction" placeholder="Write what you expect and why, then check the reference."></textarea></label>'+
+    '<button type="button" class="primary small-button" data-generated-reveal>Compare with the approved explanation</button>'+
+    '<div class="feedback" data-generated-feedback hidden><p><b>Expected result:</b> '+escapeHtml(current.answer)+'</p><p><b>Reasoning:</b> '+escapeHtml(current.explanation)+'</p>'+
+    '<p class="muted sm">This is an ungraded prediction. The Quiz tab saves your scored self-checks.</p></div></section>':
+  current.kind==="legacy"?'<section id="experiment" class="experiment"><h3>Interactive circuit lab</h3><p class="muted sm" id="experiment-caption">Make a prediction, adjust a value, and test what happens.</p><div id="experiment-body"></div></section>':
     '<div class="lab-widget" data-lab-kind="'+escapeHtml(current.kind)+'"><p class="muted sm">Loading interactive experiment…</p></div>')+
   '<div class="activity-nav"><button class="outline small-button" type="button" data-activity-index="'+Math.max(0,selectedIndex-1)+'" '+(selectedIndex===0?'disabled':'')+'>← Previous</button><span class="muted sm">'+(selectedIndex+1)+' of '+activities.length+'</span><button class="primary small-button" type="button" '+(selectedIndex===activities.length-1?'data-lesson-tab="quiz"':'data-activity-index="'+(selectedIndex+1)+'"')+'>'+(selectedIndex===activities.length-1?'Ready for the quiz →':'Next challenge →')+'</button></div></div>';
 }
