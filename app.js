@@ -12,6 +12,7 @@ import { cetaLessons } from './ceta-lessons.js';
 import {mathLessons, mathAvailability,relatedMath} from './math-lessons.js';
 import {legacyGroup,legacyReason,isArchivedLesson} from './legacy-groups.js';
 import {attachMathWidgets} from './math-widgets.js';
+import { attachGeneratedSimulations } from './generated-simulations.js';
 import { attachLabWidgets } from './lab-widgets.js';
 import { attachDmmWidgets } from './dmm-widgets.js';
 import { attachCetaWidgets } from './ceta-widgets.js';
@@ -167,7 +168,7 @@ function render(){setNav();refreshAIChatContext();const names={'generated-lesson
    lessonTab=tabButtons[next].dataset.lessonTab;render();main.querySelector('.lesson-tab.selected')?.focus();
  }));
  if(['lesson','generated-lesson'].includes(view)){attachQuiz();if(lessonTab==='interact'){
-  renderExperiment();attachLabWidgets();attachDmmWidgets();attachCetaWidgets();attachMathWidgets();
+  renderExperiment();attachLabWidgets();attachDmmWidgets();attachCetaWidgets();attachMathWidgets();attachGeneratedSimulations(main);
   main.querySelectorAll('[data-generated-reveal]').forEach(button=>button.addEventListener('click',()=>{
     const feedback=button.closest('.generated-activity-check')?.querySelector('[data-generated-feedback]');
     const input=button.closest('.generated-activity-check')?.querySelector('textarea');
