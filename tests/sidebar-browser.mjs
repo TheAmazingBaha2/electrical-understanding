@@ -12,6 +12,10 @@ try{
   await page.goto('http://127.0.0.1:8080/');await page.locator('.dashboard-welcome').waitFor();
   assert.equal(await page.locator('.dashboard-area,.dashboard-home,#account-pill,.dashboard-continue').count(),0);
   const sidebar=page.locator('.sidebar'),handle=page.locator('#sidebar-resize');
+  const menu=page.locator('#menu-toggle');
+  assert.equal(await menu.locator('img[src^="./icon.svg"]').count(),1,'Navigation uses branded lightning artwork');
+  assert.equal(await menu.getAttribute('aria-label'),'Open navigation');
+  if(mobile){const tap=await menu.boundingBox();assert.ok(tap.width>=44&&tap.height>=44,'Lightning menu retains phone tap target');}
   if(mobile){assert.equal(await handle.isVisible(),false);await page.locator('#menu-toggle').click();assert.equal(await page.locator('#menu-toggle').getAttribute('aria-expanded'),'true');}
   if(mobile)await page.waitForFunction(()=>document.querySelector('.sidebar').getBoundingClientRect().left===0);
   const before=Number(await handle.getAttribute('aria-valuenow')),box=await handle.boundingBox(),x=box.x+box.width/2,y=450;
