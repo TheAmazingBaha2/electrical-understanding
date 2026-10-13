@@ -30,7 +30,7 @@ function lessonContent(lesson,job,idPrefix){
  return h+'</div>';
 }
 
-function makeWorkbenchLesson(job, unit, content, kind, order) {
+export function makeWorkbenchLesson(job, unit, content, kind, order) {
  const rawId=String(unit.id||job.draft_id||job.id);
  const id=kind==="review"?rawId+"-R"+String(order+1).padStart(2,"0"):rawId;
  const sections=safeList(content.sections), original=safeList(content.questions);
@@ -75,7 +75,7 @@ function makeWorkbenchLesson(job, unit, content, kind, order) {
    minutes:Math.max(10,sections.length*6+10),kind:unit.plan?.kind||unit.kind||"concept",
    ordering:unit.plan?.ordering||unit.ordering||"independent",sourceUnitId:rawId};
 }
-export {makeWorkbenchLesson};
+
 
 function cards(jobs,filter,register=()=>{}){
  const entries=[];
