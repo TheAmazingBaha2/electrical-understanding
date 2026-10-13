@@ -18,7 +18,7 @@ export function learningContent(lesson) {
 // bite-sized concept cards instead of five sections in one scrolling document.
 export function renderLearnSteps(lesson,step=0){
  const html=learningContent(lesson);
- if(lesson.experiment!=="embedded")return html;
+ if(!["embedded","generated"].includes(lesson.experiment))return html;
  const pieces=html.split(/(?=<h3>)/);
  const intro=pieces.shift()||"";
  if(!pieces.length)return html;
