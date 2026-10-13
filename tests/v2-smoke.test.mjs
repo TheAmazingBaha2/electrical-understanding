@@ -84,6 +84,7 @@ test('colors and site icon match approved branding',()=>{
  assert.match(icon,/id="mist"/);
  for(const size of [192,512,180]){const png=readFileSync(new URL('../icon-'+size+'.png',import.meta.url));assert.equal(png.readUInt32BE(16),size);assert.equal(png.readUInt32BE(20),size);}
  const manifest=JSON.parse(readFileSync(new URL('../manifest.webmanifest',import.meta.url),'utf8'));assert.ok(manifest.icons.some(i=>i.purpose==='maskable'&&i.sizes==='512x512'));
+ assert.equal(manifest.name,'Electrical Workbench');assert.equal(manifest.short_name,'Electrical Workbench');
 
 });
 
