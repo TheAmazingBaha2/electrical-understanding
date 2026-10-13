@@ -42,7 +42,7 @@ try{
   },curated);
   assert.equal(await page.locator('.chapter-lesson').count(),16);assert.equal(await page.locator('.chapter-lesson [data-goto="generated-lesson"]').count(),16);
   await page.evaluate(()=>window.__dashboard());
-  assert.equal(await page.locator('.dashboard-chapter').count(),1);assert.equal(await page.locator('.dashboard-lesson-list .lesson-pie').count(),16);
+  assert.equal(await page.locator('.dashboard-chapter').count(),1);assert.equal(await page.locator('.dashboard-lesson-list .lesson-progress-bar').count(),16);
   assert.equal(await page.locator('.dashboard-welcome [data-lesson="C3-CURATED-U01"]').count(),0);
   for(let i=0;i<16;i++){
    await page.evaluate(i=>window.__curatedTab(i,'overview'),i);assert.match(await page.locator('.lesson-briefing').innerText(),/CHAPTER 3/);

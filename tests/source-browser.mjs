@@ -17,9 +17,9 @@ try{
   assert.equal(await page.locator('.dashboard-area').count(),0);assert.equal(await page.locator('[data-view="scan-inbox"]').count(),0);
   assert.equal(await page.locator('[data-dashboard-source="associate-cet"] .dashboard-chapter').count(),1);assert.equal(await page.locator('[data-dashboard-source="associate-cet"] .dashboard-lesson-list .chapter-lesson').count(),17);
   assert.equal(await page.locator('[data-dashboard-source="associate-cet"] .dashboard-lesson-list').isVisible(),false);
-  await page.locator('[data-dashboard-source="associate-cet"] > summary').click();await page.locator('[data-dashboard-source="associate-cet"] .dashboard-chapter > summary').click();assert.equal(await page.locator('[data-dashboard-source="associate-cet"] .dashboard-lesson-list').isVisible(),true);
+  await page.locator('[data-dashboard-source="associate-cet"] .dashboard-chapter > summary').click();assert.equal(await page.locator('[data-dashboard-source="associate-cet"] .dashboard-lesson-list').isVisible(),true);
   if(width===1440){const bytes=await page.screenshot({path:'test-artifacts/chapter-dashboard-desktop.jpg',type:'jpeg',quality:65});console.log('SOURCE_QA_IMAGE:dashboard:'+bytes.toString('base64'));}
-  await page.locator('[data-disclosure="lesson:C3-CURATED-SUMMARY"] > summary').click();await page.locator('[data-dashboard-source="associate-cet"] .dashboard-lesson-list [data-lesson="C3-CURATED-SUMMARY"]').click();assert.equal(await page.locator('.chapter-takeaways li').count(),16);assert.match(await page.locator('.lesson-header').innerText(),/summary/);
+  await page.locator('[data-dashboard-source="associate-cet"] .dashboard-lesson-list [data-lesson="C3-CURATED-SUMMARY"]').click();assert.equal(await page.locator('.chapter-takeaways li').count(),16);assert.match(await page.locator('.lesson-header').innerText(),/summary/);
   if(width===1440){const bytes=await page.screenshot({path:'test-artifacts/chapter-summary-desktop.jpg',type:'jpeg',quality:65});console.log('SOURCE_QA_IMAGE:summary:'+bytes.toString('base64'));}
   await page.locator('.lesson-tabs [data-lesson-tab="quiz"]').click();assert.equal(await page.locator('.quiz-step').count(),16);assert.equal(await page.locator('#main textarea').count(),0);
   await page.locator('.lesson-tabs [data-lesson-tab="review"]').click();await page.locator('[data-goto="ceta"][data-lesson="associate-cet:3"]').click();
@@ -33,7 +33,7 @@ try{
   if(width===390){const bytes=await page.screenshot({path:'test-artifacts/chapter-contents-phone.jpg',type:'jpeg',quality:65});console.log('SOURCE_QA_IMAGE:contents:'+bytes.toString('base64'));}
   await go(page,'dashboard');await page.locator('[data-dashboard-source="associate-cet"] .dashboard-chapter').waitFor({state:'attached'});
   assert.match(await page.locator('[data-dashboard-source="associate-cet"] .dashboard-chapter-progress [role="img"]').getAttribute('aria-label'),/1 correct, 0 needs review, 175 unanswered out of 176/);
-  await page.locator('[data-dashboard-source="associate-cet"] > summary').click();await page.locator('[data-dashboard-source="associate-cet"] .dashboard-chapter > summary').focus();await page.locator('[data-dashboard-source="associate-cet"] .dashboard-chapter > summary').press('Enter');assert.equal(await page.locator('[data-dashboard-source="associate-cet"] .dashboard-lesson-list').isVisible(),true);
+  await page.locator('[data-dashboard-source="associate-cet"] .dashboard-chapter > summary').focus();await page.locator('[data-dashboard-source="associate-cet"] .dashboard-chapter > summary').press('Enter');assert.equal(await page.locator('[data-dashboard-source="associate-cet"] .dashboard-lesson-list').isVisible(),true);
   await go(page,'math');assert.equal(await page.locator('.chapter-lesson').count(),0);
   await go(page,'textbooks');assert.equal(await page.locator('.source-book').count(),1);await page.locator('[data-disclosure="contents:geier:6"] > summary').click();assert.equal(await page.locator('[data-lesson="BDMM-01"]').count(),1);
   await go(page,'labs');assert.equal(await page.locator('.source-book').count(),4);assert.equal(await page.locator('.content-chapter').count(),21);

@@ -14,22 +14,26 @@ try{for(const width of [320,390,1440]){
  assert.equal(await page.locator('.dashboard-area').count(),0);
  assert.match(await page.locator('[data-nav-status="math"]').textContent(),/TBD/);
  assert.match(await page.locator('[data-nav-status="reviews"]').textContent(),/TBD/);
- assert.equal(await book.getAttribute('open'),null);
+ assert.equal(await book.evaluate(el=>el.tagName),'SECTION');
+ assert.equal(await page.locator('details details').count(),0);
  assert.equal(await book.locator('.chapter-pie').first().isVisible(),false);
  if(width===390||width===1440)await page.screenshot({path:'test-artifacts/compact-dashboard-'+width+'.png',fullPage:true});
- await book.locator(':scope > summary').press('Enter');
  const chapter=book.locator('.dashboard-chapter').first();
  assert.equal(await chapter.locator('.chapter-pie').first().isVisible(),false);
  await chapter.locator(':scope > summary').click();
  assert.equal(await chapter.locator('.dashboard-chapter-progress .chapter-pie').isVisible(),true);
- const lesson=chapter.locator('.dashboard-lesson').first();
- assert.equal(await lesson.locator('.lesson-pie').isVisible(),false);
- await lesson.locator(':scope > summary').click();
- assert.equal(await lesson.locator('.lesson-pie').isVisible(),true);
+ const lesson=chapter.locator('.chapter-lesson').first();
+ assert.equal(await chapter.locator('.lesson-pie').count(),0);
+ assert.equal(await lesson.locator('.lesson-progress-bar').isVisible(),true);
+ assert.equal(await chapter.locator('details').count(),0);
+ assert.equal(await lesson.locator('.chapter-lesson-copy').evaluate(el=>{
+  const reference=el.querySelector('.lesson-page-reference'),bar=el.querySelector('.lesson-progress-bar'),counts=el.querySelector('small');
+  return Boolean(reference.compareDocumentPosition(bar)&Node.DOCUMENT_POSITION_FOLLOWING)&&Boolean(bar.compareDocumentPosition(counts)&Node.DOCUMENT_POSITION_FOLLOWING);
+ }),true);
  assert.ok((await lesson.locator('button').boundingBox()).height>=44 || width>700);
  if(width===390)await page.screenshot({path:'test-artifacts/compact-dashboard-expanded-phone.png',fullPage:true});
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));
  await go(page,'math');assert.match(await page.locator('#main').innerText(),/Math Practice/);
  await go(page,'dashboard');await book.waitFor();
  assert.deepEqual(errors,[]);await page.close();
-}console.log('PASS: compact dashboard, nested keyboard/touch disclosures, TBD sidebar labels, sidebar navigation, 320/390/1440px without overflow.');}finally{await browser.close();}
+}console.log('PASS: compact dashboard, single-level keyboard/touch disclosures and subsection bars, TBD sidebar labels, sidebar navigation, 320/390/1440px without overflow.');}finally{await browser.close();}
