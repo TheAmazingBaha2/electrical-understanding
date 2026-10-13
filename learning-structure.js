@@ -4,11 +4,11 @@ import {cetaGuideUnits,eimBasicExperiments} from './course-catalog.js';
 import {geierChapters} from './geier-catalog.js';
 import {workshopActivityProgress} from './workshop-progress.js';
 export const studySections=[
- {id:'textbooks',section:'textbooks',title:'Textbook Companions',description:'Your books, their chapters, and the lessons that support your reading.'},
- {id:'labs',section:'labs',title:'Labs',description:'Manuals and chapter companions for the laboratory work you are studying.'},
- {id:'ceta',section:'exam',title:'Exam Prep',description:'Study guides and chapter practice for your certification exams.'},
- {id:'math',section:'math',title:'Math',description:'Periodic refreshers on the mathematics behind electricity.'},
- {id:'reviews',section:'reviews',title:'Review',description:'Bring ideas from your regular lessons back into practice. The broader review format is still to be decided.'}
+ {id:'textbooks',section:'textbooks',title:'Textbook Companions',description:'Lessons alongside your book chapters.'},
+ {id:'labs',section:'labs',title:'Labs',description:'Practice alongside your lab manuals.'},
+ {id:'ceta',section:'exam',title:'Exam Prep',description:'Chapter practice for certification exams.'},
+ {id:'math',section:'math',title:'Math',description:'Refresh the mathematics behind electricity.'},
+ {id:'reviews',section:'reviews',title:'Review',description:'Revisit ideas and checks from earlier lessons.'}
 ];
 export const learningSources=[
  {id:'associate-cet',section:'exam',title:'Associate CET',book:'Associate CET Study Guide',chapters:cetaGuideUnits.flatMap(u=>u.chapters.map(([id,title,page])=>({id,title,page,group:u.title})))},

@@ -61,3 +61,7 @@ Dashboard and sidebar category order: Textbook Companions, Labs, Exam Prep, Math
 ## Separate expansion controls — October 13 correction
 
 Category and book headers have two sibling buttons: the title/description opens contents; a visibly divided 72px desktop / 76px phone arrow area expands or collapses its children without navigation. Both controls use native button keyboard behavior. Expansion states survive internal rerenders and navigation during the session. Chapters retain native disclosures, with larger arrow targets; lessons remain flat rows. Preserve category order, overall pies, subsection bars, stable content and saved learning data.
+
+## Compact card dimensions — October 13 final sizing
+
+User requested card heights at about 60% of the previous layout and an arrow division about half as wide. Tighten category/book/chapter header padding and gaps; use brief one-line category descriptions and 54px phone category headers where text fits. Category/book arrow columns are 44px wide (down from 72/76px), preserving a separate touch target. Long titles wrap naturally rather than clip. Keep both functions, state persistence, category order and all learning data unchanged.

@@ -24,8 +24,9 @@ try{for(const width of [320,390,1440]){
  assert.equal(await page.locator('details details').count(),0);
  const category=page.locator('[data-dashboard-category="textbooks"]'),categoryToggle=category.locator(':scope > .dashboard-split-heading .dashboard-expand'),bookToggle=book.locator(':scope > .dashboard-split-heading .dashboard-expand');
  const arrowBox=await bookToggle.boundingBox(),linkBox=await book.locator('.dashboard-book-link').boundingBox();
- assert.ok(arrowBox.width>=72&&arrowBox.height>=64);
+ assert.ok(arrowBox.width===44&&arrowBox.height>=44);
  assert.ok(arrowBox.x>=linkBox.x+linkBox.width-1);
+ if(width<=700){const header=await category.locator('.dashboard-category-heading').boundingBox();assert.ok(header.height<=60, 'Compact category header');}
  await bookToggle.click();assert.equal(await bookToggle.getAttribute('aria-expanded'),'false');assert.equal(await book.locator('.dashboard-book-body').isVisible(),false);assert.equal(await page.locator('.dashboard-welcome').isVisible(),true);
  await bookToggle.press('Enter');assert.equal(await bookToggle.getAttribute('aria-expanded'),'true');assert.equal(await book.locator('.dashboard-book-body').isVisible(),true);
  await categoryToggle.click();assert.equal(await categoryToggle.getAttribute('aria-expanded'),'false');assert.equal(await book.isVisible(),false);assert.equal(await page.locator('.dashboard-welcome').isVisible(),true);
