@@ -1,5 +1,7 @@
 export async function go(page,view){
- const target=page.locator('.sidebar [data-view="'+view+'"]');
- if(await target.evaluate(el=>el.getBoundingClientRect().left<0))await page.locator('#menu-toggle').click();
- await target.click();
+ const menu=page.locator('#menu-toggle'),sidebar=page.locator('.sidebar');
+ // Use the state class rather than animated geometry: a just-closed menu
+ // can still be crossing the viewport when the next navigation starts.
+ if(await menu.isVisible()&&!await sidebar.evaluate(el=>el.classList.contains('open')))await menu.click();
+ await sidebar.locator('[data-view="'+view+'"]').click();
 }

@@ -7,3 +7,5 @@ Implemented native book → chapter → lesson disclosures. Large charts and stu
 Verification: syntax checks, 206 unit/contract tests, build and deployment validation. Browser checks cover 320/390/1440px navigation, keyboard disclosures, hidden charts, touch target size, page overflow and existing lesson/workshop/quiz/sync flows using local or mocked services. No paid API calls or real learner writes. Staging publication is gated on the exact commit's complete CI; production is outside this change.
 
 Educational content and missing page references are unchanged. No new design questions are blocking this requested presentation change.
+
+CI follow-up: the first run exposed a race in the new test navigation helper: its position check sampled the mobile drawer during its closing transition. Navigation now checks the drawer's explicit open state; Playwright still performs normal visible, stable button clicks. The application itself was not changed for this test race.
