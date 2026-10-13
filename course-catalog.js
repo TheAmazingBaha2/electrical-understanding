@@ -26,7 +26,7 @@ export const eimBasicExperiments = [
   ['AC 19','Warp-up Project',165,'indexed']
 ];
 export const catalog = [
- {id:'ceta',title:'Exam Practice',subtracks:[{id:'guide',title:'Associate CET',status:'indexed',summary:'Chapter-by-chapter certification practice.',units:cetaGuideUnits}]},
+ {id:'ceta',title:'Exam Prep',subtracks:[{id:'guide',title:'Associate CET',status:'indexed',summary:'Chapter-by-chapter certification practice.',units:cetaGuideUnits}]},
  {id:'textbooks',title:'Textbook Companions',subtracks:[{id:'geier',title:'How to Diagnose and Fix Everything Electronic',status:'active',summary:'Troubleshooting book; full contents pending.',units:[{id:'6',title:'Digital Multimeter',page:97}]}]},
  {id:'labs',title:'Labs',subtracks:[
   {id:'basic',title:'EIM · Basic Electric Circuits',status:'active',units:eimBasicExperiments.map(([id,title,page,source])=>({id,title,page,source}))},
