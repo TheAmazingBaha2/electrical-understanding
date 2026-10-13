@@ -7,7 +7,12 @@ const brief={astra_guidance:'Check source.',lesson_guidance:'Teach clearly.',rev
 const outline={chapter_title:'Two units',rationale:'Separate skills.',units:[1,2].map(i=>({key:'U0'+i,title:'Unit '+i,goal:'Use the equation.',focus:'Explain its operation.',kind:'math',destination:'source',ordering:'sequential',prerequisites:i===2?['U01']:[],source_ids:['S1']}))};
 const section={heading:'Worked example',body:'Explain each symbol and substitute the known values. '.repeat(4),source_ids:['S1']};
 const question={prompt:'What is the result?',answer:'2',explanation:'Substitute and calculate.',source_ids:['S1']};
-const draft={title:'Practice',description:'Use the source equation.',objectives:['Explain','Calculate'],sections:[section,section],questions:[question,question],review_lessons:[]};
+const draft={title:'Practice',description:'Use the source equation.',objectives:['Explain','Calculate'],
+ sections:[section,section],
+ questions:Array.from({length:10},(_,i)=>({...question,prompt:'What is the result for example '+(i+1)+'?'})),
+ activities:[{title:'Predict the result',prompt:'What should the equation yield?',expected:'2',explanation:'Substitute the values',source_ids:['S1']},
+ {title:'Predict the change',prompt:'What changes when a known value changes?',expected:'A changed result',explanation:'Substitute again.',source_ids:['S1']}],
+ review_lessons:[]};
 const payloads={eu_analysis:extraction,eu_outline:outline,eu_draft:draft,eu_review:{ready:true,summary:'Checked.',findings:[]}};
 function saved(h,phase,payload,status='invalid'){
  const a={id:'saved',job_id:h.job.id,user_id:'owner',phase,model:phase==='analyze'?'gpt-6-astra':'gpt-6.1-sol',base_revision:h.job.revision,status,response_id:'resp_saved',learner_context:'Keep every intermediate step',raw_response:JSON.stringify({id:'resp_saved',status:'completed',output_text:JSON.stringify(payload),usage:{input_tokens:67018,output_tokens:3638}}),output_text:JSON.stringify(payload)};
