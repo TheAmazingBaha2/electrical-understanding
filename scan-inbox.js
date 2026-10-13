@@ -175,7 +175,7 @@ export function chapterBatchExposure(job,price){
  if(job.state==='drafted')drafts--;
  if(job.state==='reviewed'&&job.lesson?.current){drafts--;reviews--;}
  if(remaining===0)return {requiredUSD:0,requests:0};
- return {requiredUSD:Math.max(0,drafts)*max(6200)+Math.max(0,reviews)*max(1800),requests:Math.max(0,drafts)+Math.max(0,reviews)};
+ return {requiredUSD:Math.max(0,drafts)*max(8500)+Math.max(0,reviews)*max(1800),requests:Math.max(0,drafts)+Math.max(0,reviews)};
 }
 export async function runChapterBatch({getJob,stage,refresh,stopped=()=>false,onProgress=()=>{},initialRetryOf=null}){
  const first=getJob(),id=first.id,total=first.analysis?.chapter_outline?.units?.length,outlineIdentity=JSON.stringify(first.analysis?.chapter_outline);
@@ -318,7 +318,7 @@ function detail(job){
  explainAnalysis(job.analysis)+explainOutline(job)+explainLesson(job.lesson,job)+explainReview(job.review)+provenance+
  attemptLog(job)+'<div class="scan-approve-actions"><button type="button" class="outline" id="scan-free-preflight">Check pipeline readiness (free)</button>'+buttonFor(job)+'</div>'+
  '<div id="scan-free-preflight-result" class="scan-preflight-result" role="status" aria-live="polite" hidden></div>'+
- '<p class="muted sm">Model outputs are drafts, not definitive references. Compare important formulas and safety guidance against the actual scanned pages before approving. Approved lessons are read-only study companions; they do not award scores.</p></section>';
+ '<p class="muted sm">Model outputs are source drafts, not definitive references. Verify formulas and safety guidance against the original pages. After approval, use the five-stage lesson workbench from the appropriate learning track; the Quiz tab saves scored self-checks separately from your source approval.</p></section>';
 }
 export function attachScanInbox(supabase,user,notify=()=>{}){
  const root=by('#scan-root');
