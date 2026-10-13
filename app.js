@@ -24,11 +24,14 @@ const now = () => Date.now();
 const DAY = 24*60*60*1000;
 const sourceLessons=[...lessons,...labLessons,...bookLessons,...cetaLessons];
 const allLessons=[...sourceLessons,...mathLessons];
-const findLesson=id=>allLessons.find(l=>l.id===id);
+// Approved, user-owned scan lessons are loaded only after authentication.
+// Their IDs and existing graded answers are never rewritten on library refresh.
+const generatedLessons=new Map();
+const findLesson=id=>allLessons.find(l=>l.id===id)||generatedLessons.get(id);
 const labUnlocked=l=>l?.id===labLessons[0].id || Boolean(labLessons.length && hasPassed(labLessons[0]));
 const bookUnlocked=l=>l?.id===bookLessons[0].id || Boolean(bookLessons.length && hasPassed(bookLessons[0]));
 const guideUnlocked=l=>l?.id===cetaLessons[0].id || Boolean(cetaLessons.length && hasPassed(cetaLessons[cetaLessons.indexOf(l)-1]));
-const canOpenLesson=(l,i)=>!l?false:l?.subtrack==='math'?true:i<lessons.length?unlocked(i):l?.subtrack==='geier'?bookUnlocked(l):l?.subtrack==='guide'?guideUnlocked(l):labUnlocked(l);
+const canOpenLesson=(l,i)=>!l?false:l.generated?true:l?.subtrack==='math'?true:i<lessons.length?unlocked(i):l?.subtrack==='geier'?bookUnlocked(l):l?.subtrack==='guide'?guideUnlocked(l):labUnlocked(l);
 let supabase=null, user=null, view='dashboard', activeLesson=null, focusQuestion=null, progress={}, busy=false;
 let lessonTab='overview', activityIndex=0, quizIndex=0, learnIndex=0;
 // Only Cloudflare preview hosts may connect to the isolated staging project.
@@ -63,7 +66,7 @@ async function connect(){
    const pkg=await import('https://esm.sh/@supabase/supabase-js@2.57.4');
    supabase=pkg.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
    supabase.auth.onAuthStateChange((_event,session)=>{
-     if(session?.user?.id!==user?.id){user=session?.user||null;progress=localLoad();updateAIChatSession(user,supabase);syncLabel(user?'Staging cloud connected':'Sign in for staging sync',!!user);render();if(user)void loadCloud();}
+     if(session?.user?.id!==user?.id){user=session?.user||null;generatedLessons.clear();progress=localLoad();updateAIChatSession(user,supabase);syncLabel(user?'Staging cloud connected':'Sign in for staging sync',!!user);render();if(user)void loadCloud();}
    });
    const {data,error}=await supabase.auth.getSession();if(error)throw error;
    user=data.session?.user||null;progress=localLoad();updateAIChatSession(user,supabase);syncLabel(user?'Cloud connected':'Sign in to synchronize',!!user);
@@ -105,7 +108,7 @@ async function saveAnswer(lessonId,qid,update){
  finally{busy=false;if(saved)render()}
 }
 function switchTo(next,id=null,qid=null){
- const startingLesson=next==='lesson'&&(view!=='lesson'||activeLesson!==id);
+ const startingLesson=['lesson','generated-lesson'].includes(next)&&(view!==next||activeLesson!==id);
  if(startingLesson){lessonTab=qid?'quiz':'overview';activityIndex=0;learnIndex=0;quizIndex=Math.max(0,findLesson(id)?.questions.findIndex(q=>q.id===qid)||0);}
  view=next;activeLesson=id;focusQuestion=qid;
  $('.sidebar').classList.remove('open');render();window.scrollTo({top:0,behavior:'instant'});
@@ -135,10 +138,10 @@ function v2Context(){
 }
 function setNav(){const current=view==='lesson'?(isArchivedLesson(activeLesson)?'legacy':mathLessons.some(l=>l.id===activeLesson)?'math':lessons.some(l=>l.id===activeLesson)?'ceta':bookLessons.some(l=>l.id===activeLesson)?'textbooks':cetaLessons.some(l=>l.id===activeLesson)?'ceta':'labs'):(view==='legacy'||view==='curriculum')?'legacy':view==='subtrack'?(activeLesson==='core'||['guide','exam'].includes(activeLesson)?'ceta':['geier','teach','principles','cabling'].includes(activeLesson)?'textbooks':'labs'):view;
  document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',current===b.dataset.view));}
-function render(){setNav();refreshAIChatContext();const names={dashboard:'Your learning dashboard',ceta:'Exam Preparation',curriculum:'Legacy lessons',legacy:'Legacy lessons',textbooks:'Textbook companions',labs:'Hands-on laboratory',math:'Mathematics Companion',subtrack:'Learning sub-track',lesson:'Lesson workbench',reviews:'Review & Reinforcement',library:'Textbook companions','scan-inbox':'Scan Inbox',account:'Your study account','ai-lab':'Private AI model tests'};
+function render(){setNav();refreshAIChatContext();const names={'generated-lesson':'Approved lesson workbench',dashboard:'Your learning dashboard',ceta:'Exam Preparation',curriculum:'Legacy lessons',legacy:'Legacy lessons',textbooks:'Textbook companions',labs:'Hands-on laboratory',math:'Mathematics Companion',subtrack:'Learning sub-track',lesson:'Lesson workbench',reviews:'Review & Reinforcement',library:'Textbook companions','scan-inbox':'Scan Inbox',account:'Your study account','ai-lab':'Private AI model tests'};
  $('#page-title').textContent=names[view]||names.dashboard;
  const main=$('#main');
- main.innerHTML=view==='dashboard'?renderDashboard():view==='lesson'?renderLesson():view==='reviews'?renderReviews():view==='account'?renderAccount():view==='scan-inbox'?renderScanInbox(user):view==='ai-lab'?renderAIModelLab(user):view==='library'?renderLibrary():v2Page(view,v2Context(),activeLesson);
+ main.innerHTML=view==='dashboard'?renderDashboard():['lesson','generated-lesson'].includes(view)?renderLesson():view==='reviews'?renderReviews():view==='account'?renderAccount():view==='scan-inbox'?renderScanInbox(user):view==='ai-lab'?renderAIModelLab(user):view==='library'?renderLibrary():v2Page(view,v2Context(),activeLesson);
  const approvedFilter=view==='reviews'?'review':view==='math'?'math':view==='textbooks'?'textbooks':view==='ceta'?'ceta':view==='labs'?'labs':
   view==='subtrack'?(['guide','core','exam'].includes(activeLesson)?'ceta':activeLesson):null;
  if(approvedFilter&&user)main.insertAdjacentHTML(view==='reviews'?'afterbegin':'beforeend',generatedLibrarySlot(approvedFilter));
@@ -163,11 +166,23 @@ function render(){setNav();refreshAIChatContext();const names={dashboard:'Your l
    const next=event.key==='Home'?0:event.key==='End'?tabButtons.length-1:(i+(event.key==='ArrowRight'?1:tabButtons.length-1))%tabButtons.length;
    lessonTab=tabButtons[next].dataset.lessonTab;render();main.querySelector('.lesson-tab.selected')?.focus();
  }));
- if(view==='lesson'){attachQuiz();if(lessonTab==='interact'){renderExperiment();attachLabWidgets();attachDmmWidgets();attachCetaWidgets();attachMathWidgets()}}
+ if(['lesson','generated-lesson'].includes(view)){attachQuiz();if(lessonTab==='interact'){
+  renderExperiment();attachLabWidgets();attachDmmWidgets();attachCetaWidgets();attachMathWidgets();
+  main.querySelectorAll('[data-generated-reveal]').forEach(button=>button.addEventListener('click',()=>{
+    const feedback=button.closest('.generated-activity-check')?.querySelector('[data-generated-feedback]');
+    const input=button.closest('.generated-activity-check')?.querySelector('textarea');
+    if(!feedback)return;
+    if(!input?.value.trim()){notify('Write your prediction before revealing the reference.');return;}
+    feedback.hidden=false;button.textContent='Reference revealed';
+    button.disabled=true;
+  }));
+}}
  if(view==='account')attachAuth();
  if(view==='ai-lab'&&user)attachAIModelLab(supabase,notify);
  if(view==='scan-inbox'&&user)attachScanInbox(supabase,user,notify);
- if(approvedFilter&&user)attachGeneratedLibrary(supabase,user,notify);
+ if(approvedFilter&&user)attachGeneratedLibrary(supabase,user,notify,
+  lesson=>generatedLessons.set(lesson.id,lesson),
+  id=>{if(generatedLessons.has(id))switchTo('generated-lesson',id);});
 }
 function cloudBanner(){if(user)return `<div class="success sm">Signed in. Answers save on this device first. Check the sync status; resolve any differences in Account.</div>`;
   if(stagingPreview)return `<div class="flash sm"><b>Staging sync enabled:</b> Sign in to the separate preview Supabase project to sync trial answers between devices. Production progress is never used by this preview. <button class="outline small-button" data-goto="account">Sign in →</button></div>`;
@@ -180,6 +195,12 @@ function renderLibrary(){return v2Page('textbooks',v2Context());}
 function renderReviews(){const queue=reviewQueue();return `<p class="muted">Reviews are scheduled after each check: one day after a missed answer, seven days after an initial success, and 21 days after a successful retry. Open a question to answer again.</p>${cloudBanner()}<div class="panel"><h2>Scheduled quiz reviews · ${queue.length} review${queue.length===1?'':'s'} due</h2>${queue.length?queue.map(({lesson,q,a})=>`<div class="review-item"><div><b>${esc(lesson.title)}</b><p class="muted sm">${esc(q.prompt)}<br>Scheduled ${duration(a.reviewDue)}</p></div><button class="primary small-button" data-goto="lesson" data-lesson="${lesson.id}" data-question="${q.id}">Review →</button></div>`).join(''):`<div class="empty"><h3>You're caught up.</h3><p>When your completed questions become due, they'll appear here.</p></div>`}</div>`}
 function renderLesson(){const lesson=findLesson(activeLesson);if(!lesson)return '<p>Lesson not found.</p>';
  const idx=lessons.indexOf(lesson),isPilot=idx>=0;
+ if(lesson.generated){
+  const score=getAccuracy(lesson),passed=hasPassed(lesson);
+  return tabbedLesson({lesson,isPilot:false,isLegacyArchived:false,idx:0,score,passed,
+    nextLesson:null,tab:lessonTab,activityIndex,learnIndex,quizIndex,
+    answers:getState(lesson.id).answers||{},questionHtml});
+ }
  if(!canOpenLesson(lesson,allLessons.indexOf(lesson)))return '<div class="panel"><h2>Lesson not yet available</h2><p>'+ (lesson.subtrack==='math'?'Reach one of the linked electronics topics to unlock this mathematics companion.':'Complete the preceding lesson in this source track before continuing.')+'</p><button class="primary" data-goto="'+(isArchivedLesson(lesson)?'legacy':lesson.subtrack==='math'?'math':isPilot?'legacy':'subtrack')+'" '+(isArchivedLesson(lesson)||lesson.subtrack==='math'||isPilot?'':'data-lesson="'+(lesson.subtrack||'basic')+'"')+'>Back</button></div>';
  const score=getAccuracy(lesson),passed=hasPassed(lesson),nextLesson=lesson.subtrack==='math'?null:isPilot?lessons[idx+1]:lesson.subtrack==='geier'?bookLessons[bookLessons.indexOf(lesson)+1]:lesson.subtrack==='guide'?cetaLessons[cetaLessons.indexOf(lesson)+1]:labLessons[labLessons.indexOf(lesson)+1];
  const lessonView=tabbedLesson({lesson,isPilot,isLegacyArchived:isArchivedLesson(lesson),legacyGroup:legacyGroup(lesson),idx,score,passed,nextLesson,tab:lessonTab,activityIndex,learnIndex,quizIndex,answers:getState(lesson.id).answers||{},questionHtml});
@@ -214,7 +235,7 @@ function attachQuiz(){const lesson=findLesson(activeLesson);if(!lesson)return;do
  }));
 }
 function expControl(label,id,min,max,value,unit,step=1){return `<div class="control"><label for="${id}">${label}: <b id="${id}-label">${value} ${unit}</b></label><input id="${id}" type="range" min="${min}" max="${max}" value="${value}" step="${step}"></div>`}
-function renderExperiment(){const l=findLesson(activeLesson);const body=$('#experiment-body');if(!l||!body||l.experiment==='embedded')return;
+function renderExperiment(){const l=findLesson(activeLesson);const body=$('#experiment-body');if(!l||!body||l.experiment==='embedded'||l.generated)return;
  const type=l.experiment;
  if(type==='power'||type==='ohm'||type==='meters'){
   body.innerHTML=`<svg class="experiment-graph" viewBox="0 0 500 145" role="img" aria-label="Simple DC circuit with battery and resistor"><g fill="none" stroke="#b1c8d6" stroke-width="3"><path d="M88 70 V25 H215 M280 25 H410 V117 H88 V90"/><path d="M215 25 l10 -8 10 16 10 -16 10 16 10 -8 h15"/><path d="M75 70 H101 M81 77 H95"/><circle cx="88" cy="80" r="16"/></g><text x="250" y="12" text-anchor="middle" font-size="13" fill="#83CFFF">Resistor</text><text x="45" y="79" fill="#b1c8d6" font-size="12">DC</text><text x="305" y="135" fill="#a8b8c9" font-size="12">Simple load circuit</text></svg><div class="controls">${expControl('Voltage','exp-v',1,24,12,'V')}${expControl('Resistance','exp-r',1,24,6,'kΩ')}</div><p class="reading-stat" id="exp-out"></p><p class="muted sm">Predict what happens when voltage doubles or resistance doubles. These are ideal component values.</p>`;
