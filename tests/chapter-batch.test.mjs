@@ -80,3 +80,17 @@ test('approval retains every unit warning and database rejection preserves all p
  const good=await chapter({payloads:{eu_outline:{chapter_title:'Chapter',rationale:'Three skills.',units},eu_draft:draft,eu_review:{ready:true,summary:'Checked with notes.',findings:[{severity:'warning',source_id:'S1',description:'Verify the contextual claim.'}]}}});
  await runChapterBatch(controller(good));assert.equal((await good.invoke({action:'approve-batch'})).status,200);assert.equal(good.job.review.findings.length,3);assert.equal(good.job.review.findings[0].unit_id,'U01');assert.equal(good.calls.length,9);
 });
+
+test('paid Sol draft checkpoints strip generation labels before saving, without extra calls',async()=>{
+ const prefixed={...draft,questions:draft.questions.map((question,i)=>({...question,
+  prompt:i===0?'Newly authored practice: Calculate the result for the first example.':question.prompt}))};
+ const h=await chapter({payloads:{eu_outline:{chapter_title:'Chapter',rationale:'Three skills.',units},
+   eu_draft:prefixed,eu_review:{ready:true,summary:'Checked arithmetic.',findings:[]}}});
+ const calls=h.calls.length;
+ assert.equal((await h.invoke({action:'draft'})).status,200);
+ assert.equal(h.calls.length,calls+1);
+ assert.equal(h.job.lesson.current.questions[0].prompt,'Calculate the result for the first example.');
+ assert.equal(h.job.lesson.current.questions.length,10);
+ assert.equal(h.job.state,'drafted');
+ assert.equal(prefixed.questions[0].prompt,'Newly authored practice: Calculate the result for the first example.');
+});
