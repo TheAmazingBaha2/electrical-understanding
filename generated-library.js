@@ -1,3 +1,4 @@
+import {isArchivedScanChapter} from './legacy-groups.js';
 // Owner-only, read-only library of human-approved scan-derived companions.
 // Existing graded lesson IDs and spaced-review records are never changed here.
 const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -97,7 +98,7 @@ export function makeWorkbenchLesson(job, unit, content, kind, order) {
    module:job.source_book||job.title||"Source-backed chapter",sourceAttribution:citation,
    objectives:safeList(content.objectives),html,experiment:"generated",activities,questions:prompts,
    minutes:Math.max(10,sections.length*6+10),simulator:simulationForTitle(unit.plan?.title||content.title),kind:unit.plan?.kind||unit.kind||"concept",
-   ordering:unit.plan?.ordering||unit.ordering||"independent",sourceUnitId:rawId,sourceTrack:job.source_track||"other",libraryView:kind==="review"?"reviews":(unit.plan?.kind||unit.kind)==="math"?"math":job.source_track==="guide"?"ceta":job.source_track==="basic"?"labs":"textbooks"};
+   ordering:unit.plan?.ordering||unit.ordering||"independent",sourceUnitId:rawId,scanId:String(job.id),archived:isArchivedScanChapter(job),sourceTrack:job.source_track||"other",libraryView:isArchivedScanChapter(job)?"legacy":kind==="review"?"reviews":(unit.plan?.kind||unit.kind)==="math"?"math":job.source_track==="guide"?"ceta":job.source_track==="basic"?"labs":"textbooks"};
 }
 
 
@@ -106,18 +107,20 @@ function cards(jobs,filter,register=()=>{}){
  for(const job of jobs){
   if(!["outlined","drafted","reviewed","needs_revision","approved"].includes(job.state)||!job.lesson)continue;
   const track=job.source_track||job.lesson?.source?.track||"other";
+  // Archived chapters remain in their own Legacy collection, not in active paths.
+  if(isArchivedScanChapter(job)!==(filter==="legacy"))continue;
   const approvedUnits=Array.isArray(job.lesson.lessons)?job.lesson.lessons:
    job.state==="approved"?[job.lesson]:[];
   for(const unit of approvedUnits){
    const kind=unit.plan?.kind||unit.kind||"concept";
    const destination=unit.plan?.destination||unit.destination||"source";
    const meta=unit.plan||unit;
-   if(filter==="review"||(filter==="math"&&kind==="math")){
+   if(filter==="legacy"||filter==="review"||(filter==="math"&&kind==="math")){
     for(const [i,review] of safeList(unit.review_lessons).entries()){
      entries.push({job,unit,lesson:review,kind:"review",order:i,meta});
     }
    }
-   if(filter!=="review"&&((filter==="math"&&kind==="math")||
+   if(filter!=="review"&&(filter==="legacy"||(filter==="math"&&kind==="math")||
     (filter==="textbooks"&&BOOK_TRACKS.has(track))||
     (filter==="ceta"&&track==="guide")||
     (filter==="labs"&&track==="basic")||filter===track)){
@@ -160,11 +163,11 @@ export function approvedWorkbenchLessons(jobs){
 }
 
 export function generatedLibrarySlot(filter){
- const review=filter==="review";
+ const review=filter==="review",legacy=filter==="legacy";
  return '<section class="generated-library-panel panel" aria-label="'+(review?'Review and Reinforcement':'Approved source-specific lessons')+'">'+
-  '<div class="generated-library-top"><div><p class="v2-kicker">'+(review?'CROSS-BOOK LEARNING TRACK':'ORIGINAL SOURCE COMPANIONS')+'</p>'+
-  '<h2>'+(review?'Review & Reinforcement lessons':'Approved source-specific lessons')+'</h2>'+
-  '<p class="muted sm">'+(review?'Repeated concepts live here when a new publication contributes a different explanation, worked method, safety detail or exercise. This is separate from your scheduled quiz reviews.':
+  '<div class="generated-library-top"><div><p class="v2-kicker">'+(legacy?'LEGACY · APPROVED SOURCE CHAPTER':review?'CROSS-BOOK LEARNING TRACK':'ORIGINAL SOURCE COMPANIONS')+'</p>'+
+  '<h2>'+(legacy?'Archived Chapter 3 companions':review?'Review & Reinforcement lessons':'Approved source-specific lessons')+'</h2>'+
+  '<p class="muted sm">'+(legacy?'This chapter has been archived by request. The approved source material, lesson IDs, explanations, interactions and progress are preserved.':'Repeated concepts live here when a new publication contributes a different explanation, worked method, safety detail or exercise. This is separate from your scheduled quiz reviews.':
   'Unique material remains with its source track. Overlapping concepts are directed to Review & Reinforcement.')+'</p></div>'+
   '<button type="button" class="outline small-button" data-refresh-generated>Refresh library</button></div>'+
   '<div id="generated-library-list" data-track="'+esc(filter)+'">Loading private approved lessons…</div></section>';
