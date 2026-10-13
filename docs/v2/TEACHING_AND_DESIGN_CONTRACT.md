@@ -71,3 +71,7 @@ User requested card heights at about 60% of the previous layout and an arrow div
 User requested less dominant blue, frosted cyan/white panel highlights with restrained lightning yellow accents, and three nonuniform branching bolts converging from different angles. Use charcoal/neutral frosted surfaces, bright icy cyan illuminated borders and yellow focus/selected accents. Keep current compact geometry and all learner data unchanged. Redrawn SVG branding plus 192/512px PNG, maskable and Apple touch icons serve site and phone launchers.
 
 Tutor launcher supports mouse dragging, short touch hold/drag and Alt+arrow keyboard movement. A completed drag suppresses opening the tutor. Positions are local UI preferences, separate for phone/desktop, restored on reload and clamped inside the viewport. Dragging never invokes a paid request or changes grading. Preserve owner-only visibility, chat authorization and existing paid send flow.
+
+## Dark fantasy icon revision
+
+User supersedes the three-bolt icon: four thin irregular branching strikes, all originating near the top and descending at different angles, each with its own glacial, pale-gold, silver-violet or amber-white gradient and restrained bloom. Backdrop is a gray misty cloudy night sky. Update SVG, phone raster/maskable/Apple icons and cache version together. Keep the site theme, layout and draggable tutor behavior unchanged.

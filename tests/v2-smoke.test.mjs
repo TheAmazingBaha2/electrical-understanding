@@ -77,9 +77,11 @@ test('navigation and script imports are wired up',()=>{
 test('colors and site icon match approved branding',()=>{
  const icon=readFileSync(new URL('../icon.svg',import.meta.url),'utf8');
  const css=readFileSync(new URL('../styles.css',import.meta.url),'utf8');
- for(const color of ['#ffe66e','#ffe98e','#fffce0'])assert.ok(icon.includes(color));
+ for(const color of ['#a6cfdd','#fff6d5','#f4f0ff','#ebce79'])assert.ok(icon.includes(color));
  for(const color of ['#8df6ff','#ffe269','#0b1217'])assert.ok(css.includes(color));
- assert.match(icon,/Three branching lightning bolts converging/);
+ assert.match(icon,/Four fine branching lightning strikes descending/);
+ assert.equal((icon.match(/data-bolt="[1-4]"/g)||[]).length,4);
+ assert.match(icon,/id="mist"/);
  for(const size of [192,512,180]){const png=readFileSync(new URL('../icon-'+size+'.png',import.meta.url));assert.equal(png.readUInt32BE(16),size);assert.equal(png.readUInt32BE(20),size);}
  const manifest=JSON.parse(readFileSync(new URL('../manifest.webmanifest',import.meta.url),'utf8'));assert.ok(manifest.icons.some(i=>i.purpose==='maskable'&&i.sizes==='512x512'));
 
