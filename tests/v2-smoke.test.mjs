@@ -232,7 +232,7 @@ test('DMM published scope contributes to overall charts without changing saved C
  const c=context({'BDMM-01':{complete:true,answers:{b101:{correct:true},b102:{correct:false}},updatedAt:Date.now()}});
  const html=v2Dashboard(c);
  assert.match(html,/Textbook companions/);
- assert.match(html,/1 \/ 2 DMM companions passed/);
+ assert.match(html,/1 \/ 2 textbook companions passed/);
  assert.match(html,/All published lessons/);
  assert.match(html,/correct, 1 needs review/);
  assert.match(html,/Legacy CETa/);
