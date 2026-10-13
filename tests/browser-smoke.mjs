@@ -5,13 +5,13 @@ await mkdir('test-artifacts',{recursive:true});
 const browser=await chromium.launch({headless:true});
 try{
  for(const width of [390,1440]){
-  const page=await browser.newPage({viewport:{width,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));
+  const page=await browser.newPage({viewport:{width,height:1000}}),errors=[];page.on('pageerror',e=>{errors.push(e.message);console.log('BROWSER_ERROR',e.stack);});
   await page.route('https://esm.sh/**',r=>r.abort());await page.goto('http://127.0.0.1:8080/');await page.locator('.v2-hero').waitFor();
   assert.equal(await page.locator('.workspace-top-tabs .workspace-tab').count(),7);assert.equal(await page.locator('.v2-frost-ring,.v2-evidence-pie').count(),0);assert.equal(await page.locator('[data-view="scan-inbox"],[data-view="legacy"]').count(),0);
   await page.locator('.workspace-top-tabs [data-view="ceta"]').click();assert.equal(await page.locator('.content-chapter').count(),22);assert.equal(await page.locator('.source-book').count(),1);
   await page.locator('.workspace-top-tabs [data-view="account"]').click();await page.locator('.account-maintenance > summary').click();await page.locator('[data-goto="legacy"]').click();
   await page.locator('[data-goto="lesson"][data-lesson="CETA-G03-01"]').click();await page.locator('[data-lesson-tab="interact"]').click();assert.equal(await page.locator('.ceta-illustration').count(),1);await page.locator('[data-x="p"]').selectOption('kilo');assert.match(await page.locator('.ceta-illustration').textContent(),/1 kA = 1,000 A/);
-  await page.locator('.workspace-top-tabs [data-view="labs"]').click();await page.locator('[data-disclosure="contents:basic:PreLab"] > summary').click();
+  await page.locator('.workspace-top-tabs [data-view="labs"]').click();assert.deepEqual(errors,[]);await page.locator('[data-disclosure="contents:basic:PreLab"] > summary').click();
   await page.locator('[data-lesson="EIM-BEC-PRELAB"]').click();assert.equal(await page.locator('.lesson-tab').count(),5);assert.match(await page.locator('.lesson-overview').innerText(),/1,080/);await page.locator('[data-reveal-insight]').click();assert.equal(await page.locator('#starting-insight').isVisible(),true);
   await page.locator('[data-lesson-tab="learn"]').click();assert.equal(await page.locator('.lab-widget').count(),0);assert.equal(await page.locator('.concept-step').count(),5);
   await page.locator('[data-learn-index="2"]').click();assert.match(await page.locator('.learning-concept-reading').innerText(),/power limit/);

@@ -216,7 +216,9 @@ function curriculumPlacement(job:any){
  const label=String(intake.group||job.title||'');
  const chapter=String(intake.chapter_id||label.match(/\bchapter\s+(\d+(?:\.\d+)?)/i)?.[1]||'unassigned');
  const section=intake.practice_mode==='math'?'math':job.source_track==='guide'?'exam':job.source_track==='basic'?'labs':'textbooks';
- const sourceId=section==='exam'?'associate-cet':job.source_track==='geier'?'geier':job.source_track==='basic'?'basic':'book-'+String(job.source_book||job.title).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+ const manual=String(job.source_book||job.title).toLowerCase();
+ const manualId=/rp2040/.test(manual)?'rp2040':/fpga/.test(manual)?'fpga':/analog.*(?:circuits|semiconductor)/.test(manual)?'analog':/basic electric circuits/.test(manual)?'basic':null;
+ const sourceId=section==='exam'?'associate-cet':job.source_track==='geier'?'geier':job.source_track==='basic'&&manualId?manualId:'book-'+String(job.source_book||job.title).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
  return {section,source_id:sourceId,source_title:job.source_book||job.title,chapter_id:chapter,chapter_title:intake.chapter_title||job.analysis?.chapter_outline?.chapter_title||'Source chapter to be assigned',dashboard:true};
 }
 function dashboardTrack(job:any,unit:any):string{

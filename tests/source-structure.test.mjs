@@ -24,7 +24,7 @@ test('progress is weighted by current question identities and excludes unrelated
 });
 test('future chapters and books update the same menus and dashboard without hard-coded chart rows',()=>{
  const next={...lessons[0],id:'FUTURE-C4',curatedSeries:false,seriesId:null,curriculum:{section:'exam',source_id:'associate-cet',chapter_id:'4',order:1,dashboard:true}};
- const book={...next,id:'FUTURE-BOOK',module:'New verified book',curriculum:{section:'textbooks',source_id:'new-book',source_title:'New verified book',chapter_id:'2',chapter_title:'Supported chapter',dashboard:true},sourceContents:[{id:'1',title:'Introduction'},{id:'2',title:'Supported chapter'}]};
+ const book={...next,id:'FUTURE-BOOK',curatedSeries:true,seriesId:'FUTURE-AUTHORED-BOOK',module:'New verified book',curriculum:{section:'textbooks',source_id:'new-book',source_title:'New verified book',chapter_id:'2',chapter_title:'Supported chapter',dashboard:true},sourceContents:[{id:'1',title:'Introduction'},{id:'2',title:'Supported chapter'}]};
  const c={...ctx,activeGeneratedLessons:[...lessons,next,book]};
  assert.equal(sourceIndex(c).find(s=>s.id==='new-book').chapters.length,2);
  assert.match(renderSourceSection('textbooks',c),/data-content-lesson="FUTURE-BOOK"/);
@@ -47,5 +47,13 @@ test('future paid authoring retains source chapter placement and explicitly opte
   assert.equal(h.job.analysis.intake_context.chapter_id,'4');assert.equal(h.calls.length,0);
   const r=await h.invoke({action:'plan'});assert.equal(r.status,200);const input=JSON.parse(h.calls[0].input[0].content[0].text);
   assert.equal(input.source_metadata.curriculum.section,mode==='math'?'math':'exam');assert.equal(input.source_metadata.curriculum.chapter_id,'4');assert.match(h.calls[0].instructions,/CURRICULUM STRUCTURE/);
+ }
+});
+
+test('new lab companions attach to their actual manual rather than all sharing Basic Electric Circuits',async()=>{
+ for(const [book,id] of [['EIM Fundamental Analog Circuits and Semiconductors','analog'],['EIM Fundamental Digital Design with FPGA','fpga'],['EIM Introduction to Microcontroller with RP2040','rp2040'],['EIM Basic Electric Circuits','basic']]){
+  const h=setup();await h.invoke({action:'register',path:'owner/33333333-3333-4333-8333-333333333333.pdf',title:'Chapter 2',book,pages:'10–15',track:'basic',chapterId:'2'});await h.invoke({action:'plan'});
+  const p=JSON.parse(h.calls[0].input[0].content[0].text).source_metadata.curriculum;
+  assert.equal(p.source_id,id);assert.equal(sourcePlacement(h.job).source_id,id);assert.equal(p.section,'labs');
  }
 });

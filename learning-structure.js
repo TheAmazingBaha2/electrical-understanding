@@ -18,18 +18,19 @@ export const learningSources=[
 ];
 const clean=v=>String(v??'').trim();
 export const sectionView=section=>studySections.find(s=>s.section===section)?.id||'textbooks';
+export function manualSourceId(title){const s=clean(title).toLowerCase();return /rp2040/.test(s)?'rp2040':/fpga/.test(s)?'fpga':/analog.*(?:circuits|semiconductor)/.test(s)?'analog':/basic electric circuits/.test(s)?'basic':null;}
 const sourceKey=title=>'book-'+clean(title).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 export function sourcePlacement(job,unit={},kind='unique'){
  const explicit=unit.curriculum||job.analysis?.intake_context?.curriculum||{};
  const series=unit.series_id==='C3-CURATED-20261013'||/^C3-CURATED-U\d+$/.test(unit.id||'');
  const section=kind==='review'?'reviews':series?'exam':studySections.some(s=>s.section===explicit.section)?explicit.section:job.source_track==='guide'?'exam':job.source_track==='basic'?'labs':'textbooks';
- const sourceId=series?'associate-cet':clean(explicit.source_id)||(section==='exam'?'associate-cet':job.source_track==='geier'?'geier':job.source_track==='basic'?'basic':sourceKey(job.source_book||job.title||'Source'));
+ const sourceId=series?'associate-cet':clean(explicit.source_id)||(section==='exam'?'associate-cet':job.source_track==='geier'?'geier':job.source_track==='basic'?(manualSourceId(job.source_book)||sourceKey(job.source_book||job.title||'Manual')):sourceKey(job.source_book||job.title||'Source'));
  const label=job.analysis?.intake_context?.group||job.title||'';
  const chapterMatch=label.match(/\bchapter\s+(\d+(?:\.\d+)?)/i);
  return {section,source_id:sourceId,source_title:clean(explicit.source_title)||job.source_book||job.title||'Source',chapter_id:series?'3':clean(explicit.chapter_id)||chapterMatch?.[1]||'unassigned',chapter_title:series?'Basic Math used in Electronic Service & Decibels':clean(explicit.chapter_title)||job.analysis?.chapter_outline?.chapter_title||'Source chapter to be assigned',order:Number(unit.series_order||explicit.order)||0,dashboard:explicit.dashboard!==false};
 }
 export function placementForLesson(l){
- if(l.curatedSeries||/^C3-CURATED-U\d+$/.test(l.id||''))return {...l.curriculum,section:'exam',source_id:'associate-cet',chapter_id:'3',order:l.seriesOrder||0,dashboard:true};
+ if(l.seriesId==='C3-CURATED-20261013'||/^C3-CURATED-U\d+$/.test(l.id||''))return {...l.curriculum,section:'exam',source_id:'associate-cet',chapter_id:'3',order:l.seriesOrder||0,dashboard:true};
  if(l.curriculum)return l.curriculum;
  if(l.id==='EIM-BEC-PRELAB'||l.id==='EIM-BEC-DC02')return {section:'labs',source_id:'basic',chapter_id:l.id==='EIM-BEC-PRELAB'?'PreLab':'DC 02',dashboard:false};
  if(/^BDMM-/.test(l.id||''))return {section:'textbooks',source_id:'geier',chapter_id:'6',dashboard:false};
