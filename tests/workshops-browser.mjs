@@ -70,7 +70,7 @@ try{
   }
   await page.locator('.lesson-tabs [data-lesson-tab="review"]').click();assert.match(await page.locator('.lesson-summary').innerText(),/Lesson mastered/);await page.locator('[data-goto="lesson"][data-lesson="GEIER-C2-W02"]').click();assert.match(await page.locator('.lesson-header').innerText(),/Choose the tool/);
   const summary=geierWorkshops.find(l=>l.chapterSummary);await open(summary);assert.equal(await page.locator('.chapter-takeaways li').count(),10);await page.locator('.lesson-tabs [data-lesson-tab="quiz"]').click();assert.equal(await page.locator('.quiz-step').count(),12);
-  await go(page,'dashboard');await page.locator('[data-dashboard-source="geier"] > summary').click();const c2=page.locator('[data-disclosure="dashboard:geier:2"]');assert.match(await c2.innerText(),/1 \/ 11 lessons mastered/);await c2.locator('summary').first().click();assert.equal(await c2.locator('.chapter-lesson').count(),11);
+  await go(page,'dashboard');const c2=page.locator('[data-disclosure="dashboard:geier:2"]');assert.match(await c2.innerText(),/1 \/ 11 lessons mastered/);await c2.locator('summary').first().click();assert.equal(await c2.locator('.chapter-lesson').count(),11);
   const old=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)).progress['BDMM-01'].answers.b101,key);assert.deepEqual(old,{value:'0',correct:true,reviewDue:777,extra:'retain'});
   assert.equal(providerRequests.length,0);assert.deepEqual(errors,[]);await page.close();
  }
