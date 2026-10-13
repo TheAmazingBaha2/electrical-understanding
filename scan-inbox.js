@@ -284,7 +284,7 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
  const root=by('#scan-root');
  if(!root||!supabase||!user)return;
  const id=user.id;
- let jobs=[],preparedFile=null,preparing=null,pendingUpload=null,budgetSessionId=null;
+ let jobs=[],preparedFile=null,preparing=null,pendingUpload=null,budgetSessionId=null,budgetAuthorizedUSD=null;
   let books=[],bookCatalogReady=false,bookCatalogBusy=false;
  let renderedJobId=null,renderedSignature=null;
  const openedPanelsByJob=new Map();
@@ -447,13 +447,14 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
   accounting.innerHTML='<summary>Request accounting for this source</summary><div class="scan-accounting-records"></div>';
   budgetPanel.append(accounting);
   const loadBudget=async()=>{
-   budgetSessionId=null;
+   budgetSessionId=null;budgetAuthorizedUSD=null;
    try{
     const b=await invoke({action:'budget-status'});
     if(b.contract!=='spend-v1')throw Error('Budget API contract unavailable');
     const session=b.sessions?.[0];
     const held=(b.ledger||[]).filter(x=>x.session_id===session?.id).reduce((n,x)=>n+Number(x.held_usd),0);
-    budgetSessionId=session?.id||null;
+    budgetSessionId=session?.id||null;budgetAuthorizedUSD=session?Number(session.authorized_usd):null;
+    budgetPanel.querySelector("#scan-budget-create").textContent=session?"Update limit (no generation)":"Set limit (no generation)";
     const bounds=(b.prices||[]).filter(p=>p.model==='gpt-6.1-sol'&&Date.parse(p.valid_until)>Date.now()).map(p=>p.model+': up to $'+((Number(p.context_tokens)*Math.max(Number(p.input_rate),Number(p.cached_rate),Number(p.write_rate))*Number(p.long_input)+11400*Number(p.output_rate)*Number(p.long_output))*Number(p.safety_multiplier)/1e6).toFixed(3)+' per request');
     budgetPanel.querySelector('#scan-budget-info').textContent=(session?'Authorized $'+Number(session.authorized_usd).toFixed(2)+' · held $'+held.toFixed(3)+' · available $'+(Number(session.authorized_usd)-held).toFixed(3):'No spending session authorized. New generation is blocked; saved work remains accessible.')+'. Conservative full-context reservations: '+bounds.join('; ')+'. Actual token estimates are recorded separately; holds are not released on network errors.';
     const money=value=>value==null?'unknown':'$'+Number(value).toFixed(6);
@@ -473,8 +474,14 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
    const amount=Number(budgetPanel.querySelector('#scan-budget-limit').value);
    if(!Number.isFinite(amount)||amount<=0||amount>1000)return notify('Choose a limit between $0.01 and $1000.');
    if(!window.confirm('Authorize an application spending session of $'+amount.toFixed(2)+'? No generation starts now. Every paid stage still asks separately.'))return;
-   const {error}=await supabase.rpc('ai_open_budget',{p_label:'Scan Inbox authorized session',p_usd:amount});
-   if(error)notify(error.message);await loadBudget();
+   const sessionId=budgetSessionId,expected=budgetAuthorizedUSD;
+   const button=budgetPanel.querySelector("#scan-budget-create");button.disabled=true;
+   try{
+    const {error}=await supabase.rpc(sessionId?"ai_update_budget":"ai_open_budget",sessionId?{p_session:sessionId,p_expected:expected,p_usd:amount}:{p_label:"Scan Inbox authorized session",p_usd:amount});
+    if(error)throw error;
+    await loadBudget();status("Spending limit saved. No generation started.");
+   }catch(error){status("Could not save spending limit: "+error.message);notify(error.message);}
+   finally{button.disabled=false;}
   };
   loadBudget();
   const openStates=openedPanelsByJob.get(job.id);
