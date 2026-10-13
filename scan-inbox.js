@@ -169,8 +169,8 @@ export function buttonFor(job){
   return '<button class="primary" data-scan-action="recover" data-scan-attempt="'+esc(attempt.id)+'">Revalidate saved '+esc(attempt.phase)+' response (free · no AI call)</button>';
  if(attempt&&["failed","incomplete","invalid","unknown"].includes(attempt.status))
   return '<button class="primary" data-scan-action="resume" data-scan-retry="true">Retry unfinished stage (new paid request)</button>';
- if(job.state==="uploaded"&&job.analysis?.planning_brief)return '<button class="primary" data-scan-action="analyze">Resume Astra analysis — Sol brief saved</button>';
- if(job.state==="uploaded")return '<button class="primary" data-scan-action="analyze">Run Sol planning → Astra analysis</button>';
+ if(job.state==="uploaded"&&job.analysis?.planning_brief)return '<button class="primary" data-scan-action="analyze">Start Astra extraction (new paid request; Sol brief saved)</button>';
+ if(job.state==="uploaded")return '<button class="primary" data-scan-action="plan">Ask Sol to plan (one paid request)</button>';
  if(job.state==="analyzed")return '<button class="primary" data-scan-action="outline">Ask Sol to outline the full chapter (paid call)</button>';
  if(job.state==="outlined"){
   const total=job.analysis?.chapter_outline?.units?.length||0,done=job.lesson?.lessons?.length||0;
@@ -283,7 +283,7 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
  const root=by('#scan-root');
  if(!root||!supabase||!user)return;
  const id=user.id;
- let jobs=[],preparedFile=null,preparing=null,pendingUpload=null;
+ let jobs=[],preparedFile=null,preparing=null,pendingUpload=null,budgetSessionId=null;
   let books=[],bookCatalogReady=false,bookCatalogBusy=false;
  let renderedJobId=null,renderedSignature=null;
  const openedPanelsByJob=new Map();
@@ -438,6 +438,31 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
   renderedJobId=job?.id||null;
   renderedSignature=signature;
   if(!job)return;
+  const budgetPanel=document.createElement('section');
+  budgetPanel.className='panel scan-budget';
+  budgetPanel.innerHTML='<h3>AI spending protection</h3><p id="scan-budget-info">Checking authorized budget…</p><button class="outline" id="scan-budget-refresh">Refresh spending (free)</button><details><summary>Authorize a spending session</summary><p>This sets the application limit. Each new generation still requires a separate confirmation. Existing holds remain until billing is reconciled. This is not a provider account spending cap.</p><label>Maximum USD <input id="scan-budget-limit" type="number" min="0.01" max="1000" step="0.01" placeholder="Amount you authorize"></label><button class="outline" id="scan-budget-create">Set limit (no generation)</button></details>';
+  div.prepend(budgetPanel);
+  const loadBudget=async()=>{
+   budgetSessionId=null;
+   try{
+    const b=await invoke({action:'budget-status'});
+    if(b.contract!=='spend-v1')throw Error('Budget API contract unavailable');
+    const session=b.sessions?.[0];
+    const held=(b.ledger||[]).filter(x=>x.session_id===session?.id).reduce((n,x)=>n+Number(x.held_usd),0);
+    budgetSessionId=session?.id||null;
+    const bounds=(b.prices||[]).map(p=>p.model+': up to $'+((Number(p.context_tokens)*Math.max(Number(p.input_rate),Number(p.cached_rate),Number(p.write_rate))*Number(p.long_input)+11400*Number(p.output_rate)*Number(p.long_output))*Number(p.safety_multiplier)/1e6).toFixed(3)+' per request');
+    budgetPanel.querySelector('#scan-budget-info').textContent=(session?'Authorized $'+Number(session.authorized_usd).toFixed(2)+' · held $'+held.toFixed(3)+' · available $'+(Number(session.authorized_usd)-held).toFixed(3):'No spending session authorized. New generation is blocked; saved work remains accessible.')+'. Conservative full-context reservations: '+bounds.join('; ')+'. Actual token estimates are recorded separately; holds are not released on network errors.';
+   }catch(error){budgetPanel.querySelector('#scan-budget-info').textContent=error.message;}
+  };
+  budgetPanel.querySelector('#scan-budget-refresh').onclick=loadBudget;
+  budgetPanel.querySelector('#scan-budget-create').onclick=async()=>{
+   const amount=Number(budgetPanel.querySelector('#scan-budget-limit').value);
+   if(!Number.isFinite(amount)||amount<=0||amount>1000)return notify('Choose a limit between $0.01 and $1000.');
+   if(!window.confirm('Authorize an application spending session of $'+amount.toFixed(2)+'? No generation starts now. Every paid stage still asks separately.'))return;
+   const {error}=await supabase.rpc('ai_open_budget',{p_label:'Scan Inbox authorized session',p_usd:amount});
+   if(error)notify(error.message);await loadBudget();
+  };
+  loadBudget();
   const openStates=openedPanelsByJob.get(job.id);
   if(openStates)div.querySelectorAll('details[data-scan-expand]').forEach(panel=>{
    if(openStates.has(panel.dataset.scanExpand))panel.open=openStates.get(panel.dataset.scanExpand);
@@ -520,6 +545,9 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
    if(operation)return;
    const action=e.currentTarget.dataset.scanAction;
    const retry=e.currentTarget.dataset.scanRetry==='true';
+   const paid=!['check','recover','approve'].includes(action);
+   if(paid&&!budgetSessionId)return notify('Authorize and refresh a spending session first. No request started.');
+   if(paid&&!retry&&!window.confirm('Start ONE new paid '+action+' request under the displayed spending limit? A conservative reservation will be held even if the connection fails.'))return;
    if(retry){
     const failedAttempt=job.attempts?.find(a=>a.base_revision===job.revision&&
      ['failed','incomplete','invalid','unknown'].includes(a.status));
@@ -533,22 +561,15 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
    operation=true;
    updateLiveStage(action==='resume'?currentScanPhase(job):action);
    const button=e.currentTarget;button.disabled=true;
-   status(action==='recover'?'Revalidating saved model output locally (free, no AI call)…':action==='approve'?'Saving your lesson approval (free)…':action==='analyze'?'Running Sol planning → Astra analysis (up to two paid requests)…':action==='outline'?'Sol is planning an adaptable chapter curriculum — one paid request…':'Running '+action+' — one paid AI request, please wait…');
+   status(action==='recover'?'Revalidating saved model output locally (free, no AI call)…':action==='approve'?'Saving your lesson approval (free)…':action==='analyze'?'Running Astra extraction — one paid request…':action==='outline'?'Sol is planning an adaptable chapter curriculum — one paid request…':'Running '+action+' — one paid AI request, please wait…');
    try{
-    let planningUsage=null,expectedRevision=job.revision;
-    if(action==='analyze'&&!job.analysis?.planning_brief){
-     const planned=await runStage({action:'plan',jobId:job.id,expectedRevision,learnerContext:div.querySelector('#scan-learner-context')?.value||''});
-     planningUsage=planned.usage;expectedRevision=job.revision+1;
-     status('Sol brief saved. Running Astra source analysis…');
-     updateLiveStage('analyze');
-    }
-    const result=await runStage({action,jobId:job.id,retry,expectedRevision,
+    const expectedRevision=job.revision;
+    const result=await runStage({action,jobId:job.id,retry,expectedRevision,budgetSessionId,learnerContext:div.querySelector('#scan-learner-context')?.value||'',
       ...(retry?{retryOf:job.attempts?.find(a=>a.base_revision===job.revision)?.id}:{}),
       ...(["recover","check"].includes(action)?{attemptId:button.dataset.scanAttempt}:{})});
-    if(planningUsage&&result.usage)result.usage.estimatedUSD+=planningUsage.estimatedUSD;
     if(result.usage){lastUsage=result.usage;}
     await refresh(false);
-    status('Completed '+action+'. '+(result.usage?'Estimated cost: $'+Number(result.usage.estimatedUSD).toFixed(5)+'. ':'')+'Review the results before moving on.');
+    status('Completed '+action+'. '+(Number.isFinite(result.usage?.estimatedUSD)?'Estimated cost: $'+result.usage.estimatedUSD.toFixed(5)+'. ':'Cost estimate unavailable or not applicable. ')+'Review the results before moving on.');
    }catch(error){await refresh(false);status('Could not '+action+': '+error.message+' Any saved Sol brief will be reused on retry.');notify(error.message)}
    finally{
     operation=false;
@@ -615,7 +636,7 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
    const registered=await invoke({action:'register',path:pending.path,title:name,book,pages,track});
    selectedId=registered.jobId;root.querySelector('#scan-upload-form').reset();
    chooseBook('');preparedFile=null;preparing=null;pendingUpload=null;
-   await refresh(false);status('Source uploaded. No AI charges yet. Select Run Sol planning → Astra analysis when ready.');
+   await refresh(false);status('Source uploaded. No AI charges yet. Select Ask Sol to plan (one paid request) when ready.');
    button.textContent='Upload privately (no AI charge)';
   }catch(error){
    status('Upload failed while '+phase+': '+error.message+'. Tap Retry upload to try again.');

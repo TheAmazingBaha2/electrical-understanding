@@ -40,6 +40,7 @@ try{
    }},
    functions:{invoke:async(slug,{body})=>{
     if(slug!=='scan-lesson-pipeline')throw Error('Wrong function');
+    if(body.action==='budget-status')return {data:{contract:'spend-v1',sessions:[{id:'22222222-2222-2222-2222-222222222222',authorized_usd:100}],ledger:[],prices:[]},error:null};
     if(body.action==='status')return {data:{authorized:true},error:null};
     if(body.action==='delete'){job=null;return {data:{deleted:true},error:null};}
     if(body.action==='register'){
@@ -71,9 +72,11 @@ try{
  await page.locator('#scan-upload').click();
  await page.waitForFunction(()=>document.querySelector('#scan-upload')?.textContent.includes('Retry'));
  await page.locator('#scan-upload').click();
- await page.locator('[data-scan-action="analyze"]').waitFor();
+ await page.locator('[data-scan-action="plan"]').waitFor();
  assert.equal(await page.evaluate(()=>window.__uploadCount),1,'Registration retry must not upload a duplicate');
  assert.match(await page.locator('#scan-status').innerText(),/No AI charges yet/);
+ const acceptPaid=dialog=>dialog.accept();page.on('dialog',acceptPaid);
+ await page.locator('[data-scan-action="plan"]').click();
  await page.locator('[data-scan-action="analyze"]').click();
  await page.locator('.scan-evidence-row').first().waitFor();
  assert.match(await page.locator('#scan-detail').innerText(),/S1/);
@@ -85,8 +88,8 @@ try{
  assert.match(await page.locator('.scan-quiz-item').first().innerText(),/0\.005 A/);
  await page.locator('[data-scan-action="review"]').click();
  await page.locator('[data-scan-action="approve"]').waitFor();
- page.once('dialog',dialog=>dialog.accept());
  await page.locator('[data-scan-action="approve"]').click();
+ page.off('dialog',acceptPaid);
  await page.waitForFunction(()=>document.querySelector('#scan-detail')?.innerText.includes('Approved · available'));
  assert.match(await page.locator('#scan-detail').innerText(),/Approved lesson 1/i);
  assert.equal(await page.locator('.scan-chapter-current').count(),0);

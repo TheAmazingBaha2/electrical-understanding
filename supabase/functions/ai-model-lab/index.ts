@@ -45,13 +45,14 @@ Deno.serve(async (req:Request)=>{
  if(!input||typeof input!=="object"||Array.isArray(input))return response({error:"Invalid request"},400,origin);
  const apiKey=Deno.env.get("OPENAI_API_KEY")||"";
  if(input.action==="status")return response({
-  authorized:true,ready:apiKey.startsWith("sk-"),
+  authorized:true,ready:false,spendingProtected:false,
   models:MODELS,
   cases:CASES.map(({id,topic,title,prompt})=>({id,topic,title,prompt})),
   limits:{perMinute:2,perHour:6,per24Hours:24,astraPer24Hours:2,maxOutputTokens:1400},
-  note:"Cost-bearing inference is disabled until an OpenAI API key is configured in staging Edge Function secrets."
+  note:"New lab and tutor generation is paused: these endpoints do not yet have the scan spending ledger. Existing study content remains available."
  },200,origin);
  if(input.action!=="run" && input.action!=="chat")return response({error:"Unknown action"},400,origin);
+ return response({error:"New lab/tutor generation is paused pending equivalent spending and checkpoint protection. No paid request was sent."},503,origin);
  if(!apiKey.startsWith("sk-"))return response({error:"Live OpenAI model tests are not enabled; set OPENAI_API_KEY in staging Edge Function secrets."},503,origin);
  if(typeof input.model!=="string"||!MODELS.includes(input.model as any))return response({error:"Model not allowed"},400,origin);
  if(typeof input.caseId!=="string")return response({error:"Missing case ID"},400,origin);

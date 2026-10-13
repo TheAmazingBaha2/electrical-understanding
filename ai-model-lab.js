@@ -61,7 +61,7 @@ export function attachAIModelLab(supabase,notify){
      ?'Astra: $10 per million input tokens and $50 per million output tokens. Maximum 2 Astra tests per rolling 24 hours.'
      :'Clicking Run uses metered API tokens. Choose another model to compare the same question.';};
    model.addEventListener('change',updateCostNote);updateCostNote();
-   status.textContent=info.ready?'Ready: choose a model, then run the scenario.':'Private gateway connected. Live model inference needs a configured OpenAI API key.';
+   status.textContent=info.ready?'Ready: choose a model, then run the scenario.':(info.note||'New generation is paused pending spending protection.');
   }catch(e){status.textContent='Private access unavailable: '+e.message;}
  })();
  button.addEventListener('click',async()=>{

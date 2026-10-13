@@ -107,3 +107,24 @@ test('planning inventory includes approved units inside unfinished chapters but 
  assert.equal(input.existing_lessons.approved[0].id,'approved-unit');
  assert.ok(!JSON.stringify(input).includes('Unapproved secret draft'));
 });
+
+test('one and forty unit outlines preserve mixed classifications and independent mathematics',async()=>{
+ for(const count of [1,40]){
+  const units=Array.from({length:count},(_,i)=>({...outline.units[0],key:'K'+i,kind:i%3===0?'math':'concept',destination:i%2?'review':'source',prerequisites:i?['K'+(i-1)]:[],ordering:i?'sequential':'independent'}));
+  const h=setup({payloads:{...payloads,eu_outline:{...outline,units}}});
+  h.job.state='analyzed';h.job.analysis=structuredClone(extraction);
+  assert.equal((await h.invoke({action:'outline'})).status,200);
+  assert.equal(h.job.analysis.chapter_outline.units.length,count);
+  for(const u of h.job.analysis.chapter_outline.units)if(u.kind==='math'){assert.equal(u.ordering,'independent');assert.equal(u.prerequisites.length,0);}
+ }
+});
+test('next unit and revision receive earlier approvals, citations, original brief and review findings',async()=>{
+ const h=setup({payloads});for(const action of ['plan','analyze','outline','draft','review','approve'])await h.invoke({action});
+ const approved=structuredClone(h.job.lesson.lessons[0]);await h.invoke({action:'draft'});
+ const input=JSON.parse(h.calls.at(-1).input);
+ assert.deepEqual(input.approved_chapter_lessons[0],approved);assert.equal(input.source_metadata.book,h.job.source_book);
+ assert.equal(input.analysis.equations.length,16);assert.equal(input.selected_unit.id,'U02');assert.ok(input.planning_brief);
+ h.job.state='needs_revision';h.job.review={ready:false,summary:'Explain sign',findings:[{severity:'blocker',description:'Explain sign',source_id:'S1'}]};
+ await h.invoke({action:'draft'});assert.deepEqual(JSON.parse(h.calls.at(-1).input).previous_review,h.job.review===null?{ready:false,summary:'Explain sign',findings:[{severity:'blocker',description:'Explain sign',source_id:'S1'}]}:h.job.review);
+ assert.deepEqual(h.job.lesson.lessons[0],approved);
+});

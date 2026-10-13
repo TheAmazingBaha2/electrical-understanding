@@ -27,7 +27,7 @@ async function verifyAccess(){
   if(id!==currentId||usedClient!==client)return;
   if(error)throw new Error(error.message||'Private gateway unavailable');
   if(!data?.authorized)throw new Error('Account is not authorized for the private tutor');
-  if(!data.ready)throw new Error('AI key has not been enabled for staging');
+  if(!data.ready)throw new Error(data.note||'New tutor generation is paused pending spending protection');
   authorized=true;setStatus('Private tutor ready · metered calls · shared hourly quota');
  }catch(e){if(id===currentId)setStatus('Private tutor unavailable: '+e.message)}
  setControls();

@@ -7,12 +7,16 @@ import { join } from "node:path";
 // Do not let a misconfigured auto-build deploy main to the dedicated staging Worker.
 const sourceBranch = process.env.WORKERS_CI_BRANCH || process.env.GITHUB_REF_NAME || "local";
 const isWorkersBuild = process.env.WORKERS_CI === "1";
-const allowedCloudflareBranch = sourceBranch === "draft/v2-dmm-companion" || sourceBranch.startsWith("preview/");
+const allowedCloudflareBranch = sourceBranch === "draft/v2-dmm-companion";
 if (isWorkersBuild && !allowedCloudflareBranch) {
-  throw new Error(`Refusing to build eu-v2-staging from unexpected Cloudflare branch: ${sourceBranch}. Set its production branch to draft/v2-dmm-companion, or use an intentional preview/* branch.`);
+  throw new Error(`Refusing to build eu-v2-staging from unexpected Cloudflare branch: ${sourceBranch}. Set its production branch to draft/v2-dmm-companion.`);
 }
 const commitSha = process.env.WORKERS_CI_COMMIT_SHA || process.env.GITHUB_SHA || "local";
 
+if(isWorkersBuild){
+ const {requireCI}=await import('./require-ci.mjs');
+ await requireCI(commitSha);
+}
 const output = "dist";
 const publicFiles = [
   "index.html",

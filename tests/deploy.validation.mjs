@@ -17,10 +17,10 @@ const blocked = spawnSync(process.execPath, ["scripts/build.mjs"], {
 });
 assert.notEqual(blocked.status, 0, "A Workers build from main must fail");
 assert.match(blocked.stderr, /Refusing to build eu-v2-staging/);
-// A correct staging branch and intentional preview/* branch remain valid.
-for (const name of ["draft/v2-dmm-companion", "preview/layout-review"]) {
-  const outcome = spawnSync(process.execPath, ["scripts/build.mjs"], {
-    env: { ...process.env, WORKERS_CI: "1", WORKERS_CI_BRANCH: name }, encoding: "utf8"
+// An exact staging commit with successful CI may build (network mocked).
+for (const name of ["draft/v2-dmm-companion"]) {
+  const outcome = spawnSync(process.execPath, ["--import", "./tests/ci-pass-fixture.mjs", "scripts/build.mjs"], {
+    env: { ...process.env, WORKERS_CI: "1", WORKERS_CI_BRANCH: name, WORKERS_CI_COMMIT_SHA:"a".repeat(40) }, encoding: "utf8"
   });
   assert.equal(outcome.status, 0, name + " should build: " + outcome.stderr);
 }
