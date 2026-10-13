@@ -15,6 +15,12 @@ try{for(const width of [320,390,1440]){
  assert.match(await page.locator('[data-nav-status="math"]').textContent(),/TBD/);
  assert.match(await page.locator('[data-nav-status="reviews"]').textContent(),/TBD/);
  assert.equal(await book.evaluate(el=>el.tagName),'SECTION');
+ assert.deepEqual(await page.locator('[data-dashboard-category]').evaluateAll(els=>els.map(el=>el.dataset.dashboardCategory)),['textbooks','labs','ceta','math','reviews']);
+ assert.deepEqual(await page.locator('.sidebar [data-nav-status]').evaluateAll(els=>els.map(el=>el.dataset.navStatus)),['textbooks','labs','ceta','math','reviews']);
+ assert.equal(await book.locator('.dashboard-book-link .navigation-chevron').count(),1);
+ assert.equal(await book.locator('button').filter({hasText:'Browse contents'}).count(),0);
+ assert.equal(await book.evaluate(el=>el.closest('[data-dashboard-category]').dataset.dashboardCategory),'textbooks');
+
  assert.equal(await page.locator('details details').count(),0);
  assert.equal(await book.locator('.chapter-pie').first().isVisible(),false);
  if(width===390||width===1440)await page.screenshot({path:'test-artifacts/compact-dashboard-'+width+'.png',fullPage:true});
@@ -33,6 +39,8 @@ try{for(const width of [320,390,1440]){
  assert.ok((await lesson.locator('button').boundingBox()).height>=44 || width>700);
  if(width===390)await page.screenshot({path:'test-artifacts/compact-dashboard-expanded-phone.png',fullPage:true});
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));
+ await book.locator('.dashboard-book-link').click();assert.equal(await page.locator('[data-source="geier"]').count(),1);
+ await go(page,'dashboard');await book.waitFor();
  await go(page,'math');assert.match(await page.locator('#main').innerText(),/Math Practice/);
  await go(page,'dashboard');await book.waitFor();
  assert.deepEqual(errors,[]);await page.close();

@@ -27,18 +27,23 @@ export function renderSourceSection(view,c={},selected=''){
 }
 export function renderMathPractice(c={}){
  const lessons=studyInventory(c).filter(l=>l.curriculum.section==='math');
- return '<header class="source-heading"><p class="v2-kicker">KEEP THE FOUNDATIONS FRESH</p><h2>Math Practice</h2><p>Periodic refreshers on the mathematics behind electricity. These stand on their own, without requiring a book.</p></header><section class="source-book">'+(lessons.length?lessonRows(lessons,c):'<div class="chapter-empty"><h3>A place for your math refreshers</h3><p>Chapter 3’s full lessons are in Exam Practice → Associate CET. Refresher lessons will appear here as we add them.</p><button class="outline small-button" data-goto="ceta" data-lesson="associate-cet:3">Open Associate CET · Chapter 3 →</button></div>')+'</section>';
+ return '<header class="source-heading"><p class="v2-kicker">KEEP THE FOUNDATIONS FRESH</p><h2>Math Practice</h2><p>Periodic refreshers on the mathematics behind electricity. These stand on their own, without requiring a book.</p></header><section class="source-book">'+(lessons.length?lessonRows(lessons,c):'<div class="chapter-empty"><h3>A place for your math refreshers</h3><p>Chapter 3’s full lessons are in Exam Prep → Associate CET. Refresher lessons will appear here as we add them.</p><button class="outline small-button" data-goto="ceta" data-lesson="associate-cet:3">Open Associate CET · Chapter 3 →</button></div>')+'</section>';
 }
 export function renderSavedReinforcement(c={}){
  const lessons=studyInventory(c).filter(l=>l.curriculum.section==='reviews');
  return lessons.length?'<section class="source-book"><header class="source-book-heading"><div><p class="v2-kicker">PREVIOUSLY PUBLISHED PRACTICE</p><h3>Saved reinforcement lessons</h3><p>These existing lessons remain available while the broader review format is decided.</p></div></header><div class="source-chapters">'+lessonRows(lessons,c)+'</div></section>':'';
 }
 const legend='<span class="pie-legend"><i class="legend-correct"></i>Correct <i class="legend-retry"></i>Needs review <i class="legend-unanswered"></i>Unanswered</span>';
-export function renderChapterDashboard(c={}){
- const sources=sourceIndex(c).map(s=>({...s,chapters:s.chapters.filter(ch=>ch.lessons.some(l=>l.curriculum.dashboard!==false)).map(ch=>({...ch,lessons:ch.lessons.filter(l=>l.curriculum.dashboard!==false)}))})).filter(s=>s.chapters.length);
- return '<div class="chapter-dashboard"><header class="dashboard-welcome"><h2>Your learning dashboard</h2></header><div class="dashboard-books">'+sources.map(s=>
- '<section class="dashboard-book source-book" data-dashboard-source="'+esc(s.id)+'"><header class="source-book-heading"><span class="dashboard-book-copy"><span class="v2-kicker">'+esc(studySections.find(x=>x.section===s.section)?.title)+'</span><strong>'+esc(s.book)+'</strong><span>'+s.chapters.length+' chapter'+(s.chapters.length===1?'':'s')+' with lessons</span></span></header><div class="dashboard-book-body"><button class="outline small-button" data-goto="'+sectionView(s.section)+'">Browse contents →</button><div class="dashboard-chapters">'+s.chapters.map(ch=>{
+function dashboardBook(s,c){
+ return '<section class="dashboard-book source-book" data-dashboard-source="'+esc(s.id)+'"><button type="button" class="source-book-heading dashboard-book-link" data-goto="'+sectionView(s.section)+'" aria-label="Open contents: '+esc(s.book)+'"><span class="dashboard-book-copy"><strong>'+esc(s.book)+'</strong><span>'+s.chapters.length+' chapter'+(s.chapters.length===1?'':'s')+' with lessons</span></span><span class="navigation-chevron" aria-hidden="true">›</span></button><div class="dashboard-book-body"><div class="dashboard-chapters">'+s.chapters.map(ch=>{
  const p=learningProgress(ch.lessons,c);
  return '<details class="dashboard-chapter" data-disclosure="dashboard:'+esc(s.id+':'+ch.id)+'"><summary><span class="dashboard-chapter-copy"><small>'+esc(chapterLabel(ch))+'</small><strong>'+esc(ch.title)+'</strong><span>'+p.mastered+' / '+p.lessons+' lessons mastered · '+p.total+' checks</span></span><span class="disclosure-chevron" aria-hidden="true">⌄</span></summary><div class="dashboard-lesson-list"><div class="dashboard-chapter-progress">'+progressPie(p,chapterLabel(ch))+'<div>'+legend+(ch.coverage?'<p class="dashboard-coverage">'+esc(ch.coverage)+'</p>':'')+'</div></div>'+lessonRows(ch.lessons,c)+'</div></details>';
- }).join('')+'</div></div></section>').join('')+'</div>'+(c.banner||'')+'</div>';
+ }).join('')+'</div></div></section>';
+}
+export function renderChapterDashboard(c={}){
+ const sources=sourceIndex(c).map(s=>({...s,chapters:s.chapters.filter(ch=>ch.lessons.some(l=>l.curriculum.dashboard!==false)).map(ch=>({...ch,lessons:ch.lessons.filter(l=>l.curriculum.dashboard!==false)}))})).filter(s=>s.chapters.length);
+ return '<div class="chapter-dashboard"><header class="dashboard-welcome"><h2>Your learning dashboard</h2></header><div class="dashboard-categories">'+studySections.map(section=>{
+ const books=sources.filter(s=>s.section===section.section);
+ return '<section class="dashboard-category" data-dashboard-category="'+section.id+'"><button type="button" class="dashboard-category-heading" data-goto="'+section.id+'"><span><strong>'+esc(section.title)+'</strong><span>'+esc(section.description)+'</span></span><span class="navigation-chevron" aria-hidden="true">›</span></button><div class="dashboard-books">'+(books.length?books.map(s=>dashboardBook(s,c)).join(''):'<p class="dashboard-category-empty">TBD · No published graded lessons yet.</p>')+'</div></section>';
+ }).join('')+'</div>'+(c.banner||'')+'</div>';
 }

@@ -4,10 +4,10 @@ import {cetaGuideUnits,eimBasicExperiments} from './course-catalog.js';
 import {geierChapters} from './geier-catalog.js';
 import {workshopActivityProgress} from './workshop-progress.js';
 export const studySections=[
- {id:'ceta',section:'exam',title:'Exam Practice',description:'Prepare for Associate CET, one chapter and lesson at a time.'},
  {id:'textbooks',section:'textbooks',title:'Textbook Companions',description:'Your books, their chapters, and the lessons that support your reading.'},
  {id:'labs',section:'labs',title:'Labs',description:'Manuals and chapter companions for the laboratory work you are studying.'},
- {id:'math',section:'math',title:'Math Practice',description:'Periodic refreshers on the mathematics behind electricity.'},
+ {id:'ceta',section:'exam',title:'Exam Prep',description:'Study guides and chapter practice for your certification exams.'},
+ {id:'math',section:'math',title:'Math',description:'Periodic refreshers on the mathematics behind electricity.'},
  {id:'reviews',section:'reviews',title:'Review',description:'Bring ideas from your regular lessons back into practice. The broader review format is still to be decided.'}
 ];
 export const learningSources=[

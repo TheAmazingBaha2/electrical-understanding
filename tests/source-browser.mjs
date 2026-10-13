@@ -24,7 +24,7 @@ try{
   await page.locator('.lesson-tabs [data-lesson-tab="quiz"]').click();assert.equal(await page.locator('.quiz-step').count(),16);assert.equal(await page.locator('#main textarea').count(),0);
   await page.locator('.lesson-tabs [data-lesson-tab="review"]').click();await page.locator('[data-goto="ceta"][data-lesson="associate-cet:3"]').click();
   assert.equal(await page.locator('[data-disclosure="contents:associate-cet:3"] .chapter-lesson').last().getAttribute('data-content-lesson'),'C3-CURATED-SUMMARY');
-  await page.locator('[data-disclosure="contents:associate-cet:3"] [data-lesson="C3-CURATED-U01"]').click();assert.match(await page.locator('.bread').innerText(),/Exam Practice.*Chapter 3/);
+  await page.locator('[data-disclosure="contents:associate-cet:3"] [data-lesson="C3-CURATED-U01"]').click();assert.match(await page.locator('.bread').innerText(),/Exam Prep.*Chapter 3/);
   await page.locator('.lesson-tabs [data-lesson-tab="quiz"]').click();const correct=series.lessons[0].questions[0].correct;await page.locator('.quiz-card input[value="'+correct+'"]').check();await page.locator('[data-submit="C3-CURATED-U01-Q01"]').click();
   await page.waitForFunction(()=>JSON.parse(localStorage.getItem('eu_progress:hkwmtjhgrskidaizamwy:fixture-owner')||'{}').progress?.['C3-CURATED-U01']?.answers?.['C3-CURATED-U01-Q01']?.correct===true);
   await page.locator('.lesson-tabs [data-lesson-tab="review"]').click();await page.locator('[data-goto="ceta"][data-lesson="associate-cet:3"]').click();

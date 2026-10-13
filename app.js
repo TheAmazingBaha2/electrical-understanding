@@ -220,7 +220,7 @@ function setNav(){const current=view==='generated-lesson'?(generatedLessons.get(
  const context=v2Context(),inventory=studyInventory(context);
  for(const section of studySections){const status=$('[data-nav-status="'+section.id+'"]');if(status){const graded=learningProgress(inventory.filter(l=>l.curriculum.section===section.section),context).total;status.textContent=graded||(section.id==='reviews'&&context.reviews)?'':'TBD'}}
 }
-function render(){setNav();refreshAIChatContext();const names={'generated-lesson':'Approved lesson workbench',dashboard:'Your learning dashboard',ceta:'Exam Practice',curriculum:'Legacy lessons',legacy:'Legacy lessons',textbooks:'Textbook companions',labs:'Labs',math:'Math Practice',subtrack:'Learning sub-track',lesson:'Lesson workbench',reviews:'Review',library:'Textbook companions','scan-inbox':'Scan Inbox',account:'Your study account','ai-lab':'Private AI model tests'};
+function render(){setNav();refreshAIChatContext();const names={'generated-lesson':'Approved lesson workbench',dashboard:'Your learning dashboard',ceta:'Exam Prep',curriculum:'Legacy lessons',legacy:'Legacy lessons',textbooks:'Textbook companions',labs:'Labs',math:'Math Practice',subtrack:'Learning sub-track',lesson:'Lesson workbench',reviews:'Review',library:'Textbook companions','scan-inbox':'Scan Inbox',account:'Your study account','ai-lab':'Private AI model tests'};
  $('#page-title').textContent=names[view]||names.dashboard;
  const main=$('#main');
  const disclosures=new Set([...main.querySelectorAll('details[data-disclosure][open]')].map(el=>el.dataset.disclosure));

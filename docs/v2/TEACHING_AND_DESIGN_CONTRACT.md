@@ -53,3 +53,7 @@ Every current and future content card must show a Reference pages row immediatel
 ## Dashboard simplification — October 13 follow-up
 
 Keep overall chapter progress pies. Books are static headings and chapters are the only expandable level; lessons never add another disclosure. Replace subsection/lesson pies with compact horizontal bars using the same correct / needs review / unanswered totals. Place each bar immediately after Reference pages and before written completion counts. Lesson actions stay visible when their chapter is open. Apply the same reference → bar → counts order in content lists. Preserve sidebar navigation and saved widths, stable lesson/question IDs and progress; this presentation change never authorizes paid generation.
+
+## Category hierarchy and card navigation — October 13 follow-up
+
+Dashboard and sidebar category order: Textbook Companions, Labs, Exam Prep, Math, Review. Dashboard categories are static containers with brief descriptions; each source book/guide is a subdivision inside its category, using shared inventory. Show TBD for categories without published graded lessons. Category headings and book title cards navigate to their existing contents views, with right-side arrows; remove separate Browse contents buttons. Only chapters expand to lesson rows, preserving overall chapter pies and subsection bars. Future books join their correct category automatically. Sidebar resizing, IDs, answers, review schedules, cloud behavior and financial controls remain unchanged.
