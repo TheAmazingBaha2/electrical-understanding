@@ -1,3 +1,4 @@
+import {go} from './navigation-helper.mjs';
 // Browser-only mocked chat integration. No provider calls or private account tokens.
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
@@ -7,7 +8,7 @@ try{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.route('https://esm.sh/**',route=>route.abort());
  await page.goto('http://127.0.0.1:8080/',{waitUntil:'domcontentloaded'});
- await page.locator('.v2-hero').waitFor({timeout:30000});
+ await page.locator('.dashboard-welcome').waitFor({timeout:30000});
  assert.equal(await page.locator('#ai-chat-panel').isVisible(),false);
  assert.equal(await page.locator('#ai-chat-launch').isVisible(),false);
  await page.evaluate(async()=>{
@@ -35,7 +36,7 @@ try{
  assert.match(await page.locator('#ai-chat-messages').innerText(),/What happens at 5 volts/);
  await page.locator('#ai-chat-close').click();
  assert.equal(await page.locator('#ai-chat-panel').isVisible(),false);
- await page.locator('.workspace-top-tabs [data-view="textbooks"]').click();
+ await go(page,'textbooks');
  await page.locator('#ai-chat-launch').click();
  assert.match(await page.locator('#ai-chat-messages').innerText(),/Detailed explanation/,'Conversation survives navigation');
  await page.setViewportSize({width:390,height:770});

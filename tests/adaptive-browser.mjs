@@ -7,7 +7,7 @@ const browser=await chromium.launch({headless:true});
 try{
  for(const width of [390,1280]){
   const page=await browser.newPage({viewport:{width,height:900}});const errors=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.route('https://esm.sh/**',r=>r.abort());await page.goto('http://127.0.0.1:8080/');await page.locator('.v2-hero').waitFor();
+  await page.route('https://esm.sh/**',r=>r.abort());await page.goto('http://127.0.0.1:8080/');await page.locator('.dashboard-welcome').waitFor();
   await page.evaluate(async()=>{
    const {renderActivitySelector,attachGeneratedPredictions}=await import('/lesson-tabs.js');
    const {attachGeneratedSimulations}=await import('/generated-simulations.js');
@@ -43,7 +43,7 @@ try{
   assert.equal(await page.locator('.chapter-lesson').count(),16);assert.equal(await page.locator('.chapter-lesson [data-goto="generated-lesson"]').count(),16);
   await page.evaluate(()=>window.__dashboard());
   assert.equal(await page.locator('.dashboard-chapter').count(),1);assert.equal(await page.locator('.dashboard-lesson-list .lesson-pie').count(),16);
-  assert.equal(await page.locator('.v2-hero [data-lesson="C3-CURATED-U01"]').count(),1);
+  assert.equal(await page.locator('.dashboard-welcome [data-lesson="C3-CURATED-U01"]').count(),1);
   for(let i=0;i<16;i++){
    await page.evaluate(i=>window.__curatedTab(i,'overview'),i);assert.match(await page.locator('.lesson-briefing').innerText(),/CHAPTER 3/);
    await page.evaluate(i=>window.__curatedTab(i,'quiz'),i);assert.equal(await page.locator('.quiz-step').count(),curated.series.lessons[i].questions.length);

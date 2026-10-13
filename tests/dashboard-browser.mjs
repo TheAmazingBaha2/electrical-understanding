@@ -1,0 +1,34 @@
+import assert from 'node:assert/strict';
+import {chromium} from 'playwright';
+import {mkdir} from 'node:fs/promises';
+await mkdir('test-artifacts',{recursive:true});
+const browser=await chromium.launch({headless:true});
+try{for(const width of [320,390,1440]){
+ const page=await browser.newPage({viewport:{width,height:900}}),errors=[];
+ page.on('pageerror',e=>errors.push(e.message));
+ await page.route('https://esm.sh/**',r=>r.fulfill({contentType:'text/javascript',body:'export function createClient(){throw new Error("Offline fixture")}'}));
+ await page.goto('http://127.0.0.1:8080/');
+ const book=page.locator('[data-dashboard-source="geier"]');await book.waitFor();
+ assert.equal(await page.locator('.workspace-top-tabs').count(),0);
+ assert.equal(await page.locator('.dashboard-area').count(),6);
+ assert.match(await page.locator('.dashboard-area[data-goto="math"]').innerText(),/TBD/);
+ assert.match(await page.locator('.dashboard-area[data-goto="reviews"]').innerText(),/TBD/);
+ assert.equal(await book.getAttribute('open'),null);
+ assert.equal(await book.locator('.chapter-pie').first().isVisible(),false);
+ if(width===390||width===1440)await page.screenshot({path:'test-artifacts/compact-dashboard-'+width+'.png',fullPage:true});
+ await book.locator(':scope > summary').press('Enter');
+ const chapter=book.locator('.dashboard-chapter').first();
+ assert.equal(await chapter.locator('.chapter-pie').first().isVisible(),false);
+ await chapter.locator(':scope > summary').click();
+ assert.equal(await chapter.locator('.dashboard-chapter-progress .chapter-pie').isVisible(),true);
+ const lesson=chapter.locator('.dashboard-lesson').first();
+ assert.equal(await lesson.locator('.lesson-pie').isVisible(),false);
+ await lesson.locator(':scope > summary').click();
+ assert.equal(await lesson.locator('.lesson-pie').isVisible(),true);
+ assert.ok((await lesson.locator('button').boundingBox()).height>=44 || width>700);
+ if(width===390)await page.screenshot({path:'test-artifacts/compact-dashboard-expanded-phone.png',fullPage:true});
+ assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));
+ await page.locator('.dashboard-area[data-goto="math"]').click();assert.match(await page.locator('#main').innerText(),/Math Practice/);
+ await page.locator('.dashboard-home').click();await book.waitFor();
+ assert.deepEqual(errors,[]);await page.close();
+}console.log('PASS: compact dashboard, nested keyboard/touch disclosures, TBD sections, dashboard links, 320/390/1440px without overflow.');}finally{await browser.close();}

@@ -13,7 +13,7 @@ test('Chapter 3 lives only under Associate CET and its complete ordered contents
  const index=sourceIndex(ctx),guide=index.find(s=>s.id==='associate-cet'),chapter=guide.chapters.find(ch=>ch.id==='3');
  assert.equal(guide.chapters.length,22);assert.deepEqual(chapter.lessons.map(l=>l.id),lessons.map(l=>l.id));
  const dashboard=renderChapterDashboard(ctx),menu=renderSourceSection('ceta',ctx);
- assert.equal((dashboard.match(/class="dashboard-book/g)||[]).length,1);assert.equal((dashboard.match(/class="dashboard-chapter"/g)||[]).length,1);
+ assert.equal((dashboard.match(/class="dashboard-book source-book"/g)||[]).length,1);assert.equal((dashboard.match(/class="dashboard-chapter"/g)||[]).length,1);
  assert.equal((dashboard.match(/data-content-lesson=/g)||[]).length,16);assert.equal((menu.match(/data-content-lesson=/g)||[]).length,16);
  assert.doesNotMatch(renderMathPractice(ctx),/data-content-lesson=/);assert.doesNotMatch(dashboard,/v2-meter|v2-frost-ring|All published lessons|Legacy/);
 });
@@ -36,9 +36,9 @@ test('missing TOC data stays pending, textbook placeholders are limited to the t
  assert.match(labs,/table of contents is supplied/);assert.equal((labs.match(/data-source=/g)||[]).length,4);
  assert.equal(sourcePlacement({source_track:'guide',title:'Chapter 4',source_book:'Associate CET'}, {kind:'math'}).section,'exam');
 });
-test('scan and archive are absent from both navigation bars; account and sync stay available',()=>{
+test('scan and archive are absent from both navigation; account and sync stay available',()=>{
  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');assert.doesNotMatch(html,/data-view="(?:scan-inbox|legacy)"/);
- assert.equal((html.match(/data-view="account"/g)||[]).length,2);assert.equal((html.match(/data-view="ceta"/g)||[]).length,2);
+ assert.equal((html.match(/data-view="account"/g)||[]).length,1);assert.equal((html.match(/data-view="ceta"/g)||[]).length,1);
  const app=readFileSync(new URL('../app.js',import.meta.url),'utf8');assert.match(app,/data-goto="scan-inbox"/);assert.match(app,/loadCloud/);assert.match(app,/data-disclosure/);
 });
 test('future paid authoring retains source chapter placement and explicitly opted-in math refreshers',async()=>{

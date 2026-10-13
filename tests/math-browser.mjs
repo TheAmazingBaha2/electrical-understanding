@@ -1,3 +1,4 @@
+import {go} from './navigation-helper.mjs';
 // Real phone/desktop navigation and offline math saving; no paid APIs.
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
@@ -7,11 +8,11 @@ try{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.route('https://esm.sh/**',route=>route.abort());
  await page.goto('http://127.0.0.1:8080/',{waitUntil:'domcontentloaded'});
- await page.locator('.v2-hero').waitFor({timeout:30000});
- await page.locator('.workspace-top-tabs [data-view="math"]').click();
+ await page.locator('.dashboard-welcome').waitFor({timeout:30000});
+ await go(page,'math');
  assert.equal(await page.locator('.math-topic-card').count(),0);
  assert.match(await page.locator('#main').innerText(),/Periodic refreshers/);
- await page.locator('.workspace-top-tabs [data-view="account"]').click();await page.locator('.account-maintenance > summary').click();await page.locator('[data-goto="legacy"]').click();
+ await go(page,'account');await page.locator('.account-maintenance > summary').click();await page.locator('[data-goto="legacy"]').click();
  assert.equal(await page.locator('.legacy-source-row').count(),7);
  await page.locator('[data-lesson="MATH-001"][data-goto="lesson"]').click();
  assert.match(await page.locator('.lesson-header').innerText(),/Scale, Prefixes/);
@@ -40,11 +41,11 @@ try{
  assert.ok(saved.keys.includes('MATH-001'));
  assert.equal(saved.answer.correct,true);
  assert.ok(!saved.keys.includes('L01'),'Math answer must not overwrite legacy lesson ID');
- await page.locator('.workspace-top-tabs [data-view="account"]').click();await page.locator('.account-maintenance > summary').click();await page.locator('[data-goto="legacy"]').click();
+ await go(page,'account');await page.locator('.account-maintenance > summary').click();await page.locator('[data-goto="legacy"]').click();
  assert.match(await page.locator('.legacy-source-row').filter({has:page.locator('[data-lesson="MATH-001"]')}).innerText(),/1 correct/);
- await page.locator('.workspace-top-tabs [data-view="ceta"]').click();
+ await go(page,'ceta');
  assert.equal(await page.locator('.content-chapter').count(),22);
- await page.locator('.workspace-top-tabs [data-view="account"]').click();await page.locator('.account-maintenance > summary').click();await page.locator('[data-goto="legacy"]').click();
+ await go(page,'account');await page.locator('.account-maintenance > summary').click();await page.locator('[data-goto="legacy"]').click();
  await page.locator('[data-goto="lesson"][data-lesson="CETA-G03-01"]').click();
  assert.ok(await page.locator('.math-related-panel [data-lesson="MATH-001"]').count()>0);
  await page.locator('.math-related-panel [data-lesson="MATH-001"]').click();

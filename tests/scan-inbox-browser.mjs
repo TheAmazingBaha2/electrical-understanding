@@ -7,7 +7,7 @@ try{
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.route('https://esm.sh/**',route=>route.abort());
  await page.goto('http://127.0.0.1:8080/',{waitUntil:'domcontentloaded'});
- await page.locator('.v2-hero').waitFor({timeout:30000});
+ await page.locator('.dashboard-welcome').waitFor({timeout:30000});
  await page.evaluate(async()=>{
   const {renderScanInbox,attachScanInbox}=await import('/scan-inbox.js');
   let job=null;window.__attempts=[];window.__batchCalls=[];window.__uploadCount=0;window.__failRegistration=true;

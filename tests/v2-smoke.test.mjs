@@ -52,7 +52,7 @@ test('analog stays paused while FPGA and RP2040 wait',()=>{
 });
 test('empty progress produces true zeros, not imaginary completion',()=>{
  const html=v2Dashboard(context());
- assert.match(html,/Your chapter progress will appear here/);assert.doesNotMatch(html,/role="img"/);
+ assert.match(html,/Exam Practice<\/strong><span>TBD/);assert.doesNotMatch(html,/role="img"/);
 });
 test('persisted lesson IDs count in the dashboard without renaming records',()=>{
  const p={L01:{complete:true,answers:{u1:{correct:true}},updatedAt:1760000000000}};
@@ -177,7 +177,7 @@ test('CETa cards show actual source inventory and label exam plans without claim
 });
 test('dashboard prioritizes active virtual laboratories, not archived pilot lessons',()=>{
  const html=v2Dashboard(context());
- assert.match(html,/Explore Associate CET/);assert.doesNotMatch(html,/data-lesson="EIM-BEC-PRELAB"/);
+ assert.match(html,/data-goto="ceta"/);assert.doesNotMatch(html,/data-lesson="EIM-BEC-PRELAB"/);
  assert.ok(!html.includes('data-goto="lesson" data-lesson="L01"'));
 });
 
