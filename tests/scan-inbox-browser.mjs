@@ -50,7 +50,7 @@ try{
       return {data:{jobId:job.id},error:null};
     }
     if(body.action==='plan'){job.analysis={planning_brief:{astra_guidance:'Verify',lesson_guidance:'Explain',review_guidance:'Check'}};job.revision++;}
-    if(body.action==='outline'){job.state='outlined';job.analysis.chapter_outline={chapter_title:'One unit',units:[{id:'U01',title:'Circuit',kind:'math',destination:'source',ordering:'independent',prerequisites:[]}]};}
+    if(body.action==='outline'){job.state='outlined';job.lesson={lessons:[],pending:[],current:null};job.revision++;job.analysis.chapter_outline={chapter_title:'One unit',units:[{id:'U01',title:'Circuit',kind:'math',destination:'source',ordering:'independent',prerequisites:[]}]};}
     if(body.action==='analyze'){job.state='analyzed';job.analysis=exampleAnalysis;}
     if(body.action==='draft'){window.__batchCalls.push('draft');job.state='drafted';job.lesson={...job.lesson,current:{...lesson,plan:job.analysis.chapter_outline.units[(job.lesson.lessons?.length||0)+(job.lesson.pending?.length||0)]}};job.revision++;}
     if(body.action==='review'){window.__batchCalls.push('review');job.state='reviewed';job.review=sampleReview;job.revision++;}
