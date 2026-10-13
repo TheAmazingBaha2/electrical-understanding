@@ -33,8 +33,15 @@ const generatedLessons=new Map();
 const findLesson=id=>allLessons.find(l=>l.id===id)||generatedLessons.get(id);
 const labUnlocked=l=>l?.id===labLessons[0].id || Boolean(labLessons.length && hasPassed(labLessons[0]));
 const bookUnlocked=l=>l?.id===bookLessons[0].id || Boolean(bookLessons.length && hasPassed(bookLessons[0]));
-const guideUnlocked=l=>l?.id===cetaLessons[0].id || Boolean(cetaLessons.length && hasPassed(cetaLessons[cetaLessons.indexOf(l)-1]));
-const canOpenLesson=(l,i)=>!l?false:l.generated?true:l?.subtrack==='math'?true:i<lessons.length?unlocked(i):l?.subtrack==='geier'?bookUnlocked(l):l?.subtrack==='guide'?guideUnlocked(l):labUnlocked(l);
+const guideUnlocked=l=>l?.id===cetaLessons[0].id || Boolean(cetaLessons.length && hasPassed(cetaLessons[cetaLessons.findIndex(original=>original.id===l.id)-1]));
+const canOpenLesson=l=>{
+ if(!l)return false;if(l.generated||l.subtrack==='math')return true;
+ const pilotIndex=lessons.findIndex(original=>original.id===l.id);
+ if(pilotIndex>=0)return unlocked(pilotIndex);
+ if(l.subtrack==='geier')return bookUnlocked(l);
+ if(l.subtrack==='guide')return guideUnlocked(l);
+ return labLessons.some(original=>original.id===l.id)&&labUnlocked(l);
+};
 let supabase=null, user=null, view='dashboard', activeLesson=null, focusQuestion=null, progress={}, busy=false;
 let lessonTab='overview', activityIndex=0, quizIndex=0, learnIndex=0;
 // Only Cloudflare preview hosts may connect to the isolated staging project.
@@ -53,7 +60,7 @@ function localLoad(){
 function getAnonymousSnapshot(){return new ProgressStore(localStorage,null).read().progress}
 function getState(id){return progress[id] || {answers:{},complete:false,updatedAt:0}}
 function getAccuracy(lesson){const a=getState(lesson.id).answers||{};const done=lesson.questions.filter(q=>a[q.id]?.correct===true).length;return {correct:done,total:lesson.questions.length,answered:lesson.questions.filter(q=>typeof a[q.id]?.correct==='boolean').length}}
-function hasPassed(lesson){const state=getState(lesson.id);if(state.complete===true)return true;const a=state.answers||{};const hits=lesson.questions.filter(q=>a[q.id]?.correct===true).length;
+function hasPassed(lesson){if(!lesson)return false;const state=getState(lesson.id);if(state.complete===true)return true;const a=state.answers||{};const hits=lesson.questions.filter(q=>a[q.id]?.correct===true).length;
   return lesson.questions.every(q=>typeof a[q.id]?.correct==='boolean') && hits>=Math.ceil(.8*lesson.questions.length) && lesson.questions.filter(q=>q.safety).every(q=>a[q.id]?.correct===true);
 }
 function unlocked(index){return index===0 || hasPassed(lessons[index-1]);}

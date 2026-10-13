@@ -46,7 +46,7 @@ test('unsupported fact citations are rejected before drafting',()=>{
 test('mathematics unlocks without any completed electronic prerequisites',()=>{
  assert.equal(mathAvailability({id:'MATH-002'},[],()=>false),true);
  assert.equal(mathAvailability({id:'MATH-005'},[],()=>false),true);
- assert.match(app,/l\?\.subtrack==='math'\?true/);
+ assert.match(app,/l.subtrack==='math'\)return true/);
 });
 test('chapter states and durable attempt phases are migrated',()=>{
  assert.match(migration,/'outlined'/);

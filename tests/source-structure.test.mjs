@@ -57,3 +57,11 @@ test('new lab companions attach to their actual manual rather than all sharing B
   assert.equal(p.source_id,id);assert.equal(sourcePlacement(h.job).source_id,id);assert.equal(p.section,'labs');
  }
 });
+
+test('availability is keyed by immutable lesson ID rather than object identity after catalog decoration',()=>{
+ const app=readFileSync(new URL('../app.js',import.meta.url),'utf8');
+ const start=app.indexOf('const canOpenLesson=');const end=app.indexOf('\nlet supabase=',start);
+ const create=new Function('lessons','labLessons','unlocked','bookUnlocked','guideUnlocked','labUnlocked',app.slice(start,end)+';return canOpenLesson;');
+ const can=create([{id:'L01'}],[{id:'LAB',subtrack:'basic'}],i=>i===0,l=>l.id==='BOOK',()=>false,l=>l.id==='LAB');
+ assert.equal(can({id:'LAB',subtrack:'basic'}),true);assert.equal(can({id:'BOOK',subtrack:'geier'}),true);assert.equal(can({id:'L01'}),true);assert.equal(can({id:'UNKNOWN'}),false);assert.equal(can({id:'REFRESH',subtrack:'math'}),true);
+});
