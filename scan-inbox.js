@@ -21,8 +21,8 @@ function setScanInboxAutoUpdatesPaused(paused){
  try{sessionStorage.setItem(pauseKey,paused?'1':'0')}catch{/* Browsers may disable session storage. */}
 }
 function humanState(state){
- return ({uploaded:"Awaiting Astra interpretation",analyzed:"Ready for Sol chapter outline",outlined:"Ready for next chapter lesson",
-  drafted:"Ready for Astra technical review",reviewed:"Ready for your approval",
+ return ({uploaded:"Awaiting Sol interpretation",analyzed:"Ready for Sol chapter outline",outlined:"Ready for next chapter lesson",
+  drafted:"Ready for Sol technical review",reviewed:"Ready for your approval",
   needs_revision:"Review found problems — revise with Sol",approved:"Approved for your private lesson library"})[state]||state;
 }
 // Detach Android content-provider files immediately, before another app changes the file handle.
@@ -43,7 +43,7 @@ export function renderScanInbox(user){
  if(!user)return '<header class="v2-intro"><p class="v2-kicker">PRIVATE SOURCE LIBRARY</p><h2>Scan Inbox</h2><p>Sign in to your staging study account before uploading and building lessons.</p><button class="primary" data-goto="account">Sign in →</button></header>';
  return `<section id="scan-root" class="scan-workbench">
  <header class="v2-intro"><p class="v2-kicker">SOURCE-BASED LEARNING · PRIVATE STAGING</p><h2>Scan Inbox & lesson studio</h2>
-  <p>Upload a short, legible textbook excerpt. Sol prepares a teaching brief, Astra extracts the evidence, Sol writes a teaching draft, and Astra reviews its accuracy. Only your manual approval adds it to your private lesson library.</p></header>
+  <p>Upload a short, legible textbook excerpt. Sol prepares a teaching brief, Sol extracts the evidence, Sol writes a teaching draft, and Sol reviews its accuracy. Only your manual approval adds it to your private lesson library.</p></header>
  <div class="scan-upload-panel panel"><h3>1 · Add a private source</h3>
   <p class="muted sm">PDF, JPG, PNG or WebP · up to 5 MB each. For affordable, reliable interpretation, upload 1–3 clear pages per source. Do not include personal identifying information.</p>
   <form id="scan-upload-form" class="scan-upload-form">
@@ -77,7 +77,7 @@ export function renderScanInbox(user){
    <label>Destination track<select id="scan-track"><option value="other">Other book / source</option><option value="geier">How to Diagnose and Fix Everything Electronic</option><option value="teach">Teach Yourself Electricity and Electronics</option><option value="principles">Electronics: Principles and Applications</option><option value="cabling">Cabling / Networking</option><option value="guide">Associate CET Study Guide</option><option value="basic">Hands-On Laboratory</option></select></label>
    <p class="muted sm">Use the printed page numbers, not the PDF reader's position. These source details will accompany every generated lesson and review exercise.</p>
    <label>Private scanned pages<input id="scan-file" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,application/pdf,image/png,image/jpeg,image/webp" required></label>
-   <label class="scan-consent"><input id="scan-share-consent" type="checkbox" required> I authorize sending this particular scan to OpenAI when I explicitly start Sol planning, Astra analysis or review. My files stay private in Supabase; they are not automatically published.</label>
+   <label class="scan-consent"><input id="scan-share-consent" type="checkbox" required> I authorize sending this particular scan to OpenAI when I explicitly start Sol planning, Sol analysis or review. My files stay private in Supabase; they are not automatically published.</label>
    <button class="primary" type="submit" id="scan-upload">Upload privately (no AI charge)</button>
   </form></div>
  <div class="scan-library-panel panel"><div class="scan-heading"><h3>2 · Your scan library</h3><button type="button" id="scan-refresh" class="outline small-button">Refresh</button></div>
@@ -87,13 +87,13 @@ export function renderScanInbox(user){
   <div id="scan-list" class="scan-list"></div>
  </div>
  <div id="scan-detail" class="scan-detail"></div>
- <p class="muted sm">The first Analyze click runs Sol planning followed by Astra analysis (two paid requests). Draft and Review each trigger one paid model request, subject to the same private quotas as your tutor. Shared limits: 10 calls/minute, 60/hour, 200/day, including 40 Astra calls/day. One started scan may use up to four completion calls beyond the limits per rolling 24 hours. Only your clicks start paid generation. Running requests can continue if you close this page. Responses are retained by OpenAI for recovery and saved privately here; incomplete output is not approved lesson content.</p>
+ <p class="muted sm">Planning, source extraction, chapter outline, lesson drafting and technical review each require a separate click and one paid Sol request. Scan quotas: 10 calls/minute, 60/hour, 200/day. The separate model lab and tutor are paused until equivalent spending safeguards are available. One started scan may use up to four completion calls beyond the limits per rolling 24 hours. Only your clicks start paid generation. Running requests can continue if you close this page. Responses are retained by OpenAI for recovery and saved privately here; incomplete output is not approved lesson content.</p>
  </section>`;
 }
 const bubble=(name,content)=>'<div class="ai-dialogue-bubble ai-dialogue-answer"><strong>'+esc(name)+'</strong><div class="ai-dialogue-copy">'+esc(content)+'</div></div>';
 function explainAnalysis(data){
  if(!data?.facts)return "";
- return `<div class="scan-evidence"><h3>Astra: extracted source evidence</h3><p>${esc(data.overview)}</p>
+ return `<div class="scan-evidence"><h3>Saved source evidence</h3><p>${esc(data.overview)}</p>
  <h4>Source-grounded observations</h4>${(data.facts||[]).map(f=>`<div class="scan-evidence-row"><strong>${esc(f.id)} · ${esc(f.location)} ${f.confidence==="uncertain"?"· uncertain":""}</strong><p>${esc(f.claim)}</p></div>`).join('')}
  ${data.equations?.length?'<h4>Equations</h4>'+data.equations.map(e=>'<p>'+esc(e.equation)+' — '+esc(e.meaning)+' ('+esc(e.source_id)+')</p>').join(''):''}
  ${data.safety_notes?.length?'<h4>Source safety notes</h4>'+data.safety_notes.map(n=>'<p>'+esc(n.note)+' ('+esc(n.source_id)+')</p>').join(''):''}
@@ -158,7 +158,7 @@ function explainOutline(job){
 }
 function explainReview(data){
  if(!data)return "";
- return `<section class="scan-review"><h3>Astra technical review</h3><p><strong>${data.ready?"Ready for your review":"Not yet acceptable"}</strong> — ${esc(data.summary)}</p>
+ return `<section class="scan-review"><h3>Saved technical review</h3><p><strong>${data.ready?"Ready for your review":"Not yet acceptable"}</strong> — ${esc(data.summary)}</p>
  ${(data.findings||[]).map(x=>'<div class="scan-finding"><strong>'+esc(x.severity)+'</strong> '+esc(x.description)+' <small>'+esc(x.source_id)+'</small></div>').join('')}
  </section>`;
 }
@@ -169,14 +169,14 @@ export function buttonFor(job){
   return '<button class="primary" data-scan-action="recover" data-scan-attempt="'+esc(attempt.id)+'">Revalidate saved '+esc(attempt.phase)+' response (free · no AI call)</button>';
  if(attempt&&["failed","incomplete","invalid","unknown"].includes(attempt.status))
   return '<button class="primary" data-scan-action="resume" data-scan-retry="true">Retry unfinished stage (new paid request)</button>';
- if(job.state==="uploaded"&&job.analysis?.planning_brief)return '<button class="primary" data-scan-action="analyze">Start Astra extraction (new paid request; Sol brief saved)</button>';
+ if(job.state==="uploaded"&&job.analysis?.planning_brief)return '<button class="primary" data-scan-action="analyze">Start Sol extraction (new paid request; Sol brief saved)</button>';
  if(job.state==="uploaded")return '<button class="primary" data-scan-action="plan">Ask Sol to plan (one paid request)</button>';
  if(job.state==="analyzed")return '<button class="primary" data-scan-action="outline">Ask Sol to outline the full chapter (paid call)</button>';
  if(job.state==="outlined"){
   const total=job.analysis?.chapter_outline?.units?.length||0,done=job.lesson?.lessons?.length||0;
   return '<button class="primary" data-scan-action="draft">Draft lesson '+(done+1)+' of '+total+' with Sol (paid call)</button>';
  }
- if(job.state==="drafted")return '<button class="primary" data-scan-action="review">Have Astra review the lesson</button>';
+ if(job.state==="drafted")return '<button class="primary" data-scan-action="review">Have Sol review the lesson</button>';
  if(job.state==="needs_revision")return '<button class="primary" data-scan-action="draft">Revise lesson with Sol</button>';
  if(job.state==="reviewed"){
   const total=job.analysis?.chapter_outline?.units?.length;
@@ -190,6 +190,7 @@ function attemptLog(job){
  return '<section class="panel"><h3>Saved attempts & errors</h3><p class="muted sm">Raw output is preserved even when incomplete or invalid. It must pass checks before becoming lesson content.</p>'+job.attempts.map(a=>
  '<details data-scan-expand="attempt-'+esc(a.id)+'" '+(a.error_message?'open':'')+'><summary>'+esc(a.phase)+' · '+esc(a.status)+' · '+new Date(a.created_at).toLocaleString()+'</summary>'+
  (a.error_message?'<p role="alert">'+esc(a.error_message)+'</p>':'')+
+ '<p class="muted sm">Recorded model: '+esc(a.model||'Unavailable')+' · source revision '+esc(a.base_revision)+'</p>'+
  (a.response_id?'<p class="muted sm">Saved response: '+esc(a.response_id)+'</p>':'')+
  (a.usage?'<p class="muted sm">Tokens reported: '+esc(a.usage.input_tokens||0)+' input / '+esc(a.usage.output_tokens||0)+' output.</p>':'')+
  (a.output_text?'<details data-scan-expand="output-'+esc(a.id)+'"><summary>View unverified saved output</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere">'+esc(a.output_text)+'</pre></details>':'')+
@@ -197,9 +198,9 @@ function attemptLog(job){
 }
 
 const SCAN_STAGE_DEFINITIONS=[
- {label:'Astra interpretation',hint:'Sol plans · Astra extracts evidence'},
+ {label:'Sol interpretation',hint:'Sol plans · Sol extracts evidence'},
  {label:'Sol chapter plan & lessons',hint:'Flexible outline and one sourced lesson at a time'},
- {label:'Astra review',hint:'Verify accuracy and safety'},
+ {label:'Sol review',hint:'Verify accuracy and safety'},
  {label:'Your approval',hint:'Add the reviewed lesson to your library'}
 ];
 const SCAN_ATTEMPT_PENDING=new Set(['starting','running','received']);
@@ -230,12 +231,12 @@ function scanStageStates(job,livePhase=null){
   if(state==='complete')hint='Stage finished';
   if(state==='failed')hint='Review the saved error or retry';
   if(state==='revision')hint='Review requested corrections';
-  if(state==='ready'&&phase==='analyze'&&index===0)hint='Sol brief saved · Astra is next';
+  if(state==='ready'&&phase==='analyze'&&index===0)hint='Sol brief saved · Sol is next';
   if(state==='running'&&phase==='plan'&&index===0)hint='Sol is preparing the teaching brief';
-  if(state==='running'&&phase==='analyze'&&index===0)hint='Astra is interpreting the source';
+  if(state==='running'&&phase==='analyze'&&index===0)hint='Sol is interpreting the source';
   if(state==='running'&&phase==='outline')hint='Sol is outlining chapter learning units';
    if(state==='running'&&phase==='draft')hint='Sol is drafting one chapter lesson';
-  if(state==='running'&&phase==='review')hint='Astra is checking the draft';
+  if(state==='running'&&phase==='review')hint='Sol is checking the draft';
   if(state==='running'&&phase==='approve')hint='Saving your approval';
   return {...definition,index,state,status:statuses[state],hint};
  });
@@ -258,7 +259,7 @@ function scanPhaseMessage(job,livePhase=null){
  if(!active)return 'Scan pipeline status is available below.';
  if(active.state==='running')return 'Stage '+(active.index+1)+' of 4 · '+active.label+' is processing.';
  if(active.state==='failed')return 'Stage '+(active.index+1)+' of 4 · '+active.label+' was interrupted. Check Saved attempts & errors to resume or retry.';
- if(job.state==='needs_revision')return 'Revision requested · Sol needs to revise the lesson before another Astra review.';
+ if(job.state==='needs_revision')return 'Revision requested · Sol needs to revise the lesson before another Sol review.';
  return 'Stage '+(active.index+1)+' of 4 · '+active.label+' is ready. No AI request is running.';
 }
 function detail(job){
@@ -272,7 +273,7 @@ function detail(job){
  '<p class="muted sm">Book and page labels are user-entered. Source fact locations below must be checked against the original pages.</p></div>'+
  '<button class="outline small-button" id="scan-download-source">Download original private source</button> <button class="outline small-button" id="scan-delete-source">Delete scan & generated content</button>'+
  '<p class="scan-phase-banner" role="status">'+esc(scanPhaseMessage(job))+'</p>'+scanTrackerMarkup(job)+
- (job.analysis?.planning_brief?'<details data-scan-expand="sol-brief"><summary>Sol’s saved teaching brief</summary>'+bubble('Your instructions',job.analysis.planning_brief.learner_context||'Default teaching guidance')+bubble('Astra extraction',job.analysis.planning_brief.astra_guidance)+bubble('Lesson drafting',job.analysis.planning_brief.lesson_guidance)+bubble('Technical review',job.analysis.planning_brief.review_guidance)+'</details>':'')+
+ (job.analysis?.planning_brief?'<details data-scan-expand="sol-brief"><summary>Sol’s saved teaching brief</summary>'+bubble('Your instructions',job.analysis.planning_brief.learner_context||'Default teaching guidance')+bubble('Sol extraction',job.analysis.planning_brief.astra_guidance)+bubble('Lesson drafting',job.analysis.planning_brief.lesson_guidance)+bubble('Technical review',job.analysis.planning_brief.review_guidance)+'</details>':'')+
  (job.state==='uploaded'&&!job.analysis?.planning_brief?'<label>Additional instructions for Sol (optional)<textarea id="scan-learner-context" maxlength="2000" rows="4" placeholder="Leave blank for Sol to plan from the scanned pages."></textarea></label>':'')+
  explainAnalysis(job.analysis)+explainOutline(job)+explainLesson(job.lesson,job)+explainReview(job.review)+provenance+
  attemptLog(job)+'<div class="scan-approve-actions"><button type="button" class="outline" id="scan-free-preflight">Check pipeline readiness (free)</button>'+buttonFor(job)+'</div>'+
@@ -442,6 +443,9 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
   budgetPanel.className='panel scan-budget';
   budgetPanel.innerHTML='<h3>AI spending protection</h3><p id="scan-budget-info">Checking authorized budget…</p><button class="outline" id="scan-budget-refresh">Refresh spending (free)</button><details><summary>Authorize a spending session</summary><p>This sets the application limit. Each new generation still requires a separate confirmation. Existing holds remain until billing is reconciled. This is not a provider account spending cap.</p><label>Maximum USD <input id="scan-budget-limit" type="number" min="0.01" max="1000" step="0.01" placeholder="Amount you authorize"></label><button class="outline" id="scan-budget-create">Set limit (no generation)</button></details>';
   div.prepend(budgetPanel);
+  const accounting=document.createElement('details');
+  accounting.innerHTML='<summary>Request accounting for this source</summary><div class="scan-accounting-records"></div>';
+  budgetPanel.append(accounting);
   const loadBudget=async()=>{
    budgetSessionId=null;
    try{
@@ -450,8 +454,18 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
     const session=b.sessions?.[0];
     const held=(b.ledger||[]).filter(x=>x.session_id===session?.id).reduce((n,x)=>n+Number(x.held_usd),0);
     budgetSessionId=session?.id||null;
-    const bounds=(b.prices||[]).map(p=>p.model+': up to $'+((Number(p.context_tokens)*Math.max(Number(p.input_rate),Number(p.cached_rate),Number(p.write_rate))*Number(p.long_input)+11400*Number(p.output_rate)*Number(p.long_output))*Number(p.safety_multiplier)/1e6).toFixed(3)+' per request');
+    const bounds=(b.prices||[]).filter(p=>p.model==='gpt-6.1-sol'&&Date.parse(p.valid_until)>Date.now()).map(p=>p.model+': up to $'+((Number(p.context_tokens)*Math.max(Number(p.input_rate),Number(p.cached_rate),Number(p.write_rate))*Number(p.long_input)+11400*Number(p.output_rate)*Number(p.long_output))*Number(p.safety_multiplier)/1e6).toFixed(3)+' per request');
     budgetPanel.querySelector('#scan-budget-info').textContent=(session?'Authorized $'+Number(session.authorized_usd).toFixed(2)+' · held $'+held.toFixed(3)+' · available $'+(Number(session.authorized_usd)-held).toFixed(3):'No spending session authorized. New generation is blocked; saved work remains accessible.')+'. Conservative full-context reservations: '+bounds.join('; ')+'. Actual token estimates are recorded separately; holds are not released on network errors.';
+    const money=value=>value==null?'unknown':'$'+Number(value).toFixed(6);
+    const rows=(b.ledger||[]).filter(x=>x.job_id===job.id);
+    accounting.querySelector('.scan-accounting-records').innerHTML=rows.length?rows.map(x=>
+     '<article><p><strong>'+esc(x.phase)+' · '+esc(x.model)+'</strong> · '+esc(x.provider_status||'reserved')+'</p>'+
+     '<p>Attempt '+esc(x.attempt_id)+' · revision '+esc(x.base_revision)+'</p>'+
+     '<p>Maximum reserved '+money(x.reserved_usd)+' · held '+money(x.held_usd)+' · token estimate '+money(x.estimated_usd)+' · provider billed '+money(x.provider_billed_usd)+'</p>'+
+     '<p>Billing '+(x.billing_uncertain?'uncertain — hold retained':'reconciled from invoice evidence')+' · '+(x.retry_of?'explicit retry of '+esc(x.retry_of):'new generation')+'</p>'+
+     '<p>Reported tokens: input '+esc(x.input_tokens??'unknown')+', output '+esc(x.output_tokens??'unknown')+', cached '+esc(x.cached_tokens??'unknown')+', cache writes '+esc(x.cache_write_tokens??'unknown')+'</p>'+
+     '<p>Provider response '+esc(x.provider_response_id||'not saved')+' · started '+esc(x.created_at)+' · completed '+esc(x.completed_at||'pending')+'</p></article>'
+    ).join(''):'<p>No spending-ledger entries for this source. Historical attempts remain in Saved attempts & errors.</p>';
    }catch(error){budgetPanel.querySelector('#scan-budget-info').textContent=error.message;}
   };
   budgetPanel.querySelector('#scan-budget-refresh').onclick=loadBudget;
@@ -561,7 +575,7 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
    operation=true;
    updateLiveStage(action==='resume'?currentScanPhase(job):action);
    const button=e.currentTarget;button.disabled=true;
-   status(action==='recover'?'Revalidating saved model output locally (free, no AI call)…':action==='approve'?'Saving your lesson approval (free)…':action==='analyze'?'Running Astra extraction — one paid request…':action==='outline'?'Sol is planning an adaptable chapter curriculum — one paid request…':'Running '+action+' — one paid AI request, please wait…');
+   status(action==='recover'?'Revalidating saved model output locally (free, no AI call)…':action==='approve'?'Saving your lesson approval (free)…':action==='analyze'?'Running Sol extraction — one paid request…':action==='outline'?'Sol is planning an adaptable chapter curriculum — one paid request…':'Running '+action+' — one paid AI request, please wait…');
    try{
     const expectedRevision=job.revision;
     const result=await runStage({action,jobId:job.id,retry,expectedRevision,budgetSessionId,learnerContext:div.querySelector('#scan-learner-context')?.value||'',
@@ -590,7 +604,7 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
     .order('created_at',{ascending:false}).limit(200);
    if(error)throw error;
    if(!root.isConnected)return;
-   const attemptsResult=await supabase.from('scan_model_attempts').select('id,job_id,base_revision,phase,status,response_id,error_message,output_text,usage,created_at').order('created_at',{ascending:false}).limit(200);
+   const attemptsResult=await supabase.from('scan_model_attempts').select('id,job_id,base_revision,phase,model,status,response_id,error_message,output_text,usage,created_at').order('created_at',{ascending:false}).limit(200);
    if(attemptsResult.error)throw attemptsResult.error;
    jobs=(data||[]).map(job=>({...job,attempts:(attemptsResult.data||[]).filter(a=>a.job_id===job.id)}));if(!jobs.some(j=>j.id===selectedId))selectedId=jobs[0]?.id||null;
    draw();if(announce)status(jobs.length+' private source(s) loaded. No paid model requests were made.');

@@ -103,7 +103,7 @@ try{
  const dims=await page.evaluate(()=>({page:document.documentElement.scrollWidth,viewport:innerWidth}));
  assert.ok(dims.page<=dims.viewport+2,'Mobile overflow '+JSON.stringify(dims));
  assert.deepEqual(errors,[],'No JS runtime errors');
- console.log('PASS: owner-only scan upload, manual Astra/Sol/Astra stages, preview, approval, and phone widths.');
+ console.log('PASS: owner-only scan upload, separate Sol pipeline stages, preview, approval, and phone widths.');
 }finally{await browser.close()}
 
 

@@ -33,3 +33,9 @@ test('ledger migration preserves original reservations, isolates RLS and denies 
  assert.match(s,/revoke all on function public.ai_reserve_attempt.*authenticated/);
  assert.match(s,/provider_billed_usd is null/);assert.match(s,/Conflicting invoice reconciliation/);
 });
+
+test('all new pipeline stages advertise Sol while retaining distinct stage identities',async()=>{
+ const h=setup();const r=await h.invoke({action:'status'});const data=await r.json();
+ assert.deepEqual(data.pipeline,['plan','analyze','outline','draft','review','approve']);
+ assert.deepEqual(Object.values(data.models),Array(5).fill('gpt-6.1-sol'));
+});

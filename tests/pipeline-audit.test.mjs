@@ -61,7 +61,7 @@ test('two-unit mock pipeline preserves IDs, evidence and approvals across the ne
  for(const action of ['draft','review','approve']){const r=await h.invoke({action});assert.equal(r.status,200,await r.text());}
  assert.equal(h.job.state,'approved');assert.equal(h.job.lesson.lessons.length,2);
  assert.deepEqual(h.job.lesson.lessons[0],first);assert.equal(h.job.analysis.facts.length,18);
- assert.deepEqual(h.calls.map(c=>c.model),['gpt-6.1-sol','gpt-6-astra','gpt-6.1-sol','gpt-6.1-sol','gpt-6-astra','gpt-6.1-sol','gpt-6-astra']);
+ assert.deepEqual(h.calls.map(c=>c.model),Array(7).fill('gpt-6.1-sol'));
  assert.equal(h.calls.filter(c=>Array.isArray(c.input)&&c.input[0].content.some(p=>p.type==='input_file')).length,2);
  assert.equal((await h.invoke({action:'draft'})).status,409);assert.equal(h.calls.length,7);
 });

@@ -15,7 +15,7 @@ test('signed-in scan upload requires explicit consent and shows all four stages'
  const html=renderScanInbox({id:'account'});
  assert.match(html,/id="scan-share-consent" type="checkbox" required/);
  assert.match(html,/Upload privately \(no AI charge\)/);
- assert.match(html,/Astra extracts.*Sol writes.*Astra reviews/);
+ assert.match(html,/Sol extracts.*Sol writes.*Sol reviews/);
 });
 test('staging source and API secrets never appear in public assets',()=>{
  assert.match(build,/"scan-inbox.js"/);
@@ -38,7 +38,7 @@ test('backend only accepts private owner path and sniffs source format',()=>{
  assert.match(source,/sourceInput=.*job\.source_kind/);
 });
 test('models and steps are fixed, sequential, paid only through atomic quota',()=>{
- assert.match(source,/\["plan","outline","draft"\]\.includes\(action\)/);
+ assert.match(source,/const model="gpt-6\.1-sol"/);
  assert.match(source,/admin\.rpc\("scan_reserve_stage"/);
  assert.match(source,/outline:"analyzed"/);
  assert.match(source,/if\(action==="approve"\)/);

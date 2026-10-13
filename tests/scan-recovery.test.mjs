@@ -34,7 +34,7 @@ test('quota errors create persistent attempt records without a model call',async
  const h=setup({quotaDenied:true});assert.equal((await h.invoke({action:'plan'})).status,429);assert.equal(h.calls.length,0);assert.equal(h.attempts[0].status,'failed');
 });
 test('resume labels distinguish free retrieval, paid continuation, and saved Sol work',()=>{
- assert.match(buttonFor({state:'uploaded',analysis:{planning_brief:{}},revision:1}),/Start Astra extraction/);
+ assert.match(buttonFor({state:'uploaded',analysis:{planning_brief:{}},revision:1}),/Start Sol extraction/);
  assert.match(buttonFor({revision:1,attempts:[{base_revision:1,status:'running'}]}),/no new AI call/);
  assert.match(buttonFor({revision:1,attempts:[{base_revision:1,status:'invalid',output_text:'partial'}]}),/Revalidate saved .*free/);
 });
