@@ -35,10 +35,14 @@ export function renderLearnSteps(lesson,step=0){
 }
 
 export function lessonActivities(lesson) {
-  if (lesson.experiment==="generated") return (lesson.activities||[]).map((a,i)=>({
-    kind:"generated-check",title:a.title||"Prediction "+(i+1),description:"Make a prediction, explain your reasoning, then compare it with the approved reference.",
-    prompt:a.prompt,answer:a.answer,explanation:a.explanation,source_ids:a.source_ids||[]
-  }));
+  if (lesson.experiment==="generated") {
+    const checks=(lesson.activities||[]).map((a,i)=>({
+      kind:"generated-check",title:a.title||"Prediction "+(i+1),description:"Make a prediction, explain your reasoning, then compare it with the approved reference.",
+      prompt:a.prompt,answer:a.answer,explanation:a.explanation,source_ids:a.source_ids||[]
+    }));
+    if(lesson.simulator)checks.push({kind:"generated-simulation",title:"Adjust the virtual experiment",description:"Change an ideal circuit value and predict how the result responds.",simulator:lesson.simulator});
+    return checks;
+  }
   if (lesson.experiment!=="embedded") return [{kind:"legacy",title:"Circuit workbench",description:"Adjust the circuit, predict the result, then compare your answer with the calculated values."}];
   const headings=[...lesson.html.matchAll(/<h3>([\s\S]*?)<\/h3>/g)].map(m=>m[1].replace(/<[^>]+>/g,"").replace(/^\d+\.\s*/,""));
   const placeholders=[...lesson.html.matchAll(widgetPattern)].map(m=>m[1]);
@@ -96,7 +100,8 @@ export function renderActivitySelector(lesson,selected=0) {
   '<div class="activity-steps" role="group" aria-label="Choose an activity">'+activities.map((a,i)=>
     '<button type="button" class="activity-step'+(i===selectedIndex?' selected':'')+'" data-activity-index="'+i+'" aria-current="'+(i===selectedIndex?'step':'false')+'" title="'+escapeHtml(a.title)+'">'+(i+1)+'</button>').join('')+'</div>'+
   '<h3>'+escapeHtml(current.title)+'</h3><p class="muted">'+escapeHtml(current.description)+'</p>'+
-  (current.kind==="generated-check"?'<section class="generated-activity-check"><p><strong>Predict before checking:</strong> '+escapeHtml(current.prompt)+'</p>'+
+  (current.kind==="generated-simulation"?'<div data-generated-simulator="'+escapeHtml(current.simulator)+'"><p class="muted sm">Loading virtual experiment…</p></div>':
+  current.kind==="generated-check"?'<section class="generated-activity-check"><p><strong>Predict before checking:</strong> '+escapeHtml(current.prompt)+'</p>'+
     '<label class="question-meta">YOUR PREDICTION<textarea class="short-answer" aria-label="Your prediction" placeholder="Write what you expect and why, then check the reference."></textarea></label>'+
     '<button type="button" class="primary small-button" data-generated-reveal>Compare with the approved explanation</button>'+
     '<div class="feedback" data-generated-feedback hidden><p><b>Expected result:</b> '+escapeHtml(current.answer)+'</p><p><b>Reasoning:</b> '+escapeHtml(current.explanation)+'</p>'+
