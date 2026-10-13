@@ -57,7 +57,7 @@ test('new chapter goes into active dashboard, reviews and correct category with 
  const ui=v2Dashboard(context(items,[],progress));
  assert.match(ui,/Approved active companions/);
  assert.match(ui,/1 \/ 3/);
- assert.match(ui,/Review & Reinforcement/);
+ assert.match(ui,/Review &amp; Reinforcement/);
  assert.match(ui,/Source concept 1/);
  assert.match(ui,/Correct saved answers/);
  assert.match(ui,/All published lessons/);
