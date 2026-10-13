@@ -1,3 +1,4 @@
+import {renderWorkshopActivity} from './workshop-widgets.js';
 // Teaching-view presentation helpers. Does not mutate saved lesson answers.
 export const lessonTabs=[
   {id:"overview",label:"Overview",symbol:"✦"},
@@ -19,7 +20,7 @@ export function learningContent(lesson) {
 export function renderLearnSteps(lesson,step=0){
  const html=learningContent(lesson);
  if(lesson.chapterSummary)return html;
- if(!["embedded","generated"].includes(lesson.experiment))return html;
+ if(!["embedded","generated","workshop"].includes(lesson.experiment))return html;
  const pieces=html.split(/(?=<h3>)/);
  const intro=pieces.shift()||"";
  if(!pieces.length)return html;
@@ -40,6 +41,7 @@ export function renderLearnSteps(lesson,step=0){
 
 export function lessonActivities(lesson) {
   if(lesson.chapterSummary)return [];
+  if(lesson.workshop)return lesson.activities||[];
   if (lesson.experiment==="generated") {
     const checks=(lesson.activities||[]).map((a,i)=>({
       kind:a.kind==="simulation"?"generated-simulation":a.kind==="choice"?"generated-choice":"generated-check",simulator:a.simulator,choices:a.choices||[],correct:a.correct,title:a.title||"Prediction "+(i+1),description:"Make a prediction, explain your reasoning, then compare it with the approved reference.",
@@ -97,16 +99,16 @@ export function renderLessonTabs(active,answersCount,questionCount) {
     '<button class="lesson-tab'+(t.id===active?' selected':'')+'" type="button" role="tab" id="lesson-tab-'+t.id+'" aria-controls="lesson-panel" aria-selected="'+String(t.id===active)+'" tabindex="'+(t.id===active?'0':'-1')+'" data-lesson-tab="'+t.id+'"><span aria-hidden="true">'+t.symbol+'</span>'+t.label+(t.id==="quiz"?'<small>'+answersCount+'/'+questionCount+'</small>':'')+'</button>'
   ).join('')+'</nav>';
 }
-export function renderActivitySelector(lesson,selected=0) {
+export function renderActivitySelector(lesson,selected=0,state={}) {
   if(lesson.chapterSummary)return '<section class="panel"><h3>A quick chapter check</h3><p>Use the key takeaways, then test the important ideas in the quiz. Revisit the earlier lessons for interactive practice.</p><button class="primary" data-lesson-tab="quiz">Start the summary quiz →</button></section>';
   const activities=lessonActivities(lesson);
   const selectedIndex=Math.min(Math.max(0,selected),activities.length-1);
   const current=activities[selectedIndex];
-  return '<div class="activity-shell"><div class="activity-step-top"><span class="v2-kicker">SIMULATION '+(selectedIndex+1)+' / '+activities.length+'</span><span class="activity-caption">Try · Observe · Explain</span></div>'+
+  return '<div class="activity-shell"><div class="activity-step-top"><span class="v2-kicker">ACTIVITY '+(selectedIndex+1)+' / '+activities.length+'</span><span class="activity-caption">Try · Observe · Explain</span></div>'+
   '<div class="activity-steps" role="group" aria-label="Choose an activity">'+activities.map((a,i)=>
-    '<button type="button" class="activity-step'+(i===selectedIndex?' selected':'')+'" data-activity-index="'+i+'" aria-current="'+(i===selectedIndex?'step':'false')+'" title="'+escapeHtml(a.title)+'">'+(i+1)+'</button>').join('')+'</div>'+
+    '<button type="button" class="activity-step'+(i===selectedIndex?' selected':'')+(lesson.workshop&&state?.workshopChecks?.[a.id]?.correct===true?' checkpoint-complete':'')+'" data-activity-index="'+i+'" aria-current="'+(i===selectedIndex?'step':'false')+'" title="'+escapeHtml(a.title)+'">'+(i+1)+'</button>').join('')+'</div>'+
   '<h3>'+escapeHtml(current.title)+'</h3><p class="muted">'+escapeHtml(current.description)+'</p>'+
-  (current.kind==="generated-simulation"?'<p>'+escapeHtml(current.prompt||'Predict how changing an input changes the result.')+'</p><div data-generated-simulator="'+escapeHtml(current.simulator)+'"><p class="muted sm">Loading virtual experiment…</p></div>':
+  (lesson.workshop?renderWorkshopActivity(current):current.kind==="generated-simulation"?'<p>'+escapeHtml(current.prompt||'Predict how changing an input changes the result.')+'</p><div data-generated-simulator="'+escapeHtml(current.simulator)+'"><p class="muted sm">Loading virtual experiment…</p></div>':
   current.kind==="generated-choice"?'<section class="generated-activity-check" data-generated-correct="'+current.correct+'"><p><strong>Choose your prediction:</strong> '+escapeHtml(current.prompt)+'</p><div class="options">'+current.choices.map((choice,i)=>'<label class="option"><input type="radio" name="generated-prediction" value="'+i+'">'+escapeHtml(choice)+'</label>').join('')+'</div><button type="button" class="primary small-button" data-generated-reveal>Check prediction</button><div class="feedback" data-generated-feedback hidden><strong data-generated-verdict></strong><p><b>Expected:</b> '+escapeHtml(current.answer)+'</p><p>'+escapeHtml(current.explanation)+'</p><p class="muted sm">Practice feedback; scored checks are in Quiz.</p></div></section>':
   current.kind==="generated-check"?'<section class="generated-activity-check"><p><strong>Predict before checking:</strong> '+escapeHtml(current.prompt)+'</p>'+
     '<label class="question-meta">YOUR PREDICTION<textarea class="short-answer" aria-label="Your prediction" placeholder="Write what you expect and why, then check the reference."></textarea></label>'+

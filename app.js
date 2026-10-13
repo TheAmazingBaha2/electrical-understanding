@@ -1,5 +1,5 @@
 import {renderSavedReinforcement} from './source-navigation.js';
-import {placementForLesson,sectionView} from './learning-structure.js';
+import {placementForLesson,sectionView,nextSourceLesson} from './learning-structure.js';
 import { ProgressStore, cloudTransport } from './persistence.js';
 import { renderAIModelLab, attachAIModelLab } from './ai-model-lab.js';
 import { renderScanInbox, attachScanInbox, scanInboxAutoUpdatesPaused } from './scan-inbox.js';
@@ -9,7 +9,11 @@ import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_ENVIRONMENT } from './
 import { lessons, books } from './lessons.js';
 import { v2Dashboard, v2Page } from './v2-panels.js';
 import { labLessons } from './lab-lessons.js';
-import { bookLessons } from './book-lessons.js';
+import { bookLessons as originalBookLessons } from './book-lessons.js';
+import {geierWorkshops} from './geier-workshops.js';
+import {attachWorkshopWidgets} from './workshop-widgets.js';
+import {lessonRequirementsMet,workshopCheckUpdate} from './workshop-progress.js';
+const bookLessons=[...originalBookLessons,...geierWorkshops];
 import { cetaLessons } from './ceta-lessons.js';
 import {mathLessons, mathAvailability,relatedMath} from './math-lessons.js';
 import {legacyGroup,legacyReason,isArchivedLesson} from './legacy-groups.js';
@@ -33,7 +37,7 @@ const allLessons=[...sourceLessons,...mathLessons];
 const generatedLessons=new Map();
 const findLesson=id=>allLessons.find(l=>l.id===id)||generatedLessons.get(id);
 const labUnlocked=l=>l?.id===labLessons[0].id || Boolean(labLessons.length && hasPassed(labLessons[0]));
-const bookUnlocked=l=>l?.id===bookLessons[0].id || Boolean(bookLessons.length && hasPassed(bookLessons[0]));
+const bookUnlocked=l=>l?.independent===true || l?.id===bookLessons[0].id || Boolean(bookLessons.length && hasPassed(bookLessons[0]));
 const guideUnlocked=l=>l?.id===cetaLessons[0].id || Boolean(cetaLessons.length && hasPassed(cetaLessons[cetaLessons.findIndex(original=>original.id===l.id)-1]));
 const canOpenLesson=l=>{
  if(!l)return false;if(l.generated||l.subtrack==='math')return true;
@@ -61,7 +65,7 @@ function localLoad(){
 function getAnonymousSnapshot(){return new ProgressStore(localStorage,null).read().progress}
 function getState(id){return progress[id] || {answers:{},complete:false,updatedAt:0}}
 function getAccuracy(lesson){const a=getState(lesson.id).answers||{};const done=lesson.questions.filter(q=>a[q.id]?.correct===true).length;return {correct:done,total:lesson.questions.length,answered:lesson.questions.filter(q=>typeof a[q.id]?.correct==='boolean').length}}
-function hasPassed(lesson){if(!lesson)return false;const state=getState(lesson.id);if(state.complete===true)return true;const a=state.answers||{};const hits=lesson.questions.filter(q=>a[q.id]?.correct===true).length;
+function hasPassed(lesson){if(!lesson)return false;const state=getState(lesson.id);if(lesson.workshop)return lessonRequirementsMet(lesson,state);if(state.complete===true)return true;const a=state.answers||{};const hits=lesson.questions.filter(q=>a[q.id]?.correct===true).length;
   return lesson.questions.every(q=>typeof a[q.id]?.correct==='boolean') && hits>=Math.ceil(.8*lesson.questions.length) && lesson.questions.filter(q=>q.safety).every(q=>a[q.id]?.correct===true);
 }
 function unlocked(index){return index===0 || hasPassed(lessons[index-1]);}
@@ -119,6 +123,14 @@ async function loadCloud(){
  })();
  try{await syncTask}finally{syncTask=null;if(syncAgain){syncAgain=false;void loadCloud()}}
 }
+async function saveWorkshopCheck(lessonId,activityId,value,correct){
+ const currentStore=store,lesson=findLesson(lessonId);if(!lesson?.workshop||!lesson.activities.some(a=>a.id===activityId&&a.required!==false)||busy)return false;busy=true;
+ try{
+  if(storageError)throw new Error(storageError);
+  const doc=await currentStore.edit(lessonId,s=>{s.workshopChecks??={};s.workshopChecks[activityId]=workshopCheckUpdate(s.workshopChecks[activityId],value,correct);s.complete=lessonRequirementsMet(lesson,s);s.updatedAt=now();});
+  if(store!==currentStore)return false;progress=doc.progress;syncLabel(user?'Activity saved · syncing':'Activity saved on this device');if(user)void loadCloud();return true;
+ }catch(error){notify('Activity not saved: '+error.message);return false;}finally{busy=false;}
+}
 async function saveAnswer(lessonId,qid,update){
  const currentStore=store;let saved=false;busy=true;
  try{
@@ -126,7 +138,7 @@ async function saveAnswer(lessonId,qid,update){
   const doc=await currentStore.edit(lessonId,s=>{
    s.answers[qid]=update(s.answers[qid]||{});
    const lesson=findLesson(lessonId),a=s.answers;
-   s.complete=s.complete===true||(lesson.questions.every(q=>typeof a[q.id]?.correct==='boolean')&&lesson.questions.filter(q=>a[q.id]?.correct===true).length>=Math.ceil(.8*lesson.questions.length)&&lesson.questions.filter(q=>q.safety).every(q=>a[q.id]?.correct===true));
+   s.complete=lesson.workshop?lessonRequirementsMet(lesson,s):s.complete===true||(lesson.questions.every(q=>typeof a[q.id]?.correct==='boolean')&&lesson.questions.filter(q=>a[q.id]?.correct===true).length>=Math.ceil(.8*lesson.questions.length)&&lesson.questions.filter(q=>q.safety).every(q=>a[q.id]?.correct===true));
    s.updatedAt=now();
   });
   if(store!==currentStore)return;
@@ -182,6 +194,7 @@ function render(){setNav();refreshAIChatContext();const names={'generated-lesson
  main.querySelectorAll('[data-activity-index]').forEach(b=>b.addEventListener('click',()=>{activityIndex=Number(b.dataset.activityIndex);render()}));
  main.querySelectorAll('[data-learn-index]').forEach(b=>b.addEventListener('click',()=>{learnIndex=Number(b.dataset.learnIndex);render()}));
  main.querySelectorAll('[data-quiz-index]').forEach(b=>b.addEventListener('click',()=>{quizIndex=Number(b.dataset.quizIndex);render()}));
+ main.querySelectorAll('[data-workshop-jump]').forEach(b=>b.addEventListener('click',()=>{activityIndex=Number(b.dataset.workshopJump);lessonTab='interact';render()}));
  main.querySelectorAll('[data-quiz-jump]').forEach(b=>b.addEventListener('click',()=>{quizIndex=Number(b.dataset.quizJump);lessonTab='quiz';render()}));
  const pathToggle=main.querySelector('[data-toggle-paths]');const courseMenu=main.querySelector('#course-paths-menu');
  if(pathToggle&&courseMenu){
@@ -200,7 +213,7 @@ function render(){setNav();refreshAIChatContext();const names={'generated-lesson
  if(['lesson','generated-lesson'].includes(view)){attachQuiz();if(lessonTab==='interact'){
   renderExperiment();attachLabWidgets();attachDmmWidgets();attachCetaWidgets();attachMathWidgets();attachGeneratedSimulations(main);
   attachGeneratedPredictions(main,notify);
-}}
+}const workshop=findLesson(activeLesson);if(workshop?.workshop)attachWorkshopWidgets(main,workshop,getState(workshop.id),(id,value,correct)=>saveWorkshopCheck(workshop.id,id,value,correct));}
  if(view==='account')attachAuth();
  if(view==='ai-lab'&&user)attachAIModelLab(supabase,notify);
  if(view==='scan-inbox'&&user)attachScanInbox(supabase,user,notify);
@@ -221,11 +234,11 @@ function renderLesson(){const lesson=findLesson(activeLesson);if(!lesson)return 
   const score=getAccuracy(lesson),passed=hasPassed(lesson);
   return tabbedLesson({lesson,isPilot:false,isLegacyArchived:lesson.archived,idx:0,score,passed,
     nextLesson:lesson.seriesId?[...generatedLessons.values()].find(l=>l.seriesId===lesson.seriesId&&l.seriesOrder===lesson.seriesOrder+1)||null:null,tab:lessonTab,activityIndex,learnIndex,quizIndex,
-    answers:getState(lesson.id).answers||{},questionHtml});
+    answers:getState(lesson.id).answers||{},workshopState:getState(lesson.id),questionHtml});
  }
  if(!canOpenLesson(lesson,allLessons.indexOf(lesson)))return '<div class="panel"><h2>Lesson not yet available</h2><p>'+ (lesson.subtrack==='math'?'Reach one of the linked electronics topics to unlock this mathematics companion.':'Complete the preceding lesson in this source track before continuing.')+'</p><button class="primary" data-goto="'+(isArchivedLesson(lesson)?'legacy':lesson.subtrack==='math'?'math':isPilot?'legacy':'subtrack')+'" '+(isArchivedLesson(lesson)||lesson.subtrack==='math'||isPilot?'':'data-lesson="'+(lesson.subtrack||'basic')+'"')+'>Back</button></div>';
- const score=getAccuracy(lesson),passed=hasPassed(lesson),nextLesson=lesson.subtrack==='math'?null:isPilot?lessons[idx+1]:lesson.subtrack==='geier'?bookLessons[bookLessons.indexOf(lesson)+1]:lesson.subtrack==='guide'?cetaLessons[cetaLessons.indexOf(lesson)+1]:labLessons[labLessons.indexOf(lesson)+1];
- const lessonView=tabbedLesson({lesson,isPilot,isLegacyArchived:isArchivedLesson(lesson),legacyGroup:legacyGroup(lesson),idx,score,passed,nextLesson,tab:lessonTab,activityIndex,learnIndex,quizIndex,answers:getState(lesson.id).answers||{},questionHtml});
+ const score=getAccuracy(lesson),passed=hasPassed(lesson),nextLesson=lesson.seriesId?bookLessons.find(l=>l.seriesId===lesson.seriesId&&l.seriesOrder===lesson.seriesOrder+1)||null:lesson.subtrack==='math'?null:isPilot?lessons[idx+1]:lesson.subtrack==='geier'?nextSourceLesson(lesson,bookLessons):lesson.subtrack==='guide'?cetaLessons[cetaLessons.indexOf(lesson)+1]:labLessons[labLessons.indexOf(lesson)+1];
+ const lessonView=tabbedLesson({lesson,isPilot,isLegacyArchived:isArchivedLesson(lesson),legacyGroup:legacyGroup(lesson),idx,score,passed,nextLesson,tab:lessonTab,activityIndex,learnIndex,quizIndex,answers:getState(lesson.id).answers||{},workshopState:getState(lesson.id),questionHtml});
  if(lesson.subtrack==='math')return lessonView;
  const math=relatedMath(lesson.id);
  return math.length?lessonView+'<aside class="math-related-panel panel"><div><strong>Math behind this topic</strong><p class="muted sm">Strengthen the equations and units that explain this lesson.</p></div>'+

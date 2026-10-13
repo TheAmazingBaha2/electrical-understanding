@@ -25,7 +25,7 @@ const publicFiles = [
   "course-catalog.js", "learning-structure.js", "source-navigation.js",
   "v2-panels.js",
   "lab-lessons.js",
-  "book-lessons.js",
+  "book-lessons.js", "geier-catalog.js", "geier-workshops.js", "workshop-widgets.js", "workshop-progress.js",
   "ceta-lessons.js",
   "ceta-widgets.js",
   "dmm-widgets.js",

@@ -18,8 +18,9 @@ test('one scan run creates all reviewed units while approvals remain exclusively
 test('every paid stage receives one consistent teaching contract and review checks educational quality',async()=>{
  const h=setup(options);await runScanWorkflow(controller(h));
  for(const call of h.calls){
-  assert.match(call.instructions,/TEACHING CONTRACT v3/);
+  assert.match(call.instructions,/TEACHING CONTRACT v4/);
   assert.match(call.instructions,/Overview, Learn, Interact, Quiz and Review/);
+  assert.match(call.instructions,/FLEXIBLE WORKSHOPS/);assert.match(call.instructions,/combines multiple task-appropriate methods/);assert.match(call.instructions,/not completion of that parent chapter/);assert.match(call.instructions,/do not invent unsupported widget kinds/);
   assert.match(call.instructions,/intermediate steps/);assert.match(call.instructions,/never more than one/);
   assert.match(call.instructions,/untrusted data/);assert.match(call.instructions,/not certified truth/);
  }

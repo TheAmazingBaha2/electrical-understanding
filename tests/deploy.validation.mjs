@@ -4,7 +4,7 @@ import { spawnSync } from "node:child_process";
 
 const allowed = [
   "app.js", "persistence.js", "generated-library.js", "generated-simulations.js", "legacy-groups.js", "ai-model-lab.js", "ai-chat-widget.js", "scan-inbox.js", "math-lessons.js", "math-widgets.js", "math-track.js", "config.js", "course-catalog.js", "learning-structure.js", "source-navigation.js", "icon.svg", "index.html",
-  "lab-lessons.js", "book-lessons.js", "ceta-lessons.js", "ceta-widgets.js", "dmm-widgets.js", "lab-widgets.js", "lab-visuals.js", "lesson-tabs.js", "lesson-view.js", "lesson-overviews.js", "lessons.js",
+  "lab-lessons.js", "book-lessons.js", "geier-catalog.js", "geier-workshops.js", "workshop-widgets.js", "workshop-progress.js", "ceta-lessons.js", "ceta-widgets.js", "dmm-widgets.js", "lab-widgets.js", "lab-visuals.js", "lesson-tabs.js", "lesson-view.js", "lesson-overviews.js", "lessons.js",
   "manifest.webmanifest", "styles.css", "v2-panels.js", "build-info.json"
 ];
 const actual = (await readdir("dist")).sort();

@@ -203,7 +203,7 @@ test('DMM book track launches first lesson and locks second until first passes',
  let html=v2Page('subtrack',c,'geier');
  assert.match(html,/data-lesson="BDMM-01"/);
  assert.doesNotMatch(html,/data-lesson="BDMM-02"/);
- assert.match(html,/contents pending|Full contents/);
+ assert.match(html,/supplied table of contents/);
  c.progress['BDMM-01']={complete:true,answers:{},updatedAt:Date.now()};
  html=v2Page('subtrack',c,'geier');
  assert.match(html,/data-lesson="BDMM-02"/);

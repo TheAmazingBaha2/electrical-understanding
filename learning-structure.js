@@ -1,6 +1,8 @@
 // Shared organization for content menus, dashboard and lesson return routes.
 // Placement changes presentation only; graded lesson/question IDs never change.
 import {cetaGuideUnits,eimBasicExperiments} from './course-catalog.js';
+import {geierChapters} from './geier-catalog.js';
+import {workshopActivityProgress} from './workshop-progress.js';
 export const studySections=[
  {id:'ceta',section:'exam',title:'Exam Practice',description:'Prepare for Associate CET, one chapter and lesson at a time.'},
  {id:'textbooks',section:'textbooks',title:'Textbook Companions',description:'Your books, their chapters, and the lessons that support your reading.'},
@@ -10,7 +12,7 @@ export const studySections=[
 ];
 export const learningSources=[
  {id:'associate-cet',section:'exam',title:'Associate CET',book:'Associate CET Study Guide',chapters:cetaGuideUnits.flatMap(u=>u.chapters.map(([id,title,page])=>({id,title,page,group:u.title})))},
- {id:'geier',section:'textbooks',title:'How to Diagnose and Fix Everything Electronic',book:'How to Diagnose and Fix Everything Electronic',note:'Troubleshooting book · third edition. Full contents to be added when we work on this book.',chapters:[{id:'6',title:'Digital Multimeter',page:97}]},
+ {id:'geier',section:'textbooks',title:'How to Diagnose and Fix Everything Electronic',book:'How to Diagnose and Fix Everything Electronic',note:'Third edition · supplied table of contents. Chapter 2 workshops are ready; Chapter 6 currently covers only Digital Multimeter, pp. 97–103.',chapters:geierChapters},
  {id:'basic',section:'labs',title:'EIM · Basic Electric Circuits',book:'EIM Basic Electric Circuits',chapters:eimBasicExperiments.map(([id,title,page])=>({id,title,page}))},
  {id:'analog',section:'labs',title:'EIM · Fundamental Analog Circuits and Semiconductors',book:'EIM Fundamental Analog Circuits and Semiconductors',note:'Paused. Only the supplied chapter reference is listed; the full contents are pending.',chapters:[{id:'2.1',title:'Equipment and Tools',page:81}]},
  {id:'fpga',section:'labs',title:'EIM · Fundamental Digital Design with FPGA',book:'EIM Fundamental Digital Design with FPGA',note:'Manual waiting. Table of contents has not been supplied.',chapters:[]},
@@ -57,8 +59,14 @@ export function sourceIndex(c={}){
 }
 export function learningProgress(lessons,c={}){
  let correct=0,incorrect=0,total=0,mastered=0;
- for(const l of lessons){const answers=c.progress?.[l.id]?.answers||{};total+=l.questions.length;for(const q of l.questions){if(answers[q.id]?.correct===true)correct++;else if(answers[q.id]?.correct===false)incorrect++;}if(c.hasPassed?.(l))mastered++;}
+ for(const l of lessons){const state=c.progress?.[l.id]||{},answers=state.answers||{},practice=workshopActivityProgress(l,state);total+=l.questions.length+practice.total;correct+=practice.correct;incorrect+=practice.incorrect;for(const q of l.questions){if(answers[q.id]?.correct===true)correct++;else if(answers[q.id]?.correct===false)incorrect++;}if(c.hasPassed?.(l))mastered++;}
  return {correct,incorrect,total,unanswered:total-correct-incorrect,mastered,lessons:lessons.length,percent:total?Math.round(correct/total*100):0};
 }
 export const chapterLabel=ch=>/^\d/.test(ch.id)?'Chapter '+ch.id:ch.id==='unassigned'?'Chapter assignment pending':ch.id;
 export const sourceReturn=l=>{const p=placementForLesson(l);return {view:sectionView(p.section),key:p.source_id+':'+p.chapter_id};};
+export function nextSourceLesson(lesson,inventory){
+ const p=placementForLesson(lesson);
+ const chapter=inventory.filter(l=>{const q=placementForLesson(l);return q.section===p.section&&q.source_id===p.source_id&&q.chapter_id===p.chapter_id;})
+  .sort((a,b)=>Number(Boolean(a.chapterSummary))-Number(Boolean(b.chapterSummary))||(placementForLesson(a).order||0)-(placementForLesson(b).order||0));
+ return chapter[chapter.findIndex(l=>l.id===lesson.id)+1]||null;
+}
