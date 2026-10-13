@@ -88,7 +88,8 @@ try{
  page.once('dialog',dialog=>dialog.accept());
  await page.locator('[data-scan-action="approve"]').click();
  await page.waitForFunction(()=>document.querySelector('#scan-detail')?.innerText.includes('Approved · available'));
- assert.match(await page.locator('#scan-detail').innerText(),/GEN-00000000/);
+ assert.match(await page.locator('#scan-detail').innerText(),/Approved lesson 1/);
+ assert.equal(await page.locator('.scan-chapter-current').count(),0);
  page.once('dialog',dialog=>dialog.dismiss());
  await page.locator('#scan-delete-source').click();
  assert.equal(await page.locator('#scan-delete-source').count(),1,'Cancel preserves scan');
