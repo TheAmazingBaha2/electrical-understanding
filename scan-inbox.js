@@ -1,3 +1,4 @@
+import { cleanGeneratedPrompt } from './generated-library.js';
 // Private scan review workspace. Source files live in protected Supabase Storage, not public assets.
 // Never inserts generated drafts into legacy lessons or graded progress automatically.
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -113,7 +114,7 @@ function lessonSections(sections,job,namespace){
  return (sections||[]).map((part,i)=>'<section class="scan-lesson-section"><h4>'+(i+1)+'. '+esc(part.heading)+'</h4><p>'+esc(part.body)+'</p><small>Source: '+esc(scanCite(job,part.source_ids))+'</small></section>').join('');
 }
 function lessonExercises(questions,job,namespace){
- return (questions||[]).map((q,i)=>'<details class="scan-quiz-item" data-scan-expand="'+esc(namespace)+'-quiz-'+i+'"><summary>Exercise '+(i+1)+': '+esc(q.prompt)+'</summary><div>'+bubble('Expected answer',q.answer)+bubble('Explanation',q.explanation)+'<small>Source: '+esc(scanCite(job,q.source_ids))+'</small></div></details>').join('');
+ return (questions||[]).map((q,i)=>'<details class="scan-quiz-item" data-scan-expand="'+esc(namespace)+'-quiz-'+i+'"><summary>Exercise '+(i+1)+': '+esc(cleanGeneratedPrompt(q.prompt))+'</summary><div>'+bubble('Expected answer',q.answer)+bubble('Explanation',q.explanation)+'<small>Source: '+esc(scanCite(job,q.source_ids))+'</small></div></details>').join('');
 }
 function lessonPredictions(activities,job){
  return (activities||[]).map((a,i)=>'<details class="scan-quiz-item"><summary>Interactive activity '+(i+1)+': '+esc(a.title)+'</summary>'+
