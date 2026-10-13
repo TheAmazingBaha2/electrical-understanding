@@ -3,6 +3,13 @@
 const esc=value=>String(value??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const BOOK_TRACKS=new Set(["geier","teach","principles","cabling","other"]);
 const safeList=value=>Array.isArray(value)?value:[];
+// Source-approved legacy drafts sometimes accidentally prefix a learner question
+// with Sol's editorial label. Remove only this leading label, never the answer,
+// citation, original stored source, or stable question ID.
+export function cleanGeneratedPrompt(value){
+ return String(value??"").replace(/^\s*newly[\s-]+authored\s+(?:practice|question|exercise)\s*(?::|[—–-])\s*/i,"").trim();
+}
+
 function attribution(job,ids=[]){
  const book=job.source_book||job.lesson?.source?.book||"Publication not recorded";
  const pages=job.source_pages||job.lesson?.source?.pages||"Page reference not recorded";
@@ -22,7 +29,7 @@ function lessonContent(lesson,job,idPrefix){
  if(safeList(lesson.questions).length){
   h+='<h4>Practice from another angle</h4>';
   for(const [i,q] of lesson.questions.entries()){
-   h+='<details class="generated-exercise"><summary>Exercise '+(i+1)+': '+esc(q.prompt)+'</summary>'+
+   h+='<details class="generated-exercise"><summary>Exercise '+(i+1)+': '+esc(cleanGeneratedPrompt(q.prompt))+'</summary>'+
     '<p><b>Answer:</b> '+esc(q.answer)+'</p><p><b>Why:</b> '+esc(q.explanation)+'</p>'+
     '<small>Source: '+attribution(job,q.source_ids)+'</small></details>';
   }
@@ -47,7 +54,7 @@ export function makeWorkbenchLesson(job, unit, content, kind, order) {
    const value=String(q.answer||"").trim().replace(/,/g,"");
    const parsed=value.match(/^([+-]?(?:[0-9]+(?:\\.[0-9]*)?|\\.[0-9]+)(?:e[+-]?[0-9]+)?)\\s*([a-zA-ZµμΩ%°/]+)?$/i);
    const result={id:id+"-Q"+String(i+1).padStart(2,"0"),
-     type:"reflection",prompt:String(q.prompt),explain:String(q.explanation||""),
+     type:"reflection",prompt:cleanGeneratedPrompt(q.prompt),explain:String(q.explanation||""),
      rubric:"Expected answer: "+String(q.answer||"")+"\\nReasoning: "+String(q.explanation||""),
      safety:false,source_ids:safeList(q.source_ids)};
    if(parsed&&Number.isFinite(Number(parsed[1]))){
@@ -68,7 +75,7 @@ export function makeWorkbenchLesson(job, unit, content, kind, order) {
    const part=sections.length?sections[(i-original.length)%sections.length]:null;
    const sample=original.length?original[(i-original.length)%original.length]:null;
    const prompt=part?styles[(i-original.length)%styles.length](String(part.heading)):
-     "Revisit this approved question and explain the reasoning, not just its answer: "+String(sample?.prompt||content.title);
+     "Revisit this approved question and explain the reasoning, not just its answer: "+cleanGeneratedPrompt(sample?.prompt||content.title);
    const reference=part?String(part.body):("Expected: "+String(sample?.answer||"")+"; Explanation: "+String(sample?.explanation||""));
    prompts.push({id:id+"-P"+String(i+1).padStart(2,"0"),type:"reflection",prompt,
      explain:"Compare your explanation with the saved source-backed material.",
@@ -76,11 +83,11 @@ export function makeWorkbenchLesson(job, unit, content, kind, order) {
  }
  const activitySource=safeList(content.activities);
  const activities=activitySource.length?activitySource.map((a,i)=>({
-   title:String(a.title||"Guided activity "+(i+1)),prompt:String(a.prompt||"Make a prediction."),
+   title:String(a.title||"Guided activity "+(i+1)),prompt:cleanGeneratedPrompt(a.prompt||"Make a prediction."),
    answer:String(a.expected||a.answer||""),explanation:String(a.explanation||""),
    source_ids:safeList(a.source_ids)})):
    original.slice(0,Math.max(2,Math.min(4,original.length))).map((q,i)=>({
-     title:"Prediction "+(i+1),prompt:String(q.prompt),answer:String(q.answer),
+     title:"Prediction "+(i+1),prompt:cleanGeneratedPrompt(q.prompt),answer:String(q.answer),
      explanation:String(q.explanation||""),source_ids:safeList(q.source_ids)}));
  const citation=[job.source_book||"Publication not recorded",job.source_pages||"Page reference not recorded"].join(" · ");
  const html='<p>'+esc(content.description||content.new_perspective||"Follow the approved source-backed explanation step by step.")+'</p>'+
