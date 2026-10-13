@@ -167,7 +167,7 @@ export function generatedLibrarySlot(filter){
  return '<section class="generated-library-panel panel" aria-label="'+(review?'Review and Reinforcement':'Approved source-specific lessons')+'">'+
   '<div class="generated-library-top"><div><p class="v2-kicker">'+(legacy?'LEGACY · APPROVED SOURCE CHAPTER':review?'CROSS-BOOK LEARNING TRACK':'ORIGINAL SOURCE COMPANIONS')+'</p>'+
   '<h2>'+(legacy?'Archived Chapter 3 companions':review?'Review & Reinforcement lessons':'Approved source-specific lessons')+'</h2>'+
-  '<p class="muted sm">'+(legacy?'This chapter has been archived by request. The approved source material, lesson IDs, explanations, interactions and progress are preserved.':'Repeated concepts live here when a new publication contributes a different explanation, worked method, safety detail or exercise. This is separate from your scheduled quiz reviews.':
+  '<p class="muted sm">'+(legacy?'This chapter has been archived by request. The approved source material, lesson IDs, explanations, interactions and progress are preserved.':review?'Repeated concepts live here when a new publication contributes a different explanation, worked method, safety detail or exercise. This is separate from your scheduled quiz reviews.':
   'Unique material remains with its source track. Overlapping concepts are directed to Review & Reinforcement.')+'</p></div>'+
   '<button type="button" class="outline small-button" data-refresh-generated>Refresh library</button></div>'+
   '<div id="generated-library-list" data-track="'+esc(filter)+'">Loading private approved lessons…</div></section>';
