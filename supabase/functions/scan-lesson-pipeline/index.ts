@@ -144,6 +144,13 @@ function verifyUnitDraft(payload:any,analysis:any,unit:any){
  }
  return draft;
 }
+function chapterDone(job:any){return (job.lesson?.lessons||[]).length+(job.lesson?.pending||[]).length;}
+function acceptUnit(job:any,current:any,unit:any,review:any){
+ const stableId="GEN-"+String(job.id).toUpperCase(),unitId=stableId+"-"+unit.id;
+ return {...current,id:unitId,kind:unit.kind,destination:unit.destination,ordering:unit.ordering,prerequisites:unit.prerequisites,
+  source:{scanId:job.id,title:job.title,book:job.source_book,pages:job.source_pages,track:job.source_track,unit:unit.id},
+  questions:(current.questions||[]).map((q:any,i:number)=>({...q,id:unitId+"-Q"+String(i+1).padStart(2,"0")})),technical_review:review};
+}
 function parseText(x:any):string{
  if(typeof x.output_text==="string")return x.output_text;
  return (x.output||[]).flatMap((o:any)=>(o.content||[]).map((v:any)=>v.type==="output_text"?v.text:"")).join("\n");
@@ -195,7 +202,7 @@ function usageOf(raw:any,price:any){
 async function modelCall(key:string,model:string,phase:string,instructions:string,input:any,admin:any,attempt:any,previous:any=null) {
  const polling=!!attempt.response_id;
  let out;
- const outputLimit=(phase==="draft"?6200:phase==="outline"?7600:phase==="analysis"?4500:1800)*(previous?1.5:1);
+ const outputLimit=(phase==="draft"?6200:phase==="outline"?7600:phase==="analysis"?4500:1800)*(previous?.output_text?1.5:1);
  if(!polling){
   const reserved=await admin.rpc("ai_reserve_attempt",{p_user:attempt.user_id,p_attempt:attempt.id,p_session:attempt.budget_session_id,p_output:outputLimit});
   if(reserved.error||!reserved.data){
@@ -312,7 +319,7 @@ Deno.serve(async(req:Request)=>{
  }
  if(action==="status")return reply({authorized:true,contract:"spend-v1",bucket:BUCKET,pipeline:["plan","analyze","outline","draft","review","approve"],
   models:{plan:"gpt-6.1-sol",analyze:"gpt-6.1-sol",outline:"gpt-6.1-sol",draft:"gpt-6.1-sol",review:"gpt-6.1-sol"},
-  note:"Every paid stage requires a separate click; uploads are private and reviewed lessons are not inserted into graded study progress."},200,origin);
+  note:"Paid stages require an explicit single-stage or whole-chapter authorization; uploads are private and reviewed lessons are not inserted into graded study progress."},200,origin);
  if(action==="register"){
   const path=request.path,title=String(request.title||"").trim();
   const book=String(request.book||"").trim(),pages=String(request.pages||"").trim();
@@ -343,11 +350,43 @@ Deno.serve(async(req:Request)=>{
   if(error||!created)return fail("Could not register private scan",origin,503);
   return reply({jobId:created.id},200,origin);
  }
- if(!["delete","update-source","preflight","recover","plan","analyze","outline","draft","review","approve","check","resume"].includes(action))return fail("Unknown action",origin);
+ if(!["queue-reviewed","approve-batch","delete","update-source","preflight","recover","plan","analyze","outline","draft","review","approve","check","resume"].includes(action))return fail("Unknown action",origin);
  if(typeof request.jobId!=="string"||!/^[a-f0-9-]{36}$/.test(request.jobId))return fail("Invalid job",origin);
  const {data:job,error:jobError}=await admin.from("scan_lesson_jobs").select("*").eq("user_id",userId).eq("id",request.jobId).maybeSingle();
  if(jobError)return fail("Source lookup failed",origin,503);
  if(!job)return action==="delete"?reply({deleted:true},200,origin):fail("Private source does not exist",origin,404);
+ if(action==="queue-reviewed"||action==="approve-batch"){
+  if(request.expectedRevision!==job.revision||job.state!=="reviewed")return fail("Chapter checkpoint changed; refresh. No AI call started.",origin,409);
+  const outline=job.analysis?.chapter_outline,finished=job.lesson?.lessons||[],pending=job.lesson?.pending||[];
+  if(!outline?.units?.length)return fail("Chapter outline required.",origin,409);
+  let body:any,nextState:string,stamp:any=null;
+  if(action==="queue-reviewed"){
+   const unit=outline.units[chapterDone(job)],current=job.lesson?.current;
+   try{verifyUnitDraft(current,job.analysis,unit);verifyReview(job.review,job.analysis)}catch(e){return fail(String(e),origin,409)}
+   if(!unit||current?.plan?.id!==unit.id||!job.review?.ready||job.review.findings.some((x:any)=>x.severity==="blocker"))return fail("This lesson has not passed technical review.",origin,409);
+   body={...job.lesson,pending:[...pending,{...current,technical_review:job.review}],current:null};
+   nextState=finished.length+body.pending.length===outline.units.length?"reviewed":"outlined";
+  }else{
+   if(job.lesson?.current||finished.length+pending.length!==outline.units.length||!pending.length)return fail("Finish drafting and reviewing the chapter before batch approval.",origin,409);
+   if(!plain(job.source_book,180)||!plain(job.source_pages,80))return fail("Source citations required.",origin,409);
+   const accepted=[];
+   try{for(let i=0;i<pending.length;i++){
+    const unit=outline.units[finished.length+i],current=pending[i];
+    verifyUnitDraft(current,job.analysis,unit);verifyReview(current.technical_review,job.analysis);
+    if(current.plan?.id!==unit.id||!current.technical_review.ready||current.technical_review.findings.some((x:any)=>x.severity==="blocker"))throw Error("Chapter review incomplete.");
+    accepted.push(acceptUnit(job,current,unit,current.technical_review));
+   }}catch(e){return fail(String(e),origin,409)}
+   body={...job.lesson,id:"GEN-"+String(job.id).toUpperCase(),chapter_title:outline.chapter_title,lessons:[...finished,...accepted],pending:[],current:null,
+    source:{scanId:job.id,book:job.source_book,pages:job.source_pages,track:job.source_track}};
+   nextState="approved";stamp=new Date().toISOString();
+  }
+  const saved=await admin.from("scan_lesson_jobs").update({lesson:body,state:nextState,review:null,approved_at:stamp,
+   draft_id:nextState==="approved"?body.id:null,revision:job.revision+1,updated_at:new Date().toISOString()})
+   .eq("id",job.id).eq("user_id",userId).eq("revision",job.revision).eq("state","reviewed").select("id").maybeSingle();
+  if(saved.error||!saved.data)return fail("Chapter checkpoint conflict; refresh. No AI call made.",origin,409);
+  if(nextState==="approved")await admin.from("scan_quota_completion").update({closed:true}).eq("user_id",userId).eq("job_id",job.id);
+  return reply({state:nextState,paidModelCallsStarted:0},200,origin);
+ }
  if(action==="preflight"){
   // Read-only diagnostics; never create a model attempt or consume the paid quota.
   const stage=job.state==="uploaded"?(job.analysis?.planning_brief?"analyze":"plan"):
@@ -364,7 +403,7 @@ Deno.serve(async(req:Request)=>{
    errors.push("Verified source facts are missing.");
   if(stage==="review"&&(!job.lesson||!job.analysis))
    errors.push("Sol's draft or Sol's extraction is missing.");
-  if(stage==="approve"&&(!job.review?.ready||!job.lesson))
+  if(stage==="approve"&&(!job.lesson||(!job.review?.ready&&!(job.lesson.pending?.length&&!job.lesson.current&&job.lesson.pending.every((p:any)=>p.technical_review?.ready)))))
    errors.push("Sol's technical review has not approved the draft.");
   if(stage==="complete")notes.push("This scan is already approved; no model call is needed.");
   if(!String(Deno.env.get("OPENAI_API_KEY")||"").startsWith("sk-"))
@@ -425,10 +464,10 @@ Deno.serve(async(req:Request)=>{
    }else if(attempt.phase==="draft"){
     if(!["outlined","analyzed","needs_revision"].includes(job.state))throw Error("Draft no longer matches the scan stage.");
     const outline=job.analysis?.chapter_outline,done=job.lesson?.lessons||[];
-    const selected=outline?.units?.[done.length];
+    const selected=outline?.units?.[chapterDone(job)];
     if(outline&&!selected)throw Error("Saved chapter plan is complete.");
     payload=verifyUnitDraft(payload,job.analysis,selected);
-    nextState="drafted";patch={lesson:outline?{lessons:done,current:{...payload,plan:selected}}:payload,review:null};
+    nextState="drafted";patch={lesson:outline?{...job.lesson,lessons:done,current:{...payload,plan:selected}}:payload,review:null};
    }else if(attempt.phase==="review"){
     if(job.state!=="drafted"||typeof payload.ready!=="boolean"||!Array.isArray(payload.findings))
      throw Error("Saved technical review is invalid for this draft.");
@@ -483,11 +522,12 @@ Deno.serve(async(req:Request)=>{
  if(action==="draft"&&job.state==="needs_revision"){}else if(job.state!==targetState[action])
   return fail("Wrong stage: "+job.state+". Refresh the Scan Inbox before continuing.",origin,409);
  if(action==="approve"){
+  if(job.lesson?.pending?.length)return fail("Use batch approval after the remaining chapter reviews.",origin,409);
   if(!plain(job.source_book,180)||!plain(job.source_pages,80))
    return fail("A complete publication and printed page reference is required before approval.",origin,409);
   const chapterOutline=job.analysis?.chapter_outline;
   const current=chapterOutline?job.lesson?.current:job.lesson;
-  try{verifyUnitDraft(current,job.analysis,chapterOutline?.units?.[(job.lesson?.lessons||[]).length])}catch(e){return fail(String(e),origin,409)}
+  try{verifyUnitDraft(current,job.analysis,chapterOutline?.units?.[chapterDone(job)])}catch(e){return fail(String(e),origin,409)}
   if(!job.review?.ready||job.review.findings?.some((x:any)=>x.severity==="blocker"))
    return fail("Sol's technical review has not approved this individual lesson.",origin,409);
   const stableId="GEN-"+String(job.id).toUpperCase();
@@ -570,7 +610,7 @@ Deno.serve(async(req:Request)=>{
     :{type:"input_image",image_url:"data:"+job.source_kind+";base64,"+encoded,detail:"high"};
   }catch(e){return fail(String(e),origin,422)}
  }
- if(action==="draft"&&job.analysis?.chapter_outline&&!job.analysis.chapter_outline.units?.[(job.lesson?.lessons||[]).length])
+ if(action==="draft"&&job.analysis?.chapter_outline&&!job.analysis.chapter_outline.units?.[chapterDone(job)])
   return fail("No unfinished lesson is left in the chapter outline.",origin,409);
  if(action==="outline"&&!Array.isArray(job.analysis?.facts))return fail("Saved Sol evidence is required before a chapter outline.",origin,409);
  if(action==="draft"&&!job.analysis)return fail("Source analysis missing",origin,409);
@@ -604,7 +644,7 @@ Deno.serve(async(req:Request)=>{
  const sourceMetadata=sourceLabel(job);
  const outline=job.analysis?.chapter_outline;
  const completedUnits=Array.isArray(job.lesson?.lessons)?job.lesson.lessons:[];
- const selectedUnit=outline?.units?.[completedUnits.length]||null;
+ const selectedUnit=outline?.units?.[chapterDone(job)]||null;
  if(action==="draft"&&outline&&!selectedUnit)return fail("No unfinished lesson is left in the chapter outline.",origin,409);
  const input=action==="plan"
   ?[{role:"user",content:[{type:"input_text",text:JSON.stringify({source_metadata:sourceMetadata,existing_lessons:existingLessons,learner_context:attempt.learner_context})},sourceInput]}]
@@ -614,9 +654,9 @@ Deno.serve(async(req:Request)=>{
   ?JSON.stringify({source_metadata:sourceMetadata,existing_lessons:existingLessons,analysis:job.analysis})
   :action==="draft"
   ?JSON.stringify({source_metadata:sourceMetadata,existing_lessons:existingLessons,planning_brief:brief,
-    analysis:job.analysis,approved_chapter_lessons:completedUnits,selected_unit:selectedUnit,previous_review:job.state==="needs_revision"?job.review:null})
+    analysis:job.analysis,approved_chapter_lessons:completedUnits,reviewed_chapter_drafts:job.lesson?.pending||[],selected_unit:selectedUnit,previous_review:job.state==="needs_revision"?job.review:null})
   :outline
-  ?JSON.stringify({source_metadata:sourceMetadata,analysis:job.analysis,approved_chapter_lessons:completedUnits,selected_unit:job.lesson?.current?.plan,
+  ?JSON.stringify({source_metadata:sourceMetadata,analysis:job.analysis,approved_chapter_lessons:completedUnits,reviewed_chapter_drafts:job.lesson?.pending||[],selected_unit:job.lesson?.current?.plan,
     draft:job.lesson?.current})
   :[{role:"user",content:[{type:"input_text",text:JSON.stringify({source_metadata:sourceMetadata,existing_lessons:existingLessons,planning_brief:brief,analysis:job.analysis,draft:job.lesson})},sourceInput]}];
  let result:any;
@@ -648,7 +688,7 @@ Deno.serve(async(req:Request)=>{
     if(selectedUnit.destination==="review"&&payload.review_lessons.length===0)
      throw Error("This planned review unit needs at least one source-based reinforcement lesson.");
     nextState="drafted";
-    patch={lesson:{lessons:completedUnits,current:{...payload,plan:selectedUnit}},review:null,approved_at:null};
+    patch={lesson:{...job.lesson,lessons:completedUnits,current:{...payload,plan:selectedUnit}},review:null,approved_at:null};
    }else{
     nextState="drafted";patch={lesson:payload,review:null,approved_at:null};
    }

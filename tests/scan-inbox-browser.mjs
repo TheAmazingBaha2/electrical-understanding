@@ -10,7 +10,7 @@ try{
  await page.locator('.v2-hero').waitFor({timeout:30000});
  await page.evaluate(async()=>{
   const {renderScanInbox,attachScanInbox}=await import('/scan-inbox.js');
-  let job=null;window.__attempts=[];window.__uploadCount=0;window.__failRegistration=true;
+  let job=null;window.__attempts=[];window.__batchCalls=[];window.__uploadCount=0;window.__failRegistration=true;
   const exampleAnalysis={
    overview:'A simulated low-voltage resistor circuit is illustrated.',
    facts:[{id:'S1',claim:'One 1 kΩ resistor is connected to 5 V.',location:'page 1',confidence:'high'},
@@ -40,7 +40,7 @@ try{
    }},
    functions:{invoke:async(slug,{body})=>{
     if(slug!=='scan-lesson-pipeline')throw Error('Wrong function');
-    if(body.action==='budget-status')return {data:{contract:'spend-v1',sessions:[{id:'22222222-2222-2222-2222-222222222222',authorized_usd:100}],ledger:[],prices:[]},error:null};
+    if(body.action==='budget-status')return {data:{contract:'spend-v1',sessions:[{id:'22222222-2222-2222-2222-222222222222',authorized_usd:100}],ledger:[],prices:[{model:"gpt-6.1-sol",tier:"default",valid_until:"2099-01-01",context_tokens:1050000,input_rate:2,cached_rate:.1,write_rate:2.5,long_input:2,output_rate:10,long_output:1.5,safety_multiplier:1.1}]},error:null};
     if(body.action==='status')return {data:{authorized:true},error:null};
     if(body.action==='delete'){job=null;return {data:{deleted:true},error:null};}
     if(body.action==='register'){
@@ -52,12 +52,15 @@ try{
     if(body.action==='plan'){job.analysis={planning_brief:{astra_guidance:'Verify',lesson_guidance:'Explain',review_guidance:'Check'}};job.revision++;}
     if(body.action==='outline'){job.state='outlined';job.analysis.chapter_outline={chapter_title:'One unit',units:[{id:'U01',title:'Circuit',kind:'math',destination:'source',ordering:'independent',prerequisites:[]}]};}
     if(body.action==='analyze'){job.state='analyzed';job.analysis=exampleAnalysis;}
-    if(body.action==='draft'){job.state='drafted';job.lesson={lessons:[],current:{...lesson,plan:job.analysis.chapter_outline.units[0]}};}
-    if(body.action==='review'){job.state='reviewed';job.review=sampleReview;}
+    if(body.action==='draft'){window.__batchCalls.push('draft');job.state='drafted';job.lesson={...job.lesson,current:{...lesson,plan:job.analysis.chapter_outline.units[(job.lesson.lessons?.length||0)+(job.lesson.pending?.length||0)]}};job.revision++;}
+    if(body.action==='review'){window.__batchCalls.push('review');job.state='reviewed';job.review=sampleReview;job.revision++;}
+    if(body.action==='queue-reviewed'){job.lesson.pending=[...(job.lesson.pending||[]),{...job.lesson.current,technical_review:job.review}];job.lesson.current=null;job.review=null;job.state=job.lesson.pending.length===job.analysis.chapter_outline.units.length?'reviewed':'outlined';job.revision++;}
+    if(body.action==='approve-batch'){job.state='approved';job.lesson.lessons=job.lesson.pending;job.lesson.pending=[];job.revision++;}
     if(body.action==='approve'){job.state='approved';job.draft_id='GEN-'+job.id.toUpperCase();job.lesson={id:job.draft_id,lessons:[{...job.lesson.current,id:job.draft_id+'-U01'}],current:null};}
     return {data:{state:job.state,usage:{input:100,output:200,estimatedUSD:0.002}},error:null};
    }}
   };
+  window.__setBatch=()=>{job.state='outlined';job.lesson={lessons:[],pending:[],current:null};job.analysis.chapter_outline.units=[1,2].map(i=>({id:'U0'+i,title:'Unit '+i,kind:'math',destination:'source',ordering:'independent',prerequisites:[],source_ids:['S1'],focus:'Explain the calculation.'}));window.__batchCalls=[];};
   window.__mockClient=client;
   document.querySelector('#main').innerHTML=renderScanInbox({id:'00000000-0000-4000-8000-000000000010'});
   attachScanInbox(client,{id:'00000000-0000-4000-8000-000000000010'});
@@ -93,6 +96,20 @@ try{
  await page.waitForFunction(()=>document.querySelector('#scan-detail')?.innerText.includes('Approved · available'));
  assert.match(await page.locator('#scan-detail').innerText(),/Approved lesson 1/i);
  assert.equal(await page.locator('.scan-chapter-current').count(),0);
+ await page.evaluate(()=>window.__setBatch());
+ await page.locator('#scan-refresh').click();
+ await page.locator('[data-chapter-batch]').waitFor();
+ page.on('dialog',acceptPaid);
+ await page.locator('[data-chapter-batch]').click();
+ await page.locator('[data-scan-action="approve-batch"]').waitFor();
+ assert.equal(await page.locator('.scan-chapter-pending').count(),2);
+ assert.equal(await page.locator('.scan-chapter-accepted').count(),0);
+ assert.deepEqual(await page.evaluate(()=>window.__batchCalls),['draft','review','draft','review']);
+ await page.locator('[data-scan-action="approve-batch"]').click();
+ await page.waitForFunction(()=>document.querySelector('#scan-detail')?.innerText.includes('Approved · available'));
+ page.off('dialog',acceptPaid);
+ assert.equal(await page.locator('.scan-chapter-pending').count(),0);
+ assert.equal(await page.locator('.scan-chapter-accepted').count(),2);
  page.once('dialog',dialog=>dialog.dismiss());
  await page.locator('#scan-delete-source').click();
  assert.equal(await page.locator('#scan-delete-source').count(),1,'Cancel preserves scan');

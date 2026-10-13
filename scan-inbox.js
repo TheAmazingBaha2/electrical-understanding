@@ -8,7 +8,7 @@ const catalogBookTitle=book=>String(book?.title||'').trim()+
 const catalogTracks=new Set(['geier','teach','principles','cabling','guide','basic','other']);
 
 const supported=new Map([["application/pdf","pdf"],["image/jpeg","jpg"],["image/png","png"],["image/webp","webp"]]);
-let selectedId=null, operation=false, lastUsage=null;
+let selectedId=null, operation=false, lastUsage=null, batchStop=false;
 const by=s=>document.querySelector(s);
 const pauseKey='eu-scan-inbox-auto-sync-paused';
 let pauseFallback=false;
@@ -87,7 +87,7 @@ export function renderScanInbox(user){
   <div id="scan-list" class="scan-list"></div>
  </div>
  <div id="scan-detail" class="scan-detail"></div>
- <p class="muted sm">Planning, source extraction, chapter outline, lesson drafting and technical review each require a separate click and one paid Sol request. Scan quotas: 10 calls/minute, 60/hour, 200/day. The separate model lab and tutor are paused until equivalent spending safeguards are available. One started scan may use up to four completion calls beyond the limits per rolling 24 hours. Only your clicks start paid generation. Running requests can continue if you close this page. Responses are retained by OpenAI for recovery and saved privately here; incomplete output is not approved lesson content.</p>
+ <p class="muted sm">Planning, extraction, outlining, drafting and review are separate paid Sol requests. Use individual stage buttons or explicitly authorize a whole-chapter draft/review batch. Scan quotas: 10 calls/minute, 60/hour, 200/day. The separate model lab and tutor are paused until equivalent spending safeguards are available. One started scan may use up to four completion calls beyond the limits per rolling 24 hours. Only your clicks start paid generation. Running requests can continue if you close this page. Responses are retained by OpenAI for recovery and saved privately here; incomplete output is not approved lesson content.</p>
  </section>`;
 }
 const bubble=(name,content)=>'<div class="ai-dialogue-bubble ai-dialogue-answer"><strong>'+esc(name)+'</strong><div class="ai-dialogue-copy">'+esc(content)+'</div></div>';
@@ -123,7 +123,8 @@ function explainLesson(data,job){
    explainLesson(unit,job)+'</section>').join('');
   const pending=data.current?'<section class="scan-chapter-current"><p class="v2-kicker">Current draft · '+esc(data.current.plan?.id||'')+'</p>'+
    explainLesson(data.current,job)+'</section>':'';
-  return rendered+pending;
+  const reviewed=(data.pending||[]).map(unit=>'<section class="scan-chapter-pending"><p class="v2-kicker">Reviewed draft · '+esc(unit.plan?.id||'')+' · awaiting your approval</p>'+explainLesson(unit,job)+explainReview(unit.technical_review)+'</section>').join('');
+  return rendered+reviewed+pending;
  }
  const unique=(data.sections||[]).length>0;
  const original='<section class="scan-lesson"><p class="v2-kicker">Source-specific material · '+esc(job.source_track||"other")+'</p>'+
@@ -154,13 +155,51 @@ function explainOutline(job){
  return '<section class="scan-chapter-outline panel"><p class="v2-kicker">SOL · FLEXIBLE CHAPTER PLAN</p>'+
   '<h3>'+esc(outline.chapter_title)+'</h3><p>'+esc(outline.rationale)+'</p>'+
   '<p class="muted sm">'+approved+' of '+outline.units.length+' chapter lessons approved. Sol chooses the count by educational need, not a fixed target of 12.</p>'+
-  '<ol>'+rows+'</ol><p class="muted sm">Mathematics is self-paced. Sequential ordering applies only to concept-dependent lessons, and every new paid draft is started separately.</p></section>';
+  '<ol>'+rows+'</ol><p class="muted sm">Mathematics is self-paced. Sequential ordering applies only to concept-dependent lessons, and a whole-chapter batch can draft and review remaining units before human approval.</p></section>';
 }
 function explainReview(data){
  if(!data)return "";
  return `<section class="scan-review"><h3>Saved technical review</h3><p><strong>${data.ready?"Ready for your review":"Not yet acceptable"}</strong> — ${esc(data.summary)}</p>
  ${(data.findings||[]).map(x=>'<div class="scan-finding"><strong>'+esc(x.severity)+'</strong> '+esc(x.description)+' <small>'+esc(x.source_id)+'</small></div>').join('')}
  </section>`;
+}
+export function chapterBatchExposure(job,price){
+ if(!price||!Number.isFinite(Date.parse(price.valid_until))||Date.parse(price.valid_until)<=Date.now()||price.tier!=='default'||price.model!=='gpt-6.1-sol')throw Error('Current Sol pricing unavailable.');
+ const values=['context_tokens','input_rate','cached_rate','write_rate','long_input','output_rate','long_output','safety_multiplier'].map(k=>Number(price[k]));
+ if(values.some(v=>!Number.isFinite(v)||v<0)||Number(price.context_tokens)<=0||Number(price.safety_multiplier)<1)throw Error('Verified spending bounds unavailable.');
+ const max=output=>Math.ceil((Number(price.context_tokens)*Math.max(Number(price.input_rate),Number(price.cached_rate),Number(price.write_rate))*Number(price.long_input)+output*Number(price.output_rate)*Number(price.long_output))*Number(price.safety_multiplier)*100)/1e8;
+ const total=job.analysis?.chapter_outline?.units?.length||0,done=(job.lesson?.lessons||[]).length+(job.lesson?.pending||[]).length;
+ const remaining=total-done;
+ if(remaining<0)throw Error('Chapter checkpoint invalid.');
+ let drafts=remaining,reviews=remaining;
+ if(job.state==='drafted')drafts--;
+ if(job.state==='reviewed'&&job.lesson?.current){drafts--;reviews--;}
+ if(remaining===0)return {requiredUSD:0,requests:0};
+ return {requiredUSD:Math.max(0,drafts)*max(6200)+Math.max(0,reviews)*max(1800),requests:Math.max(0,drafts)+Math.max(0,reviews)};
+}
+export async function runChapterBatch({getJob,stage,refresh,stopped=()=>false,onProgress=()=>{},initialRetryOf=null}){
+ const first=getJob(),id=first.id,total=first.analysis?.chapter_outline?.units?.length,outlineIdentity=JSON.stringify(first.analysis?.chapter_outline);
+ if(!total)throw Error('A saved chapter outline is required.');
+ let started=0;
+ while(!stopped()){
+  const job=getJob();if(!job||job.id!==id||JSON.stringify(job.analysis?.chapter_outline)!==outlineIdentity)throw Error('Chapter changed; batch stopped.');
+  const completed=(job.lesson?.lessons||[]).length+(job.lesson?.pending||[]).length;
+  if(job.state==='approved'||(completed===total&&!job.lesson?.current))return;
+  if(job.state==='needs_revision')throw Error('Technical review requested changes. Batch stopped; no automatic paid revision.');
+  let action=job.state==='outlined'?'draft':job.state==='drafted'?'review':job.state==='reviewed'?'queue-reviewed':null;
+  if(!action)throw Error('Unexpected chapter state; batch stopped.');
+  const attempt=job.attempts?.find(a=>a.base_revision===job.revision&&a.phase===action);
+  const body={action,jobId:id,expectedRevision:job.revision};
+  if(attempt&&['starting','running','received'].includes(attempt.status)){body.action='check';body.attemptId=attempt.id;}
+  else if(attempt&&['failed','unknown','invalid','incomplete'].includes(attempt.status)){
+   if(attempt.id!==initialRetryOf||attempt.status!=='failed'||!attempt.error_message?.startsWith('Budget reservation refused. No provider request was sent.'))
+    throw Error('Saved failed stage requires investigation or a separately confirmed retry. Batch stopped.');
+   body.retry=true;body.retryOf=attempt.id;initialRetryOf=null;
+  }
+  if(['draft','review'].includes(body.action)&&++started>2*total)throw Error('Authorized batch request count exhausted.');
+  onProgress({unit:completed+1,total,action:body.action});
+  await stage(body);await refresh();
+ }
 }
 export function buttonFor(job){
  const attempt=job.attempts?.find(a=>a.base_revision===job.revision);
@@ -179,6 +218,7 @@ export function buttonFor(job){
  if(job.state==="drafted")return '<button class="primary" data-scan-action="review">Have Sol review the lesson</button>';
  if(job.state==="needs_revision")return '<button class="primary" data-scan-action="draft">Revise lesson with Sol</button>';
  if(job.state==="reviewed"){
+  if(job.lesson?.pending?.length&&!job.lesson?.current)return '<button class="primary" data-scan-action="approve-batch">Approve all reviewed chapter lessons (free)</button>';
   const total=job.analysis?.chapter_outline?.units?.length;
   const index=(job.lesson?.lessons?.length||0)+1;
   return '<button class="primary" data-scan-action="approve">Approve '+(total?'lesson '+index+' of '+total:'draft')+' (free)</button>';
@@ -284,7 +324,7 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
  const root=by('#scan-root');
  if(!root||!supabase||!user)return;
  const id=user.id;
- let jobs=[],preparedFile=null,preparing=null,pendingUpload=null,budgetSessionId=null,budgetAuthorizedUSD=null;
+ let jobs=[],preparedFile=null,preparing=null,pendingUpload=null,budgetSessionId=null,budgetAuthorizedUSD=null,budgetAvailableUSD=null,batchPrices=null;
   let books=[],bookCatalogReady=false,bookCatalogBusy=false;
  let renderedJobId=null,renderedSignature=null;
  const openedPanelsByJob=new Map();
@@ -441,19 +481,20 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
   if(!job)return;
   const budgetPanel=document.createElement('section');
   budgetPanel.className='panel scan-budget';
-  budgetPanel.innerHTML='<h3>AI spending protection</h3><p id="scan-budget-info">Checking authorized budget…</p><button class="outline" id="scan-budget-refresh">Refresh spending (free)</button><details><summary>Authorize a spending session</summary><p>This sets the application limit. Each new generation still requires a separate confirmation. Existing holds remain until billing is reconciled. This is not a provider account spending cap.</p><label>Maximum USD <input id="scan-budget-limit" type="number" min="0.01" max="1000" step="0.01" placeholder="Amount you authorize"></label><button class="outline" id="scan-budget-create">Set limit (no generation)</button></details>';
+  budgetPanel.innerHTML='<h3>AI spending protection</h3><p id="scan-budget-info">Checking authorized budget…</p><button class="outline" id="scan-budget-refresh">Refresh spending (free)</button><details><summary>Authorize a spending session</summary><p>This sets the application limit. Confirm either one paid stage or a whole-chapter batch before generation. Existing holds remain until billing is reconciled. This is not a provider account spending cap.</p><label>Maximum USD <input id="scan-budget-limit" type="number" min="0.01" max="1000" step="0.01" placeholder="Amount you authorize"></label><button class="outline" id="scan-budget-create">Set limit (no generation)</button></details>';
   div.prepend(budgetPanel);
   const accounting=document.createElement('details');
   accounting.innerHTML='<summary>Request accounting for this source</summary><div class="scan-accounting-records"></div>';
   budgetPanel.append(accounting);
   const loadBudget=async()=>{
-   budgetSessionId=null;budgetAuthorizedUSD=null;
+   budgetSessionId=null;budgetAuthorizedUSD=null;budgetAvailableUSD=null;batchPrices=null;
    try{
     const b=await invoke({action:'budget-status'});
     if(b.contract!=='spend-v1')throw Error('Budget API contract unavailable');
     const session=b.sessions?.[0];
     const held=(b.ledger||[]).filter(x=>x.session_id===session?.id).reduce((n,x)=>n+Number(x.held_usd),0);
     budgetSessionId=session?.id||null;budgetAuthorizedUSD=session?Number(session.authorized_usd):null;
+    budgetAvailableUSD=session?Number(session.authorized_usd)-held:null;batchPrices=(b.prices||[]).find(p=>p.model==='gpt-6.1-sol'&&p.tier==='default'&&Date.parse(p.valid_until)>Date.now());
     budgetPanel.querySelector("#scan-budget-create").textContent=session?"Update limit (no generation)":"Set limit (no generation)";
     const bounds=(b.prices||[]).filter(p=>p.model==='gpt-6.1-sol'&&Date.parse(p.valid_until)>Date.now()).map(p=>p.model+': up to $'+((Number(p.context_tokens)*Math.max(Number(p.input_rate),Number(p.cached_rate),Number(p.write_rate))*Number(p.long_input)+11400*Number(p.output_rate)*Number(p.long_output))*Number(p.safety_multiplier)/1e6).toFixed(3)+' per request');
     budgetPanel.querySelector('#scan-budget-info').textContent=(session?'Authorized $'+Number(session.authorized_usd).toFixed(2)+' · held $'+held.toFixed(3)+' · available $'+(Number(session.authorized_usd)-held).toFixed(3):'No spending session authorized. New generation is blocked; saved work remains accessible.')+'. Conservative full-context reservations: '+bounds.join('; ')+'. Actual token estimates are recorded separately; holds are not released on network errors.';
@@ -538,11 +579,38 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
   });
   const updateLiveStage=(phase=null)=>{
    if(renderedJobId!==job.id)return;
-   const tracker=div.querySelector('.scan-stage-tracker');
-   if(tracker)tracker.outerHTML=scanTrackerMarkup(job,phase);
-   const banner=div.querySelector('.scan-phase-banner');
-   if(banner)banner.textContent=scanPhaseMessage(job,phase);
+   const latest=jobs.find(j=>j.id===job.id)||job;
+   const tracker=root.querySelector('.scan-stage-tracker');
+   if(tracker)tracker.outerHTML=scanTrackerMarkup(latest,phase);
+   const banner=root.querySelector('.scan-phase-banner');
+   if(banner)banner.textContent=scanPhaseMessage(latest,phase);
   };
+  if(job.analysis?.chapter_outline&&job.state!=='approved'){
+   const controls=document.createElement('section');controls.className='panel scan-batch-controls';
+   controls.innerHTML='<h3>Whole-chapter generation</h3><p>Draft and technically review all remaining outlined lessons with Sol. Saved reviewed drafts wait for your human approval. Failures stop the batch; no automatic paid retries. Keep this page open while it runs; return and explicitly resume after leaving.</p><button class="primary" data-chapter-batch>Draft & review the remaining chapter</button> <button class="outline" data-chapter-pause>Pause after current request</button><p class="muted sm" data-chapter-batch-status></p>';
+   div.append(controls);
+   controls.querySelector('[data-chapter-pause]').onclick=()=>{batchStop=true;status('Batch pause requested. The current response remains recoverable; no next generation will start.');};
+   controls.querySelector('[data-chapter-batch]').onclick=async()=>{
+    if(operation)return;
+    await loadBudget();
+    if(!budgetSessionId)return notify('Authorize and refresh a spending session first.');
+    let exposure;try{exposure=chapterBatchExposure(job,batchPrices);}catch(error){return notify(error.message);}
+    if(!Number.isFinite(budgetAvailableUSD)||budgetAvailableUSD+1e-8<exposure.requiredUSD){status('Batch not started: remaining chapter exposure requires $'+exposure.requiredUSD.toFixed(4)+' available; your session has $'+Number(budgetAvailableUSD||0).toFixed(4)+'. Updating the limit does not start generation.');return;}
+    const total=job.analysis.chapter_outline.units.length,done=(job.lesson?.lessons||[]).length+(job.lesson?.pending||[]).length;
+    const failed=job.attempts?.find(a=>a.base_revision===job.revision&&a.status==='failed'&&a.error_message?.startsWith('Budget reservation refused. No provider request was sent.'));
+    if(!window.confirm('Authorize Sol to draft and review all '+(total-done)+' remaining chapter lessons, up to '+exposure.requests+' new paid requests under your displayed session limit? Each request reserves exposure. No human approvals occur automatically. Any failure halts the batch.'+(failed?' This explicitly starts the stage previously blocked before provider submission.':'')))return;
+    const session=budgetSessionId,jobId=job.id;operation=true;batchStop=false;
+    try{
+     await runChapterBatch({getJob:()=>jobs.find(j=>j.id===jobId),refresh:()=>refresh(false),stopped:()=>batchStop||!root.isConnected,
+      initialRetryOf:failed?.id||null,stage:body=>runStage({...body,budgetSessionId:session}),onProgress:({unit,total,action})=>{
+       status('Chapter batch: lesson '+unit+' of '+total+' · '+action+'. No automatic paid retries.');
+       const latest=jobs.find(j=>j.id===jobId);if(latest)updateLiveStage(action);
+      }});
+     status(batchStop?'Batch paused; saved checkpoints retained.':'Chapter drafting and review complete. Inspect every reviewed draft, then use free batch approval.');
+    }catch(error){await refresh(false);status('Chapter batch stopped: '+error.message);notify(error.message);}
+    finally{operation=false;}
+   };
+  }
   div.querySelector('#scan-free-preflight')?.addEventListener('click',async e=>{
    const button=e.currentTarget,output=div.querySelector('#scan-free-preflight-result');
    if(operation)return;
@@ -566,7 +634,7 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
    if(operation)return;
    const action=e.currentTarget.dataset.scanAction;
    const retry=e.currentTarget.dataset.scanRetry==='true';
-   const paid=!['check','recover','approve'].includes(action);
+   const paid=!['check','recover','approve','approve-batch'].includes(action);
    if(paid&&!budgetSessionId)return notify('Authorize and refresh a spending session first. No request started.');
    if(paid&&!retry&&!window.confirm('Start ONE new paid '+action+' request under the displayed spending limit? A conservative reservation will be held even if the connection fails.'))return;
    if(retry){
@@ -578,7 +646,7 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
      :'This starts one NEW paid request for the unfinished stage. Any saved output is reference material, not a guaranteed free continuation. Earlier charges still apply. Continue?';
     if(!window.confirm(warning))return;
    }
-   if(action==='approve'&&!window.confirm('Approve this reviewed draft into your private study library? It will not affect graded lessons.'))return;
+   if(['approve','approve-batch'].includes(action)&&!window.confirm(action==='approve-batch'?'Approve every reviewed chapter draft into your private study library? Existing graded answers stay unchanged.':'Approve this reviewed draft into your private study library? It will not affect graded lessons.'))return;
    operation=true;
    updateLiveStage(action==='resume'?currentScanPhase(job):action);
    const button=e.currentTarget;button.disabled=true;
