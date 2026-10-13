@@ -233,14 +233,14 @@ export function buttonFor(job){
 }
 function attemptLog(job){
  if(!job.attempts?.length)return '';
- return '<section class="panel"><h3>Saved attempts & errors</h3><p class="muted sm">Raw output is preserved even when incomplete or invalid. It must pass checks before becoming lesson content.</p>'+job.attempts.map(a=>
+ return '<details class="panel scan-attempt-log" data-scan-expand="attempt-history"><summary>Saved attempts & errors · '+job.attempts.length+' records (expand log)</summary><p class="muted sm">Raw output is preserved even when incomplete or invalid. It must pass checks before becoming lesson content.</p>'+job.attempts.map(a=>
  '<details data-scan-expand="attempt-'+esc(a.id)+'" '+(a.error_message?'open':'')+'><summary>'+esc(a.phase)+' · '+esc(a.status)+' · '+new Date(a.created_at).toLocaleString()+'</summary>'+
  (a.error_message?'<p role="alert">'+esc(a.error_message)+'</p>':'')+
  '<p class="muted sm">Recorded model: '+esc(a.model||'Unavailable')+' · source revision '+esc(a.base_revision)+'</p>'+
  (a.response_id?'<p class="muted sm">Saved response: '+esc(a.response_id)+'</p>':'')+
  (a.usage?'<p class="muted sm">Tokens reported: '+esc(a.usage.input_tokens||0)+' input / '+esc(a.usage.output_tokens||0)+' output.</p>':'')+
  (a.output_text?'<details data-scan-expand="output-'+esc(a.id)+'"><summary>View unverified saved output</summary><pre style="white-space:pre-wrap;overflow-wrap:anywhere">'+esc(a.output_text)+'</pre></details>':'')+
- '<button class="outline small-button" data-download-attempt="'+esc(a.id)+'">Download saved response & error</button></details>').join('')+'</section>';
+ '<button class="outline small-button" data-download-attempt="'+esc(a.id)+'">Download saved response & error</button></details>').join('')+'</details>';
 }
 
 const SCAN_STAGE_DEFINITIONS=[
@@ -322,9 +322,9 @@ function detail(job){
  (job.analysis?.planning_brief?'<details data-scan-expand="sol-brief"><summary>Sol’s saved teaching brief</summary>'+bubble('Your instructions',job.analysis.planning_brief.learner_context||'Default teaching guidance')+bubble('Sol extraction',job.analysis.planning_brief.astra_guidance)+bubble('Lesson drafting',job.analysis.planning_brief.lesson_guidance)+bubble('Technical review',job.analysis.planning_brief.review_guidance)+'</details>':'')+
  (job.state==='uploaded'&&!job.analysis?.planning_brief?'<label>Additional instructions for Sol (optional)<textarea id="scan-learner-context" maxlength="2000" rows="4" placeholder="Leave blank for Sol to plan from the scanned pages."></textarea></label>':'')+
  explainAnalysis(job.analysis)+explainOutline(job)+explainLesson(job.lesson,job)+explainReview(job.review)+provenance+
- attemptLog(job)+'<div class="scan-approve-actions"><button type="button" class="outline" id="scan-free-preflight">Check pipeline readiness (free)</button>'+buttonFor(job)+'</div>'+
+ '<div class="scan-approve-actions"><button type="button" class="outline" id="scan-free-preflight">Check pipeline readiness (free)</button>'+buttonFor(job)+'</div>'+
  '<div id="scan-free-preflight-result" class="scan-preflight-result" role="status" aria-live="polite" hidden></div>'+
- '<p class="muted sm">Model outputs are source drafts, not definitive references. Verify formulas and safety guidance against the original pages. After approval, use the five-stage lesson workbench from the appropriate learning track; the Quiz tab saves scored self-checks separately from your source approval.</p></section>';
+ '<p class="muted sm">Model outputs are source drafts, not definitive references. Verify formulas and safety guidance against the original pages. After approval, use the five-stage lesson workbench from the appropriate learning track; the Quiz tab saves scored self-checks separately from your source approval.</p>'+attemptLog(job)+'</section>';
 }
 export function attachScanInbox(supabase,user,notify=()=>{}){
  const root=by('#scan-root');
@@ -594,7 +594,8 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
   if(job.analysis?.chapter_outline&&job.state!=='approved'){
    const controls=document.createElement('section');controls.className='panel scan-batch-controls';
    controls.innerHTML='<h3>Whole-chapter generation</h3><p>Draft and technically review all remaining outlined lessons with Sol. Saved reviewed drafts wait for your human approval. Failures stop the batch; no automatic paid retries. Keep this page open while it runs; return and explicitly resume after leaving.</p><button class="primary" data-chapter-batch>Draft & review the remaining chapter</button> <button class="outline" data-chapter-pause>Pause after current request</button><p class="muted sm" data-chapter-batch-status></p>';
-   div.append(controls);
+   // Batch actions stay above the history, directly after manual action controls.
+   div.querySelector('.scan-approve-actions')?.after(controls);
    controls.querySelector('[data-chapter-pause]').onclick=()=>{batchStop=true;status('Batch pause requested. The current response remains recoverable; no next generation will start.');};
    controls.querySelector('[data-chapter-batch]').onclick=async()=>{
     if(operation)return;
