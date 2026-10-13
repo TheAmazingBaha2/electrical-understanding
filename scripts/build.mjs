@@ -42,15 +42,9 @@ const publicFiles = [
 
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
-// Fail safe: staging must never bundle the production Supabase URL.
-const stagingConfig = await (await import("node:fs/promises")).readFile("config.js","utf8");
-if(!stagingConfig.includes("hkwmtjhgrskidaizamwy.supabase.co") || !stagingConfig.includes("SUPABASE_ENVIRONMENT = 'staging'") || stagingConfig.includes("wwvpzyqcgwlwcetwlime")){
- throw new Error("Staging build rejected: missing isolated Supabase project configuration");
-}
+// V3 development must not carry a usable official database connection.
 const config = await import('../config.js');
-if (config.SUPABASE_URL !== 'https://hkwmtjhgrskidaizamwy.supabase.co' || config.SUPABASE_ENVIRONMENT !== 'staging' || !/^sb_publishable_[A-Za-z0-9_-]+$/.test(config.SUPABASE_PUBLISHABLE_KEY)) {
- throw new Error('Staging requires its exact isolated project URL and a public publishable key.');
-}
+if(config.SUPABASE_ENVIRONMENT !== 'development' || config.SUPABASE_URL || config.SUPABASE_PUBLISHABLE_KEY)throw new Error('Development build rejected: cloud/AI requires a separately configured V3 backend');
 for (const file of publicFiles) {
   const info = await stat(file);
   if (!info.isFile()) throw new Error("Expected web file: " + file);
@@ -79,12 +73,12 @@ for(const file of publicFiles.filter(name=>name.endsWith(".js"))){
  }
 }
 await writeFile(join(output, "build-info.json"), JSON.stringify({
-  site: "Electrical Understanding v2 staging",
+  site: "Electronic Learning Workbench V3 development",
   worker: "eu-v2-staging",
   branch: sourceBranch,
   commit: commitSha,
   builtAt: new Date().toISOString(),
-  mode: "Cloudflare staging — production Supabase sync disabled on workers.dev"
+  mode: "V3 local development — official V2 cloud and AI disabled"
 }, null, 2) + "\n");
 console.log("Workers staging build ready: " + publicFiles.length + " public assets copied to ./dist");
 console.log("Build source: " + sourceBranch + " @ " + commitSha);

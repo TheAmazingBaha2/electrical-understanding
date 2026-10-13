@@ -268,8 +268,9 @@ test('CETa progress is independent of lab, textbook and archived lessons in dash
 test('staging Supabase uses separate preview project and cannot target production',()=>{
  const config=readFileSync(new URL('../config.js',import.meta.url),'utf8');
  const app=readFileSync(new URL('../app.js',import.meta.url),'utf8');
- assert.match(config,/SUPABASE_ENVIRONMENT = 'staging'/);
- assert.match(config,/hkwmtjhgrskidaizamwy\.supabase\.co/);
+ assert.match(config,/SUPABASE_ENVIRONMENT = 'development'/);
+ assert.match(config,/SUPABASE_URL = ''/);
+ assert.match(config,/SUPABASE_PUBLISHABLE_KEY = ''/);
  assert.doesNotMatch(config,/wwvpzyqcgwlwcetwlime/);
  assert.match(app,/stagingPreview && stagingBackend/);
  assert.match(readFileSync(new URL('../persistence.js',import.meta.url),'utf8'),/eu_staging_progress_v1_/);

@@ -1,0 +1,3 @@
+# V3 staging isolation — 2026-10-13
+
+Owner authorized making V2 official while keeping the current staging URL for V3. The development branch keeps its frontend, compact styling and stable lesson IDs but removes all usable database configuration. Cloud and paid AI are disabled, preserving official V2 data in hkwmtjhgrskidaizamwy. Existing local browser caches are left untouched. Future cloud/AI development requires a dedicated separately authorized backend; never deploy development Edge code to the official V2 project. V1 source/database backups remain intact. Browser source-inventory fixtures inject a fake configuration into fully mocked routes only; no real test writes or paid calls.
