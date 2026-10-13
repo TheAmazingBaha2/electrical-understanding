@@ -75,7 +75,7 @@ try{
  await page.locator('#scan-upload').click();
  await page.waitForFunction(()=>document.querySelector('#scan-upload')?.textContent.includes('Retry'));
  await page.locator('#scan-upload').click();
- await page.locator('[data-scan-action="plan"]').waitFor();
+ await page.locator('[data-run-scan]').waitFor();
  assert.equal(await page.evaluate(()=>window.__uploadCount),1,'Registration retry must not upload a duplicate');
  assert.match(await page.locator('#scan-status').innerText(),/No AI charges yet/);
  const acceptPaid=dialog=>dialog.accept();page.on('dialog',acceptPaid);
