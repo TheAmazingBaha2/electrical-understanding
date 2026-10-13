@@ -1,7 +1,7 @@
 import { ProgressStore, cloudTransport } from './persistence.js';
 import { renderAIModelLab, attachAIModelLab } from './ai-model-lab.js';
 import { renderScanInbox, attachScanInbox, scanInboxAutoUpdatesPaused } from './scan-inbox.js';
-import { generatedLibrarySlot, attachGeneratedLibrary } from './generated-library.js';
+import { generatedLibrarySlot, attachGeneratedLibrary, approvedWorkbenchLessons } from './generated-library.js';
 import { mountAIChat, updateAIChatSession, refreshAIChatContext } from './ai-chat-widget.js';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_ENVIRONMENT } from './config.js';
 import { lessons, books } from './lessons.js';
@@ -56,7 +56,7 @@ function hasPassed(lesson){const state=getState(lesson.id);if(state.complete===t
 }
 function unlocked(index){return index===0 || hasPassed(lessons[index-1]);}
 function finishedCount(){return lessons.filter(hasPassed).length}
-function reviewQueue(){return allLessons.flatMap((lesson,index)=>!canOpenLesson(lesson,index)?[]:lesson.questions.flatMap(q=>{
+function reviewQueue(){return [...allLessons,...generatedLessons.values()].flatMap((lesson,index)=>!canOpenLesson(lesson,index)?[]:lesson.questions.flatMap(q=>{
  const a=getState(lesson.id).answers?.[q.id];return a&&typeof a.correct==='boolean'&&a.reviewDue<=now()?[{lesson,q,a}]:[];
 })).sort((a,b)=>a.a.reviewDue-b.a.reviewDue)}
 function syncLabel(text,isOnline=false){$('#sync-status').textContent=text;$('#status-dot').classList.toggle('online',isOnline);$('#account-pill').textContent=user?'Cloud account':configured?'Sign in':'Local practice'}
@@ -67,13 +67,28 @@ async function connect(){
    const pkg=await import('https://esm.sh/@supabase/supabase-js@2.57.4');
    supabase=pkg.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
    supabase.auth.onAuthStateChange((_event,session)=>{
-     if(session?.user?.id!==user?.id){user=session?.user||null;generatedLessons.clear();progress=localLoad();updateAIChatSession(user,supabase);syncLabel(user?'Staging cloud connected':'Sign in for staging sync',!!user);render();if(user)void loadCloud();}
+     if(session?.user?.id!==user?.id){user=session?.user||null;generatedLessons.clear();progress=localLoad();updateAIChatSession(user,supabase);syncLabel(user?'Staging cloud connected':'Sign in for staging sync',!!user);render();if(user){void loadCloud();void loadApprovedInventory();}}
    });
    const {data,error}=await supabase.auth.getSession();if(error)throw error;
    user=data.session?.user||null;progress=localLoad();updateAIChatSession(user,supabase);syncLabel(user?'Cloud connected':'Sign in to synchronize',!!user);
-   if(user)await loadCloud();
+   if(user){await loadCloud();await loadApprovedInventory();}
  }catch(err){syncLabel('Cloud connection unavailable');notify('Cloud unavailable. Local progress remains on this device.');console.error(err)}
  render();
+}
+async function loadApprovedInventory(){
+ if(!supabase||!user)return;
+ const owner=user.id;
+ try{
+  const {data,error}=await supabase.from('scan_lesson_jobs')
+   .select('id,title,source_book,source_pages,source_track,state,lesson,analysis,approved_at,created_at')
+   .in('state',['outlined','drafted','reviewed','needs_revision','approved'])
+   .order('created_at',{ascending:false}).limit(200);
+  if(error)throw error;
+  if(user?.id!==owner)return;
+  generatedLessons.clear();
+  for(const lesson of approvedWorkbenchLessons(data||[]))generatedLessons.set(lesson.id,lesson);
+  if(view==='reviews'||view==='generated-lesson')render();
+ }catch(error){console.warn('Approved lesson inventory not available:',error.message);}
 }
 let syncTask = null, syncAgain = false;
 async function loadCloud(){
@@ -193,7 +208,7 @@ function renderDashboard(){return v2Dashboard(v2Context());}
 function lessonRows(group){return group.map(l=>{const i=lessons.indexOf(l),a=getAccuracy(l),passed=hasPassed(l),lock=!unlocked(i);return `<div class="lesson-row"><div class="lesson-num">${lock?'⌁':passed?'✓':String(i+1).padStart(2,'0')}</div><div class="lesson-info"><p class="smallcaps">${esc(l.module)} · ${l.minutes} MIN</p><h3>${esc(l.title)}</h3><p>${esc(l.description)}</p>${a.answered?`<p class="muted sm">${a.correct}/${a.total} checks correct</p>`:''}</div><button class="${lock?'ghost':passed?'outline':'primary'} small-button" ${lock?'disabled':''} data-goto="lesson" data-lesson="${l.id}">${lock?'Locked':passed?'Revisit':'Study lesson'}</button></div>`}).join('')}
 function renderCurriculum(){return v2Page('curriculum',v2Context());}
 function renderLibrary(){return v2Page('textbooks',v2Context());}
-function renderReviews(){const queue=reviewQueue();return `<p class="muted">Reviews are scheduled after each check: one day after a missed answer, seven days after an initial success, and 21 days after a successful retry. Open a question to answer again.</p>${cloudBanner()}<div class="panel"><h2>Scheduled quiz reviews · ${queue.length} review${queue.length===1?'':'s'} due</h2>${queue.length?queue.map(({lesson,q,a})=>`<div class="review-item"><div><b>${esc(lesson.title)}</b><p class="muted sm">${esc(q.prompt)}<br>Scheduled ${duration(a.reviewDue)}</p></div><button class="primary small-button" data-goto="lesson" data-lesson="${lesson.id}" data-question="${q.id}">Review →</button></div>`).join(''):`<div class="empty"><h3>You're caught up.</h3><p>When your completed questions become due, they'll appear here.</p></div>`}</div>`}
+function renderReviews(){const queue=reviewQueue();return `<p class="muted">Reviews are scheduled after each check: one day after a missed answer, seven days after an initial success, and 21 days after a successful retry. Open a question to answer again.</p>${cloudBanner()}<div class="panel"><h2>Scheduled quiz reviews · ${queue.length} review${queue.length===1?'':'s'} due</h2>${queue.length?queue.map(({lesson,q,a})=>`<div class="review-item"><div><b>${esc(lesson.title)}</b><p class="muted sm">${esc(q.prompt)}<br>Scheduled ${duration(a.reviewDue)}</p></div><button class="primary small-button" data-goto="${lesson.generated?'generated-lesson':'lesson'}" data-lesson="${lesson.id}" data-question="${q.id}">Review →</button></div>`).join(''):`<div class="empty"><h3>You're caught up.</h3><p>When your completed questions become due, they'll appear here.</p></div>`}</div>`}
 function renderLesson(){const lesson=findLesson(activeLesson);if(!lesson)return '<p>Lesson not found.</p>';
  const idx=lessons.indexOf(lesson),isPilot=idx>=0;
  if(lesson.generated){
