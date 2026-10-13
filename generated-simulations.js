@@ -12,6 +12,8 @@ const experiments={
    "An inverse operation isolates the unknown without changing the equality."]},
  ohm:{title:"Ideal Ohm's law",inputs:[item("Voltage",1,24,5,"V"),item("Resistance",100,10000,1000,"Ω",100)],
   solve:([v,r])=>["I = V / R",fmt(v/r*1000)+" mA","Increasing voltage increases current; increasing resistance lowers it."]},
+ power:{title:"Resistive power",inputs:[item("Voltage",1,24,5,"V"),item("Resistance",100,10000,1000,"Ω",100)],
+  solve:([v,r])=>["P = V²/R; I = V/R","Power: "+fmt(v*v/r*1000)+" mW; current: "+fmt(v/r*1000)+" mA","At fixed resistance, doubling voltage doubles current and quadruples power."]},
  network:{title:"Resistor combinations",inputs:[item("R1",100,10000,1000,"Ω",100),item("R2",100,10000,2000,"Ω",100)],
   solve:([a,b])=>["Series = R1 + R2; parallel = R1 × R2 / (R1 + R2)","Series: "+fmt(a+b)+" Ω; parallel: "+fmt(a*b/(a+b))+" Ω","For two positive resistances, the parallel equivalent is below either branch resistance."]},
  internal:{title:"Battery internal resistance",inputs:[item("EMF",1,24,6,"V"),item("Load",1,20,6,"Ω"),item("Internal resistance",0.1,4,1,"Ω",0.1)],
@@ -67,6 +69,7 @@ export function simulationCurve(name,values){
  const [a,b]=values;
  const curves={
   ohm:{title:"Current rises with voltage",x:"Voltage (V)",y:"Current (mA)",min:0,max:24,fn:x=>x/b*1000},
+  power:{title:"Resistive power grows with voltage squared",x:"Voltage (V)",y:"Power (mW)",min:0,max:24,fn:x=>x*x/b*1000},
   network:{title:"Parallel resistance as R1 changes",x:"R1 (Ω)",y:"Equivalent resistance (Ω)",min:100,max:10000,fn:x=>x*b/(x+b)},
   rc:{title:"Ideal capacitor charging",x:"Time (ms)",y:"Final voltage (%)",min:0,max:5*a*b,fn:x=>100*(1-Math.exp(-x/(a*b)))},
   sine:{title:"One ideal sinusoidal cycle",x:"Phase (radians)",y:"Voltage (V)",min:0,max:2*Math.PI,fn:x=>a*Math.sin(x)},

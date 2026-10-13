@@ -50,6 +50,7 @@ function simulationForTitle(title){
 }
 export function makeWorkbenchLesson(job, unit, content, kind, order) {
  const rawId=String(unit.id||job.draft_id||job.id);
+ const archived=!unit.curated&&isArchivedScanChapter(job);
  const id=kind==="review"?rawId+"-R"+String(order+1).padStart(2,"0"):rawId;
  const sections=safeList(content.sections), original=safeList(content.questions);
  const prompts=original.map((q,i)=>{
@@ -101,20 +102,24 @@ export function makeWorkbenchLesson(job, unit, content, kind, order) {
    module:job.source_book||job.title||"Source-backed chapter",sourceAttribution:citation,teachingSections:sections.map(part=>({heading:String(part.heading),source_ids:safeList(part.source_ids)})),
    objectives:safeList(content.objectives),html,experiment:"generated",activities,questions:prompts,
    minutes:Math.max(10,sections.length*6+10),simulator:simulationForTitle(unit.plan?.title||content.title),kind:unit.plan?.kind||unit.kind||"concept",
-   ordering:unit.plan?.ordering||unit.ordering||"independent",sourceUnitId:rawId,scanId:String(job.id),archived:isArchivedScanChapter(job),sourceTrack:job.source_track||"other",libraryView:isArchivedScanChapter(job)?"legacy":kind==="review"?"reviews":(["math","ceta","labs","textbooks"].includes(unit.dashboard_track)?unit.dashboard_track:(unit.plan?.kind||unit.kind)==="math"?"math":job.source_track==="guide"?"ceta":job.source_track==="basic"?"labs":"textbooks")};
+   ordering:unit.plan?.ordering||unit.ordering||"independent",sourceUnitId:rawId,scanId:String(job.id),archived,curatedSeries:Boolean(unit.curated),seriesId:unit.series_id||null,seriesOrder:unit.series_order||null,overview:unit.overview||null,sourceTrack:job.source_track||"other",libraryView:archived?"legacy":kind==="review"?"reviews":(["math","ceta","labs","textbooks"].includes(unit.dashboard_track)?unit.dashboard_track:(unit.plan?.kind||unit.kind)==="math"?"math":job.source_track==="guide"?"ceta":job.source_track==="basic"?"labs":"textbooks")};
 }
 
 
+export function approvedUnitsFor(job){
+ const original=Array.isArray(job.lesson?.lessons)?job.lesson.lessons:job.state==='approved'&&job.lesson?[job.lesson]:[];
+ const curated=job.state==='approved'&&job.lesson?.curated_series?.status==='ready'?safeList(job.lesson.curated_series.lessons).map(unit=>({...unit,curated:true})):[];
+ return [...original,...curated];
+}
 function cards(jobs,filter,register=()=>{}){
  const entries=[];
  for(const job of jobs){
   if(!["outlined","drafted","reviewed","needs_revision","approved"].includes(job.state)||!job.lesson)continue;
   const track=job.source_track||job.lesson?.source?.track||"other";
   // Archived chapters remain in their own Legacy collection, not in active paths.
-  if(isArchivedScanChapter(job)!==(filter==="legacy"))continue;
-  const approvedUnits=Array.isArray(job.lesson.lessons)?job.lesson.lessons:
-   job.state==="approved"?[job.lesson]:[];
+  const approvedUnits=approvedUnitsFor(job);
   for(const unit of approvedUnits){
+   if((!unit.curated&&isArchivedScanChapter(job))!==(filter==="legacy"))continue;
    const kind=unit.plan?.kind||unit.kind||"concept";
    const destination=unit.plan?.destination||unit.destination||"source";
    const meta=unit.plan||unit;
@@ -155,8 +160,7 @@ function cards(jobs,filter,register=()=>{}){
 export function approvedWorkbenchLessons(jobs){
  const lessons=[];
  for(const job of safeList(jobs)){
-  const approvedUnits=Array.isArray(job.lesson?.lessons)?job.lesson.lessons:
-   job.state==="approved"&&job.lesson?[job.lesson]:[];
+  const approvedUnits=approvedUnitsFor(job);
   for(const unit of approvedUnits){
    if(safeList(unit.sections).length)lessons.push(makeWorkbenchLesson(job,unit,unit,"unique",0));
    safeList(unit.review_lessons).forEach((review,i)=>lessons.push(makeWorkbenchLesson(job,unit,review,"review",i)));

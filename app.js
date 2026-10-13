@@ -165,7 +165,7 @@ function render(){setNav();refreshAIChatContext();const names={'generated-lesson
  $('#page-title').textContent=names[view]||names.dashboard;
  const main=$('#main');
  main.innerHTML=view==='dashboard'?renderDashboard():['lesson','generated-lesson'].includes(view)?renderLesson():view==='reviews'?renderReviews():view==='account'?renderAccount():view==='scan-inbox'?renderScanInbox(user):view==='ai-lab'?renderAIModelLab(user):view==='library'?renderLibrary():v2Page(view,v2Context(),activeLesson);
- const approvedFilter=view==='reviews'?'review':view==='math'?'math':view==='textbooks'?'textbooks':view==='ceta'?'ceta':view==='labs'?'labs':
+ const approvedFilter=view==='reviews'?'review':view==='textbooks'?'textbooks':view==='ceta'?'ceta':view==='labs'?'labs':
   view==='subtrack'?(['guide','core','exam'].includes(activeLesson)?'ceta':activeLesson):null;
  if(approvedFilter&&user)main.insertAdjacentHTML(view==='reviews'?'afterbegin':'beforeend',generatedLibrarySlot(approvedFilter));
  main.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>switchTo(b.dataset.goto,b.dataset.lesson||null,b.dataset.question||null)));
@@ -214,7 +214,7 @@ function renderLesson(){const lesson=findLesson(activeLesson);if(!lesson)return 
  if(lesson.generated){
   const score=getAccuracy(lesson),passed=hasPassed(lesson);
   return tabbedLesson({lesson,isPilot:false,isLegacyArchived:lesson.archived,idx:0,score,passed,
-    nextLesson:null,tab:lessonTab,activityIndex,learnIndex,quizIndex,
+    nextLesson:lesson.seriesId?[...generatedLessons.values()].find(l=>l.seriesId===lesson.seriesId&&l.seriesOrder===lesson.seriesOrder+1)||null:null,tab:lessonTab,activityIndex,learnIndex,quizIndex,
     answers:getState(lesson.id).answers||{},questionHtml});
  }
  if(!canOpenLesson(lesson,allLessons.indexOf(lesson)))return '<div class="panel"><h2>Lesson not yet available</h2><p>'+ (lesson.subtrack==='math'?'Reach one of the linked electronics topics to unlock this mathematics companion.':'Complete the preceding lesson in this source track before continuing.')+'</p><button class="primary" data-goto="'+(isArchivedLesson(lesson)?'legacy':lesson.subtrack==='math'?'math':isPilot?'legacy':'subtrack')+'" '+(isArchivedLesson(lesson)||lesson.subtrack==='math'||isPilot?'':'data-lesson="'+(lesson.subtrack||'basic')+'"')+'>Back</button></div>';

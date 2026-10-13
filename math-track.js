@@ -7,12 +7,12 @@ export function renderMathTrack(ctx={}){
  const available=()=>true;
  const prog=ctx.progress||{};
  const passed=ctx.hasPassed||(()=>false);
- const active=ctx.activeMathLessons||mathLessons;
+ const active=[...(ctx.activeMathLessons||mathLessons),...(ctx.activeGeneratedLessons||[]).filter(l=>l.libraryView==='math')];
  const archived=(ctx.archivedUnreferencedLessons||[]).filter(l=>l.subtrack==='math');
  const open=active.filter(available),completed=active.filter(l=>available(l)&&passed(l)).length;
  const archivedMastered=archived.filter(passed).length;
  return '<div class="math-track"><header class="v2-intro"><p class="v2-kicker">TRACK 4 · CROSS-TRACK COMPANION</p>'+
-  '<h2>Mathematics Companion</h2><p>Future source-backed math lessons will live here, linked to textbooks, exams and laboratory concepts. Earlier original lessons without verified textbook pages have moved to Legacy Group 2, where their exercises and saved progress remain accessible.</p></header>'+
+  '<h2>Mathematics Companion</h2><p>Source-backed math lessons live here, linked to textbooks, exams and laboratory concepts. Earlier original lessons without verified textbook pages have moved to Legacy Group 2, where their exercises and saved progress remain accessible.</p></header>'+
   '<section class="math-track-overview panel"><div><p class="v2-kicker">CURRENT MATH PATH</p><h3>'+completed+' / '+open.length+' reachable companions mastered</h3>'+
   '<p class="muted sm">Only source-backed lessons count toward the active math track. Original math practice remains available in Legacy Group 2, and math never blocks other learning tracks.</p></div>'+
   '<div class="math-track-meters"><span>'+open.length+' ready</span><span>'+completed+' mastered</span><span>'+(active.length-open.length)+' upcoming</span></div></section>'+
@@ -22,15 +22,15 @@ export function renderMathTrack(ctx={}){
    const s=prog[lesson.id]||{},a=s.answers||{};
    const correct=lesson.questions.filter(q=>a[q.id]?.correct===true).length;
    const answered=lesson.questions.filter(q=>typeof a[q.id]?.correct==='boolean').length;
-   const linked=lesson.sourceLessonIds.map(id=>sourceLessons.find(l=>l.id===id)).filter(Boolean);
+   const linked=(lesson.sourceLessonIds||[]).map(id=>sourceLessons.find(l=>l.id===id)).filter(Boolean);
    const links=linked.map(l=>'<button type="button" class="math-source-link" data-goto="lesson" data-lesson="'+esc(l.id)+'" '+(!ctx.sourceIsAvailable?.(l)?'disabled':'')+'>'+esc(l.module?.split('·')[0]||'Lesson')+' · '+esc(l.title)+' →</button>').join('');
    return '<article class="math-topic-card'+(unlocked?'':' locked')+'"><div class="math-topic-head"><span class="v2-kicker">MATH '+String(i+1).padStart(2,'0')+'</span>'+
     '<span class="v2-pill">'+(done?'Mastered':unlocked?'Available':'Always available')+'</span></div>'+
     '<h3>'+esc(lesson.title)+'</h3><p>'+esc(lesson.description)+'</p>'+
     '<div class="math-topic-metadata"><span>'+lesson.minutes+' min</span><span>'+lesson.questions.length+' knowledge checks</span>'+
     (unlocked?'<span>'+correct+' / '+lesson.questions.length+' correct · '+answered+' attempted</span>':'<span>Optional linked topic</span>')+'</div>'+
-    '<div class="math-topic-links"><strong>Connected electronics lessons</strong>'+links+'</div>'+
-    '<button type="button" class="'+(done?'outline':'primary')+' small-button" data-goto="lesson" data-lesson="'+esc(lesson.id)+'" '+(unlocked?'':'disabled')+'>'+
+    '<div class="math-topic-links"><strong>'+(lesson.generated?'Source reference':'Connected electronics lessons')+'</strong>'+(lesson.generated?'<p class="muted sm">'+esc(lesson.sourceAttribution)+'</p>':links)+'</div>'+
+    '<button type="button" class="'+(done?'outline':'primary')+' small-button" data-goto="'+(lesson.generated?'generated-lesson':'lesson')+'" data-lesson="'+esc(lesson.id)+'" '+(unlocked?'':'disabled')+'>'+
     (done?'Review this math':unlocked?'Learn the math →':'Not reached yet')+'</button></article>';
   }).join('')+'</div>'+
   '<section class="panel"><h3>How this track grows</h3><p>As verified chapters and lab sources arrive, new mathematics lessons can be created with exact publication and page citations. The original six companions remain in Legacy without losing their lesson IDs, scores, or review dates.</p></section></div>';

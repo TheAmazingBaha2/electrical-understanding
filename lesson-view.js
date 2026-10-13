@@ -28,7 +28,7 @@ function reviewPanel(ctx){
   const a=answers[q.id];const valid=typeof a?.correct==="boolean";const label=a?.pending?'Self-check pending':valid?(a.correct?'Understood':'Needs another attempt'):'Not yet answered';
   return '<button type="button" class="lesson-review-item" data-quiz-jump="'+i+'"><span><b>'+e("Question "+(i+1))+'</b> '+e(q.prompt)+'</span><small>'+label+' →</small></button>';
  }).join("")+'</div><div class="actions"><button class="outline" data-lesson-tab="quiz">Return to quiz</button>'+
- (passed&&nextLesson?'<button class="primary" data-goto="lesson" data-lesson="'+e(nextLesson.id)+'">Next lesson →</button>':'')+
+ (passed&&nextLesson?'<button class="primary" data-goto="'+(nextLesson.generated?'generated-lesson':'lesson')+'" data-lesson="'+e(nextLesson.id)+'">Next lesson →</button>':'')+
  '<button class="outline" data-goto="'+(lesson.generated?(lesson.libraryView||'textbooks'):isLegacyArchived?'legacy':lesson.subtrack==='math'?'math':isPilot?'legacy':'subtrack')+'" '+(lesson.generated||isLegacyArchived||lesson.subtrack==='math'||isPilot?'':'data-lesson="'+e(lesson.subtrack||'basic')+'"')+'>' +(lesson.generated?'Back to your learning track':isLegacyArchived?'Back to Legacy Lessons':lesson.subtrack==='math'?'Back to Mathematics Companion':isPilot?'Legacy lesson library':lesson.subtrack==='geier'?'Back to DMM companion':lesson.subtrack==='guide'?'Back to CETa Study Guide':'Back to lab manual')+'</button></div></section>';
 }
 // Cite only page information actually present in the source record; no invented page numbers.

@@ -1,0 +1,14 @@
+import {mkdtempSync,writeFileSync,readFileSync,rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {execFileSync} from 'node:child_process';
+// Synthetic metadata only: no private upload, account or original textbook bytes.
+export function authoredSeries(){
+ const dir=mkdtempSync(join(tmpdir(),'eu-series-'));
+ const source={id:'75f4c1db-1d8c-40df-890b-4211862bcfc4',source_book:'Test Chapter 3',source_pages:'16–24',source_track:'guide',analysis:{facts:Array.from({length:18},(_,i)=>({id:'S'+(i+1),claim:'Synthetic reference identity',confidence:'high',location:'fixture'})),equations:[],gaps:[]}};
+ try{
+  writeFileSync(join(dir,'source.json'),JSON.stringify(source));
+  execFileSync('python3',[new URL('../scripts/content/author-chapter3.py',import.meta.url).pathname,join(dir,'source.json'),join(dir,'series.json')]);
+  return {source,series:JSON.parse(readFileSync(join(dir,'series.json'),'utf8'))};
+ }finally{rmSync(dir,{recursive:true,force:true});}
+}

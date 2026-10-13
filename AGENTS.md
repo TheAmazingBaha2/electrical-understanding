@@ -3,7 +3,7 @@
 Before changing this project, read `docs/v2/TEACHING_AND_DESIGN_CONTRACT.md` and the latest `docs/qa` checkpoint. Treat design requests as changes to presentation unless the user also requests a behavior or data change.
 
 - Work on `draft/v2-dmm-companion` and isolated staging `hkwmtjhgrskidaizamwy`. Production release is a separate user decision.
-- Preserve stable lesson/question IDs, source evidence/raw attempts, human approvals, answers, review dates, Legacy group assignments and cloud conflict handling. Never regenerate paid content to implement a visual change.
+- Preserve stable lesson/question IDs, source evidence/raw attempts, human approvals, answers, review dates, Legacy group assignments and cloud conflict handling. The explicitly requested active Chapter 3 curated series is additive; its original source batch remains Legacy. Never regenerate paid content to implement a visual change.
 - Every future approved unit uses the shared five-tab lesson engine and approved inventory; its dashboard, progress and review routes come from server-owned metadata. Unapproved drafts are never active curriculum.
 - Keep source grounding, high-confidence coverage, plain-language discussions, intermediate worked steps, widget-led predictions/debriefs and an adaptive quiz dominated by selectable questions in the paid prompt contract. Do not replace these with summaries or generic question banks.
 - No design edit may enable a paid request on page load, refresh, sync, navigation or verification. New paid generations require the user's in-app authorization, an atomic reservation and durable attempt. Resume known requests freely; uncertain failures never retry automatically.
