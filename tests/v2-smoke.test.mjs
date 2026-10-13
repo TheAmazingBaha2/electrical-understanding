@@ -134,7 +134,7 @@ test('lab prose and five visual activities are in separate focused lesson views'
 });
 test('dashboard pie and track rings use real published course denominators',()=>{
  const html=v2Dashboard(context({'EIM-BEC-PRELAB':{complete:true}}));
- assert.equal((html.match(/v2-frost-ring/g)||[]).length,7);
+ assert.equal((html.match(/v2-frost-ring/g)||[]).length,9);
  assert.equal((html.match(/v2-evidence-pie/g)||[]).length,1);
  assert.match(html,/All published lessons/);
  assert.match(html,/Virtual laboratories/);
@@ -231,7 +231,7 @@ test('DMM book track launches first lesson and locks second until first passes',
 test('DMM published scope contributes to overall charts without changing saved CETa or lab IDs',()=>{
  const c=context({'BDMM-01':{complete:true,answers:{b101:{correct:true},b102:{correct:false}},updatedAt:Date.now()}});
  const html=v2Dashboard(c);
- assert.match(html,/DMM textbook/);
+ assert.match(html,/Textbook companions/);
  assert.match(html,/1 \/ 2 DMM companions passed/);
  assert.match(html,/All published lessons/);
  assert.match(html,/correct, 1 needs review/);
@@ -284,8 +284,8 @@ test('CETa progress is independent of lab, textbook and archived lessons in dash
  assert.match(html,/0 \/ 0 guide companions passed/);
  assert.match(html,/1 of 7 published lessons complete/);
  assert.match(html,/correct, 1 needs review/);
- assert.match(html,/0 \/ 2 virtual companions passed/);
- assert.match(html,/0 \/ 2 DMM companions passed/);
+ assert.match(html,/0 \/ 2 lab companions passed/);
+ assert.match(html,/0 \/ 2 textbook companions passed/);
 });
 
 test('staging Supabase uses separate preview project and cannot target production',()=>{
