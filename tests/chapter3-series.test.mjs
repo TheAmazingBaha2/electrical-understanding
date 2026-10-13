@@ -4,7 +4,7 @@ import {authoredSeries} from './chapter3-series-fixture.mjs';
 import {setup} from './scan-harness.mjs';
 import {approvedWorkbenchLessons} from '../generated-library.js';
 import {legacyGroup} from '../legacy-groups.js';
-import {renderMathTrack} from '../math-track.js';
+import {renderSourceSection,renderMathPractice} from '../source-navigation.js';
 import {lessonOverview} from '../lesson-overviews.js';
 import {tabbedLesson} from '../lesson-view.js';
 import {simulationCurve,simulatorCatalog} from '../generated-simulations.js';
@@ -17,7 +17,7 @@ test('sixteen authored lessons have variable selectable quizzes, supported widge
  assert.ok(new Set(series.lessons.map(l=>l.questions.length)).size>3);
  const ids=series.lessons.flatMap(l=>[l.id,...l.questions.map(q=>q.id)]);assert.equal(new Set(ids).size,ids.length);
  for(const l of active()){
-  assert.equal(legacyGroup(l),null);assert.equal(l.archived,false);assert.equal(l.libraryView,'math');
+  assert.equal(legacyGroup(l),null);assert.equal(l.archived,false);assert.equal(l.libraryView,'ceta');
   assert.equal(l.sourceTrack,'guide');assert.equal(l.seriesId,series.id);
   assert.ok(l.questions.every(q=>['number','choice'].includes(q.type)));
   assert.ok(l.activities.every(a=>a.kind==='choice'||(a.kind==='simulation'&&simulatorCatalog[a.simulator])));
@@ -41,9 +41,9 @@ test('additive publication preserves the original sixteen IDs and keeps pending 
  job.state='reviewed';job.lesson.lessons=[];job.lesson.curated_series=series;assert.equal(approvedWorkbenchLessons([job]).length,0);
 });
 test('math cards and lesson continuation use generated routes without a duplicate collection',()=>{
- const lessons=active(),html=renderMathTrack({activeMathLessons:[],activeGeneratedLessons:lessons});
- assert.equal((html.match(/class="math-topic-card/g)||[]).length,16);
- assert.equal((html.match(/data-goto="generated-lesson"/g)||[]).length,16);assert.match(html,/0 \/ 16 reachable companions/);
+ const lessons=active(),html=renderSourceSection('ceta',{activeMathLessons:[],activeGeneratedLessons:lessons});
+ assert.equal((html.match(/class="chapter-lesson"/g)||[]).length,16);
+ assert.equal((html.match(/data-goto="generated-lesson"/g)||[]).length,16);assert.match(html,/22 chapters · 16 lessons/);assert.doesNotMatch(renderMathPractice({activeGeneratedLessons:lessons}),/data-content-lesson=/);
  const result=tabbedLesson({lesson:lessons[0],answers:{},passed:true,score:{correct:8,total:8},nextLesson:lessons[1],tab:'review',activityIndex:0,learnIndex:0,quizIndex:0,questionHtml:()=>''});
  assert.match(result,/data-goto="generated-lesson" data-lesson="C3-CURATED-U02"/);
 });

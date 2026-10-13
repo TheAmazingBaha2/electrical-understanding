@@ -76,6 +76,8 @@ export function renderScanInbox(user){
    </div>
    <label>Chapter / shared theme (optional)<input id="scan-chapter-group" type="text" maxlength="180" placeholder="e.g. Chapter 4 — DC circuits"></label>
    <p class="muted sm">Use the same chapter/theme for subsequent uploads. Earlier interpreted parts supply context and keep their original citations; new parts add lessons without replacing them.</p>
+   <div class="scan-field-row"><label>Chapter / experiment ID<input id="scan-chapter-id" maxlength="60" placeholder="3, DC 02, or PreLab"></label><label>Chapter title<input id="scan-chapter-title" maxlength="180" placeholder="Title from the table of contents"></label></div>
+   <label>Lesson placement<select id="scan-practice-mode"><option value="source">Keep lessons in this book / exam / manual chapter</option><option value="math">Standalone Math Practice refresher</option></select></label>
    <label>How this part is grouped<select id="scan-part-kind"><option value="subsection">Complete subsection</option><option value="theme">Complete common theme</option><option value="partial">Partial / continuing material</option></select></label>
    <label>Part number (optional; assigned automatically)<input id="scan-part-number" type="number" min="1" max="999" step="1" placeholder="Next part automatically"></label>
    <label>Printed pages shown in this scan<input id="scan-pages" type="text" maxlength="80" required placeholder="e.g. pp. 104–106 or Figure 3.2, p. 45"></label>
@@ -781,7 +783,7 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
     }
    }
    phase='adding the scan to your library';status('Upload received. Adding to your private library…');
-   const registered=await invoke({action:'register',path:pending.path,title:name,book,pages,track,chapterGroup:root.querySelector('#scan-chapter-group').value.trim(),partKind:root.querySelector('#scan-part-kind').value,partNumber:Number(root.querySelector('#scan-part-number').value)||0});
+   const registered=await invoke({action:'register',path:pending.path,title:name,book,pages,track,chapterGroup:root.querySelector('#scan-chapter-group').value.trim(),chapterId:root.querySelector('#scan-chapter-id').value.trim(),chapterTitle:root.querySelector('#scan-chapter-title').value.trim(),practiceMode:root.querySelector('#scan-practice-mode').value,partKind:root.querySelector('#scan-part-kind').value,partNumber:Number(root.querySelector('#scan-part-number').value)||0});
    selectedId=registered.jobId;root.querySelector('#scan-upload-form').reset();
    chooseBook('');preparedFile=null;preparing=null;pendingUpload=null;
    await refresh(false);status('Source uploaded. No AI charges yet. Select Run scan & build lessons when ready.');

@@ -10,8 +10,8 @@ try{
  await page.locator('.v2-hero').waitFor({timeout:30000});
  await page.locator('.workspace-top-tabs [data-view="math"]').click();
  assert.equal(await page.locator('.math-topic-card').count(),0);
- assert.match(await page.locator('.math-track').innerText(),/6 original mathematics lessons preserved/);
- await page.locator('.workspace-top-tabs [data-view="legacy"]').click();
+ assert.match(await page.locator('#main').innerText(),/Periodic refreshers/);
+ await page.locator('.workspace-top-tabs [data-view="account"]').click();await page.locator('.account-maintenance > summary').click();await page.locator('[data-goto="legacy"]').click();
  assert.equal(await page.locator('.legacy-source-row').count(),7);
  await page.locator('[data-lesson="MATH-001"][data-goto="lesson"]').click();
  assert.match(await page.locator('.lesson-header').innerText(),/Scale, Prefixes/);
@@ -40,11 +40,11 @@ try{
  assert.ok(saved.keys.includes('MATH-001'));
  assert.equal(saved.answer.correct,true);
  assert.ok(!saved.keys.includes('L01'),'Math answer must not overwrite legacy lesson ID');
- await page.locator('.workspace-top-tabs [data-view="legacy"]').click();
+ await page.locator('.workspace-top-tabs [data-view="account"]').click();await page.locator('.account-maintenance > summary').click();await page.locator('[data-goto="legacy"]').click();
  assert.match(await page.locator('.legacy-source-row').filter({has:page.locator('[data-lesson="MATH-001"]')}).innerText(),/1 correct/);
  await page.locator('.workspace-top-tabs [data-view="ceta"]').click();
- await page.locator('[data-goto="subtrack"][data-lesson="guide"]').first().click();
- await page.locator('.workspace-top-tabs [data-view="legacy"]').click();
+ assert.equal(await page.locator('.content-chapter').count(),22);
+ await page.locator('.workspace-top-tabs [data-view="account"]').click();await page.locator('.account-maintenance > summary').click();await page.locator('[data-goto="legacy"]').click();
  await page.locator('[data-goto="lesson"][data-lesson="CETA-G03-01"]').click();
  assert.ok(await page.locator('.math-related-panel [data-lesson="MATH-001"]').count()>0);
  await page.locator('.math-related-panel [data-lesson="MATH-001"]').click();

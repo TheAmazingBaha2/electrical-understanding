@@ -55,12 +55,12 @@ test('new chapter goes into active dashboard, reviews and correct category with 
  const progress={[items[0].id]:{complete:true,updatedAt:1790000000000,
   answers:{[items[0].questions[0].id]:{correct:true,reviewDue:0}}}};
  const ui=v2Dashboard(context(items,[],progress));
- assert.match(ui,/Approved active companions/);
- assert.match(ui,/1 \/ 3/);
- assert.match(ui,/Review &amp; Reinforcement/);
+ assert.match(ui,/data-dashboard-source="associate-cet"/);
+ assert.match(ui,/1 \/ 2 lessons mastered/);
+ assert.doesNotMatch(ui,/Review concept 3/);
  assert.match(ui,/Source concept 1/);
- assert.match(ui,/Correct saved answers/);
- assert.match(ui,/All published lessons/);
+ assert.match(ui,/1 correct, 0 needs review/);
+ assert.match(ui,/chapter-pie/);
 });
 test('new approval includes server-assigned track and unified dashboard-readiness metadata',()=>{
  const src=readFileSync(new URL('../supabase/functions/scan-lesson-pipeline/index.ts',import.meta.url),'utf8');

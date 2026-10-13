@@ -27,22 +27,22 @@ try{
   const size=await page.evaluate(()=>({actual:document.documentElement.scrollWidth,width:innerWidth}));assert.ok(size.actual<=size.width+2);assert.deepEqual(errors,[]);
   await page.evaluate(async({source,series})=>{
    const {approvedWorkbenchLessons}=await import('/generated-library.js');
-   const {renderMathTrack}=await import('/math-track.js');
+   const {renderSourceSection}=await import('/source-navigation.js');
    const {v2Dashboard}=await import('/v2-panels.js');
    const {tabbedLesson}=await import('/lesson-view.js');
    const {attachGeneratedPredictions}=await import('/lesson-tabs.js');
    const {attachGeneratedSimulations}=await import('/generated-simulations.js');
    window.__series=approvedWorkbenchLessons([{...source,state:'approved',lesson:{lessons:[],curated_series:series}}]);
-   window.__math=()=>document.querySelector('#main').innerHTML=renderMathTrack({activeMathLessons:[],activeGeneratedLessons:window.__series});
+   window.__math=()=>document.querySelector('#main').innerHTML=renderSourceSection('ceta',{activeMathLessons:[],activeGeneratedLessons:window.__series},'associate-cet:3');
    window.__dashboard=()=>document.querySelector('#main').innerHTML=v2Dashboard({lessons:[],labLessons:[],bookLessons:[],activeCetaLessons:[],activeMathLessons:[],activeGeneratedLessons:window.__series,archivedGeneratedLessons:[],progress:{},reviews:0,banner:'',hasPassed:()=>false});
    window.__curatedTab=(i,tab,activityIndex=0)=>{
     const lesson=window.__series[i];document.querySelector('#main').innerHTML=tabbedLesson({lesson,answers:{},score:{correct:0,total:lesson.questions.length},passed:false,tab,activityIndex,learnIndex:0,quizIndex:0,questionHtml:q=>'<div>'+q.prompt+'</div>'});
     attachGeneratedPredictions(document.querySelector('#main'));attachGeneratedSimulations(document.querySelector('#main'));
    };window.__math();
   },curated);
-  assert.equal(await page.locator('.math-topic-card').count(),16);assert.equal(await page.locator('.math-topic-card [data-goto="generated-lesson"]').count(),16);
+  assert.equal(await page.locator('.chapter-lesson').count(),16);assert.equal(await page.locator('.chapter-lesson [data-goto="generated-lesson"]').count(),16);
   await page.evaluate(()=>window.__dashboard());
-  assert.equal(await page.locator('[aria-label="All published lessons: 0 of 16 published lessons complete"]').count(),1);
+  assert.equal(await page.locator('.dashboard-chapter').count(),1);assert.equal(await page.locator('.dashboard-lesson-list .lesson-pie').count(),16);
   assert.equal(await page.locator('.v2-hero [data-lesson="C3-CURATED-U01"]').count(),1);
   for(let i=0;i<16;i++){
    await page.evaluate(i=>window.__curatedTab(i,'overview'),i);assert.match(await page.locator('.lesson-briefing').innerText(),/CHAPTER 3/);

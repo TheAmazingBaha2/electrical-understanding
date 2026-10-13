@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {sourcePlacement,sectionView} from '../learning-structure.js';
 import {mathAvailability} from '../math-lessons.js';
 
 const backend=readFileSync(new URL('../supabase/functions/scan-lesson-pipeline/index.ts',import.meta.url),'utf8');
@@ -68,7 +69,7 @@ test('Scan Inbox offers free recovery and per-lesson approval',()=>{
 });
 test('approved unit cards are separate from in-progress chapter drafts',()=>{
  const js=moduleSource.replace(/^import [^\n]+\n/gm,'').replace(/\bexport\s+(?=(?:async\s+)?(?:function|const|let)\b)/g,'');
- const {cards}=new Function('isArchivedScanChapter',js+';return {cards};')(()=>false);
+ const {cards}=new Function('isArchivedScanChapter','sourcePlacement','sectionView',js+';return {cards};')(()=>false,sourcePlacement,sectionView);
  const job={state:'outlined',source_track:'guide',source_book:'Study Guide',source_pages:'pp. 16–24',
   analysis:{facts:[{id:'S1',location:'printed p. 17'}]},
   lesson:{lessons:[{title:'Practice Ohm’s law',description:'Reinforcement',kind:'math',destination:'source',

@@ -1,3 +1,4 @@
+import {sourcePlacement,sectionView} from './learning-structure.js';
 import {isArchivedScanChapter} from './legacy-groups.js';
 // Owner-only, read-only library of human-approved scan-derived companions.
 // Existing graded lesson IDs and spaced-review records are never changed here.
@@ -97,12 +98,13 @@ export function makeWorkbenchLesson(job, unit, content, kind, order) {
  const citation=[job.source_book||"Publication not recorded",job.source_pages||"Page reference not recorded"].join(" · ");
  const html='<p>'+esc(content.description||content.new_perspective||"Follow the approved source-backed explanation step by step.")+'</p>'+
  sections.map(part=>'<h3>'+esc(part.heading)+'</h3><p>'+esc(part.body).replace(/\r?\n|\\n/g,'</p><p>')+'</p><p class="muted sm">Source: '+attribution(job,part.source_ids)+'</p>').join("");
- return {id,generated:true,subtrack:"generated",title:String(content.title||unit.plan?.title||"Approved lesson"),
+ const curriculum=sourcePlacement(job,unit,kind);
+ return {curriculum,sourceContents:safeList(job.lesson?.source_catalog?.chapters),id,generated:true,subtrack:"generated",title:String(content.title||unit.plan?.title||"Approved lesson"),
    description:String(content.description||content.new_perspective||"Source-backed practice"),
    module:job.source_book||job.title||"Source-backed chapter",sourceAttribution:citation,teachingSections:sections.map(part=>({heading:String(part.heading),source_ids:safeList(part.source_ids)})),
    objectives:safeList(content.objectives),html,experiment:"generated",activities,questions:prompts,
    minutes:Math.max(10,sections.length*6+10),simulator:simulationForTitle(unit.plan?.title||content.title),kind:unit.plan?.kind||unit.kind||"concept",
-   ordering:unit.plan?.ordering||unit.ordering||"independent",sourceUnitId:rawId,scanId:String(job.id),archived,curatedSeries:Boolean(unit.curated),seriesId:unit.series_id||null,seriesOrder:unit.series_order||null,overview:unit.overview||null,sourceTrack:job.source_track||"other",libraryView:archived?"legacy":kind==="review"?"reviews":(["math","ceta","labs","textbooks"].includes(unit.dashboard_track)?unit.dashboard_track:(unit.plan?.kind||unit.kind)==="math"?"math":job.source_track==="guide"?"ceta":job.source_track==="basic"?"labs":"textbooks")};
+   ordering:unit.plan?.ordering||unit.ordering||"independent",sourceUnitId:rawId,scanId:String(job.id),archived,curatedSeries:Boolean(unit.curated),seriesId:unit.series_id||null,seriesOrder:unit.series_order||null,overview:unit.overview||null,sourceTrack:job.source_track||"other",libraryView:archived?"legacy":sectionView(curriculum.section)};
 }
 
 

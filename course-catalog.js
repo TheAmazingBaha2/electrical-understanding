@@ -26,24 +26,15 @@ export const eimBasicExperiments = [
   ['AC 19','Warp-up Project',165,'indexed']
 ];
 export const catalog = [
-  {id:'ceta',title:'Exam Preparation',tagline:'Build toward certification exams, starting with Associate CET. More exam paths can be added here later.',subtracks:[
-    {id:'core',title:'Core CETa Course',status:'planned',summary:'Rebuilding the new CETa core; earlier L01–L05 lessons are preserved separately in Legacy Lessons.',units:[{id:'pilot',title:'Pilot Unit 1 — Electrical Foundations',summary:'L01–L05; current working lessons and interactive experiments.'}]},
-    {id:'guide',title:'Associate CET Study Guide',status:'indexed',summary:'9 units · 22 chapters indexed. The original Chapter 3 topic-only exercise is preserved in Legacy Group 2 while new source-backed lessons await scanned chapter pages.',units:cetaGuideUnits},
-    {id:'exam',title:'Competency & Exam Practice',status:'planned',summary:'Mixed-topic assessments, diagnosis-based review and spaced retrieval.',units:[]}
-  ]},
-  {id:'textbooks',title:'Textbook Companions',tagline:'One private study path for each book.',subtracks:[
-    {id:'geier',title:'How to Diagnose and Fix Everything Electronic',status:'active',summary:'Third edition, Chapter 6 DMM, pp. 97–103. First two interactive lessons are published; five additional companion designs are staged.',units:[{id:'geier-dmm',title:'Chapter 6 — Digital Multimeter',summary:'BDMM-01 and BDMM-02 live; BDMM-03 through BDMM-07 are planned, not yet released.'}]},
-    {id:'teach',title:'Teach Yourself Electricity and Electronics',status:'awaiting-book',summary:'Seventh edition; awaiting the book and contextual chapter scans.',units:[]},
-    {id:'principles',title:'Electronics: Principles and Applications',status:'awaiting-book',summary:'Awaiting your copy and edition confirmation.',units:[]},
-    {id:'cabling',title:'Cabling: The Complete Guide to Copper and Fiber-Optic Networking',status:'awaiting-book',summary:'Awaiting your copy and edition confirmation.',units:[]}
-  ]},
-  {id:'labs',title:'Hands-On Laboratory',tagline:'Build, measure, explain and troubleshoot.',subtracks:[
-    {id:'basic',title:'EIM — Basic Electric Circuits',status:'active',summary:'Current kit priority. PreLab and DC 02 have published virtual companions with interactive activities and quizzes.',units:eimBasicExperiments.map(([id,title,page,source])=>({id,title,page,source}))},
-    {id:'analog',title:'EIM — Fundamental Analog Circuits and Semiconductors',status:'paused',summary:'Paused after Chapter 2, Section 2.1 (pp. 81–93); no new scans or projects until you resume.',units:[{id:'an-2.1',title:'Chapter 2 §2.1 — Equipment and Tools',summary:'Source reviewed; interactive companion drafted, not live.'}]},
-    {id:'fpga',title:'EIM — Fundamental Digital Design with FPGA',status:'waiting',summary:'Waiting until one of the two allocated manuals is finished or changed.',units:[]},
-    {id:'rp2040',title:'EIM — Introduction to Microcontroller with RP2040',status:'waiting',summary:'Waiting; kit parts remain separate from active manuals.',units:[]}
-  ]},
-  {id:'math',title:'Mathematics Companion',tagline:'New source-backed math lessons will connect to their textbook chapters; original math practice is preserved in Legacy Group 2.',subtracks:[]}
+ {id:'ceta',title:'Exam Practice',subtracks:[{id:'guide',title:'Associate CET',status:'indexed',summary:'Chapter-by-chapter certification practice.',units:cetaGuideUnits}]},
+ {id:'textbooks',title:'Textbook Companions',subtracks:[{id:'geier',title:'How to Diagnose and Fix Everything Electronic',status:'active',summary:'Troubleshooting book; full contents pending.',units:[{id:'6',title:'Digital Multimeter',page:97}]}]},
+ {id:'labs',title:'Labs',subtracks:[
+  {id:'basic',title:'EIM · Basic Electric Circuits',status:'active',units:eimBasicExperiments.map(([id,title,page,source])=>({id,title,page,source}))},
+  {id:'analog',title:'EIM · Fundamental Analog Circuits and Semiconductors',status:'paused',units:[{id:'2.1',title:'Equipment and Tools',page:81}]},
+  {id:'fpga',title:'EIM · Fundamental Digital Design with FPGA',status:'waiting',units:[]},
+  {id:'rp2040',title:'EIM · Introduction to Microcontroller with RP2040',status:'waiting',units:[]}
+ ]},
+ {id:'math',title:'Math Practice',subtracks:[]}
 ];
-export const catalogTrack = id => catalog.find(t=>t.id===id);
-export const catalogSubtrack = id => catalog.flatMap(t=>t.subtracks.map(s=>({...s,trackId:t.id,trackTitle:t.title}))).find(s=>s.id===id);
+export const catalogTrack=id=>catalog.find(t=>t.id===id);
+export const catalogSubtrack=id=>catalog.flatMap(t=>t.subtracks.map(s=>({...s,trackId:t.id,trackTitle:t.title}))).find(s=>s.id===id);
