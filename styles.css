@@ -1032,3 +1032,13 @@ body:before{content:"";position:fixed;inset:0;pointer-events:none;
 .dashboard-category-heading:hover,.dashboard-book-link:hover{background:rgba(108,213,242,.07)}.dashboard-category-heading:focus-visible,.dashboard-book-link:focus-visible{outline:2px solid #35e0f2;outline-offset:-3px}
 .dashboard-category-empty{margin:0;padding:4px 6px 2px;color:var(--muted);font-size:12px}.dashboard-book-body{padding-top:0}
 @media(max-width:700px){.dashboard-categories{gap:12px}.dashboard-category-heading{padding:13px 14px}.dashboard-category-heading strong{font-size:15px}.dashboard-category-heading>span>span{font-size:11px}.dashboard-category>.dashboard-books{padding:0 9px 9px}.dashboard-book-link.source-book-heading{padding:12px}.dashboard-book-link .dashboard-book-copy>strong{font-size:14px}.dashboard-book-body{padding:0 12px}.dashboard-category .dashboard-chapter-copy>strong{font-size:14px}}
+
+/* Independent navigation and disclosure targets prevent accidental redirects. */
+.dashboard-split-heading{display:grid;grid-template-columns:minmax(0,1fr) 72px;align-items:stretch}
+.dashboard-split-heading .dashboard-category-heading,.dashboard-split-heading .dashboard-book-link{height:100%;min-width:0;border:0}
+.dashboard-book>.dashboard-split-heading{border-bottom:1px solid #314a63}
+.dashboard-expand{display:grid;place-items:center;width:100%;min-height:64px;padding:0;border:0;border-left:1px solid #36516c;border-radius:0;background:rgba(108,213,242,.045);color:#85def0;cursor:pointer;touch-action:manipulation}
+.dashboard-expand:hover{background:rgba(108,213,242,.12)}.dashboard-expand:focus-visible{outline:2px solid #35e0f2;outline-offset:-3px}.dashboard-expand .disclosure-chevron{font-size:26px;pointer-events:none}.dashboard-expand[aria-expanded="true"] .disclosure-chevron{transform:rotate(180deg)}
+.dashboard-books[hidden],.dashboard-book-body[hidden]{display:none!important}
+.dashboard-chapter>summary>.disclosure-chevron{display:grid;place-items:center;align-self:stretch;flex:0 0 56px;min-height:48px;border-left:1px solid #36516c}
+@media(max-width:700px){.dashboard-split-heading{grid-template-columns:minmax(0,1fr) 76px}.dashboard-expand{min-height:68px}.dashboard-chapter>summary>.disclosure-chevron{flex-basis:56px}}

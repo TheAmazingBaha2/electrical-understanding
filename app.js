@@ -220,12 +220,19 @@ function setNav(){const current=view==='generated-lesson'?(generatedLessons.get(
  const context=v2Context(),inventory=studyInventory(context);
  for(const section of studySections){const status=$('[data-nav-status="'+section.id+'"]');if(status){const graded=learningProgress(inventory.filter(l=>l.curriculum.section===section.section),context).total;status.textContent=graded||(section.id==='reviews'&&context.reviews)?'':'TBD'}}
 }
+const dashboardPanelStates=new Map();
 function render(){setNav();refreshAIChatContext();const names={'generated-lesson':'Approved lesson workbench',dashboard:'Your learning dashboard',ceta:'Exam Prep',curriculum:'Legacy lessons',legacy:'Legacy lessons',textbooks:'Textbook companions',labs:'Labs',math:'Math Practice',subtrack:'Learning sub-track',lesson:'Lesson workbench',reviews:'Review',library:'Textbook companions','scan-inbox':'Scan Inbox',account:'Your study account','ai-lab':'Private AI model tests'};
  $('#page-title').textContent=names[view]||names.dashboard;
  const main=$('#main');
  const disclosures=new Set([...main.querySelectorAll('details[data-disclosure][open]')].map(el=>el.dataset.disclosure));
  main.innerHTML=view==='dashboard'?renderDashboard():['lesson','generated-lesson'].includes(view)?renderLesson():view==='reviews'?'<header class="source-heading"><p class="v2-kicker">RETURN TO THE IDEAS</p><h2>Review</h2><p>Review brings ideas from your regular lessons back into practice. The broader format is still to be decided; your scheduled quiz checks remain available below.</p></header>'+renderReviews():view==='account'?renderAccount():view==='scan-inbox'?renderScanInbox(user):view==='ai-lab'?renderAIModelLab(user):view==='library'?renderLibrary():v2Page(view,v2Context(),activeLesson);
  for(const el of main.querySelectorAll('details[data-disclosure]'))if(disclosures.has(el.dataset.disclosure))el.open=true;
+ main.querySelectorAll('[data-toggle-panel]').forEach(button=>{
+  const panel=document.getElementById(button.dataset.togglePanel);if(!panel)return;
+  function apply(expanded){panel.hidden=!expanded;button.setAttribute('aria-expanded',String(expanded));button.setAttribute('aria-label',(expanded?'Collapse ':'Expand ')+button.dataset.panelLabel)}
+  apply(dashboardPanelStates.get(button.dataset.togglePanel)??true);
+  button.addEventListener('click',()=>{const expanded=panel.hidden;dashboardPanelStates.set(button.dataset.togglePanel,expanded);apply(expanded)});
+ });
  main.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>switchTo(b.dataset.goto,b.dataset.lesson||null,b.dataset.question||null)));
  main.querySelectorAll('[data-lesson-tab]').forEach(b=>b.addEventListener('click',()=>{lessonTab=b.dataset.lessonTab;render()}));
  main.querySelectorAll('[data-reveal-insight]').forEach(b=>b.addEventListener('click',()=>{const p=main.querySelector('#starting-insight');if(!p)return;p.hidden=!p.hidden;b.setAttribute('aria-expanded',String(!p.hidden));b.innerHTML=p.hidden?'Reveal the starting insight <span aria-hidden="true">⌄</span>':'Hide the starting insight <span aria-hidden="true">⌃</span>'; }));

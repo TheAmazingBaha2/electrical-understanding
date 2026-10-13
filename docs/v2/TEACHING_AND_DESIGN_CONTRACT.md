@@ -57,3 +57,7 @@ Keep overall chapter progress pies. Books are static headings and chapters are t
 ## Category hierarchy and card navigation — October 13 follow-up
 
 Dashboard and sidebar category order: Textbook Companions, Labs, Exam Prep, Math, Review. Dashboard categories are static containers with brief descriptions; each source book/guide is a subdivision inside its category, using shared inventory. Show TBD for categories without published graded lessons. Category headings and book title cards navigate to their existing contents views, with right-side arrows; remove separate Browse contents buttons. Only chapters expand to lesson rows, preserving overall chapter pies and subsection bars. Future books join their correct category automatically. Sidebar resizing, IDs, answers, review schedules, cloud behavior and financial controls remain unchanged.
+
+## Separate expansion controls — October 13 correction
+
+Category and book headers have two sibling buttons: the title/description opens contents; a visibly divided 72px desktop / 76px phone arrow area expands or collapses its children without navigation. Both controls use native button keyboard behavior. Expansion states survive internal rerenders and navigation during the session. Chapters retain native disclosures, with larger arrow targets; lessons remain flat rows. Preserve category order, overall pies, subsection bars, stable content and saved learning data.
