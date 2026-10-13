@@ -30,6 +30,15 @@ function lessonContent(lesson,job,idPrefix){
  return h+'</div>';
 }
 
+function simulationForTitle(title){
+ const name=String(title||"").toLowerCase();
+ const choices=[["scientific notation|prefix conversions","prefixes"],["variables|formula rearrangement","ohm"],["resistor network","network"],
+ ["internal resistance|terminal voltage","internal"],["sinusoid|amplitude measure","sine"],["period and frequency","period"],
+ ["charge and stored energy","energy"],["capacitor network","capnetwork"],["time constant|exponential response","rc"],
+ ["capacitive reactance","xc"],["combining inductors|inductance and","inductors"],["inductive reactance","xl"],
+ ["series.rlc|phasor interpretation","rlc"],["resonan","resonance"],["ohm.s law|power calculation","ohm"]];
+ return choices.find(([expression])=>new RegExp(expression).test(name))?.[1]||null;
+}
 export function makeWorkbenchLesson(job, unit, content, kind, order) {
  const rawId=String(unit.id||job.draft_id||job.id);
  const id=kind==="review"?rawId+"-R"+String(order+1).padStart(2,"0"):rawId;
@@ -72,7 +81,7 @@ export function makeWorkbenchLesson(job, unit, content, kind, order) {
    description:String(content.description||content.new_perspective||"Source-backed practice"),
    module:job.source_book||job.title||"Source-backed chapter",sourceAttribution:citation,
    objectives:safeList(content.objectives),html,experiment:"generated",activities,questions:prompts,
-   minutes:Math.max(10,sections.length*6+10),kind:unit.plan?.kind||unit.kind||"concept",
+   minutes:Math.max(10,sections.length*6+10),simulator:simulationForTitle(unit.plan?.title||content.title),kind:unit.plan?.kind||unit.kind||"concept",
    ordering:unit.plan?.ordering||unit.ordering||"independent",sourceUnitId:rawId};
 }
 
