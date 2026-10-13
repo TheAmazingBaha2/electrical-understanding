@@ -100,7 +100,7 @@ function miniFigure(kind) {
  return '<svg class="overview-figure" viewBox="0 0 350 125" role="img" aria-label="Electrical units in context"><text x="175" y="64" text-anchor="middle" fill="#C8F7FF" font-size="30" font-weight="700">V × A = W</text><text x="175" y="92" text-anchor="middle" fill="#A5DCEF" font-size="13">Energy per charge × charge per second</text></svg>';
 }
 export function lessonOverview(lesson) {
- const x=intro[lesson.id]||lesson.overview||{
+ const x=(lesson.workshop?lesson.overview:null)||intro[lesson.id]||lesson.overview||{
   eyebrow:"STUDY BRIEFING",hint:"Starting question",
   mission:lesson.questions[0]?.prompt||lesson.description,
   reveal:lesson.questions[0]?.explain||"Use the Learn tab to investigate before attempting the quiz.",

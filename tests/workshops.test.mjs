@@ -1,16 +1,17 @@
+import {referencePages} from '../generated-library.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {geierChapters} from '../geier-catalog.js';
-import {geierWorkshops,toolCards} from '../geier-workshops.js';
+import {geierWorkshops,toolCards,reviseDmmLessons} from '../geier-workshops.js';
 import {evaluateWorkshopActivity,simulationReading,workshopMethods} from '../workshop-widgets.js';
 import {lessonRequirementsMet,workshopActivityProgress,workshopCheckUpdate} from '../workshop-progress.js';
 import {bookLessons} from '../book-lessons.js';
-import {sourceIndex,learningProgress,nextSourceLesson} from '../learning-structure.js';
+import {sourceIndex,learningProgress,nextSourceLesson,lessonReferencePages} from '../learning-structure.js';
 import {renderSourceSection,renderChapterDashboard} from '../source-navigation.js';
 import {tabbedLesson} from '../lesson-view.js';
 import {migrateLesson,ProgressStore,equal} from '../persistence.js';
-const ctx={bookLessons:[...bookLessons,...geierWorkshops],progress:{},hasPassed:()=>false};
+const ctx={bookLessons:[...reviseDmmLessons(bookLessons),...geierWorkshops],progress:{},hasPassed:()=>false};
 const solution=a=>a.fields?{fields:Object.fromEntries(a.fields.map(f=>[f.id,f.answer]))}:a.kind==='inspect'?{selected:a.items.filter(i=>i.problem).map(i=>i.id)}:a.kind==='sequence'?{order:a.correctOrder}:{decisions:a.cases.map(c=>String(c.correct))};
 test('verified 15-chapter book retains original DMM records and appends source-bound series',()=>{
  assert.equal(geierChapters.length,15);assert.equal(geierChapters[5].title,'Working Your Weapons: Using Test Equipment');
@@ -84,4 +85,22 @@ test('existing cloud sync transports complete workshop checkpoint state and pres
  assert.ok(equal(second.read().progress[l.id].workshopChecks,data.workshopChecks));assert.equal(second.read().progress[l.id].answers.old.reviewDue,44);
  await first.edit(l.id,s=>s.workshopChecks[l.activities[0].id].correct=false);await second.edit(l.id,s=>s.answers.new={correct:true});await first.sync(transport);await second.sync(transport);
  assert.equal(second.read().conflicts[l.id].incoming.workshopChecks[l.activities[0].id].correct,false);assert.equal(second.read().progress[l.id].workshopChecks[l.activities[0].id].correct,true);assert.equal(second.read().progress[l.id].answers.new.correct,true);
+});
+
+test('authorized DMM revisions preserve exact questions and add independently saved mixed-method checkpoints',()=>{
+ const revised=reviseDmmLessons(bookLessons);
+ for(const [i,l] of revised.entries()){assert.equal(l.id,bookLessons[i].id);assert.equal(l.questions,bookLessons[i].questions);assert.equal(l.workshop,true);assert.equal(l.independent,true);assert.equal(l.minutes,undefined);assert.equal(l.activities.length,3);assert.ok(new Set(l.activities.map(a=>a.kind)).size>=2);assert.equal(l.curriculum.order,i+1);assert.equal(l.curriculum.dashboard,true);assert.equal(lessonRequirementsMet(l,{complete:true,answers:Object.fromEntries(l.questions.map(q=>[q.id,{correct:true}]))}),false);for(const a of l.activities)assert.equal(evaluateWorkshopActivity(a,solution(a)).correct,true);}
+ assert.equal(simulationReading('voltage',{mode:'dc',jack:'volts',red:'common',black:'source',switch:'closed',range:'20'}).display,'−5.00 V'.replace('−','-'));
+ assert.equal(simulationReading('voltage',{mode:'dc',jack:'volts',red:'load',black:'common',switch:'open',range:'20'}).display,'+0.00 V');
+ assert.equal(simulationReading('voltage',{mode:'current',jack:'current'}).display,'TEST BLOCKED');
+});
+test('references sit between card description and completion with no invented book pages',()=>{
+ const menu=renderSourceSection('textbooks',ctx),dashboard=renderChapterDashboard(ctx);
+ for(const html of [menu,dashboard]){const start=html.indexOf('data-content-lesson="BDMM-01"'),end=html.indexOf('</article>',start),card=html.slice(start,end);assert.match(card,/Reference pages:<\/strong> 97–98/);assert.ok(card.indexOf('5.04 V')<card.indexOf('Reference pages:'));assert.ok(card.indexOf('Reference pages:')<card.indexOf('correct ·'));}
+ assert.equal(lessonReferencePages({id:'EIM-BEC-PRELAB'}),'1–12');assert.equal(lessonReferencePages({id:'EIM-BEC-DC02'}),'21–27');assert.match(lessonReferencePages({id:'CETA-G03-01'}),/table of contents only/);assert.match(lessonReferencePages({subtrack:'math'}),/no book pages/);assert.match(lessonReferencePages({generated:true}),/Not recorded/);
+});
+
+test('approved page references use only cited current-source printed locations with upload-range fallback',()=>{
+ const job={source_pages:'16–24',analysis:{facts:[{id:'S1',confidence:'high',location:'Printed p. 18, upper column'},{id:'S2',confidence:'high',location:'Printed pp. 19–20, figure'},{id:'S3',confidence:'uncertain',location:'Printed p. 88'},{id:'S4',confidence:'high',location:'Printed p. 77',source_job_id:'earlier'}]}};
+ assert.equal(referencePages(job,[{source_ids:['S1','S2','S3','S4']}]),'18, 19–20');assert.equal(referencePages(job,[{source_ids:['missing']}]),'16–24');assert.equal(lessonReferencePages({curriculum:{section:'textbooks',source_id:'future-book'}}),'Not recorded for this source');
 });

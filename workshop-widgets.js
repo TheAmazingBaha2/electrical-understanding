@@ -18,6 +18,11 @@ function meterDisplay(value,caption){
  return readingSVG('<rect x="188" y="32" width="264" height="190" rx="22" fill="#2c7189" stroke="#96d7ea"/><rect x="210" y="51" width="220" height="74" rx="9" fill="#092a3e"/><text x="320" y="100" fill="#b8f9f4" font-size="29" text-anchor="middle">'+e(value)+'</text><circle cx="320" cy="169" r="26" fill="#abcbd9"/><path d="M320 169 l14 -17" stroke="#1a4055" stroke-width="7"/><text x="320" y="243" fill="#d8f5fc" font-size="14" text-anchor="middle">'+e(caption)+'</text>',caption);
 }
 export function simulationReading(model,f={}){
+ if(model==='voltage'){
+  if(f.mode!=='dc'||f.jack!=='volts')return {display:'TEST BLOCKED',note:'Use DC voltage and the voltage input for this virtual comparison.'};
+  const potentials={common:0,source:5,load:f.switch==='open'?0:5},red=f.red||'source',black=f.black||'common',v=potentials[red]-potentials[black];
+  return {display:Math.abs(v)>Number(f.range||20)?'OL':(v>=0?'+':'')+v.toFixed(2)+' V',note:'Red minus black · source +5 V · load '+potentials.load+' V · verified common 0 V. '+(f.switch==='open'?'Open switch; load has a resistor to common.':'Closed switch supplies the load.')};
+ }
  if(model==='digits'){const digits=Number(f.digits)||2,error=Number(f.error)||0;return {display:(5+error).toFixed(digits)+' V',note:'Actual model 5.000 V · modeled error '+error.toFixed(3)+' V'};}
  if(model==='rms'){const rms=f.wave==='square'?2:2/Math.sqrt(2);return {display:rms.toFixed(3)+' V RMS',note:'Peak 2 V · peak-to-peak 4 V · ideal 1 kΩ average power '+(rms*rms).toFixed(3)+' mW'};}
  if(model==='resistance'){const ready=f.power==='off'&&f.energy==='clear';return {display:!ready?'TEST BLOCKED':f.isolate==='isolated'?'100 Ω':'50 Ω',note:!ready?'Disconnect external power and verify stored-energy conditions.':'Ideal 100 Ω component '+(f.isolate==='isolated'?'isolated':'with another 100 Ω parallel path')};}

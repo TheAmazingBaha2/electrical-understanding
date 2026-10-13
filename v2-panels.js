@@ -1,3 +1,4 @@
+import {lessonReferencePages} from './learning-structure.js';
 import {renderSourceSection,renderMathPractice,renderChapterDashboard} from './source-navigation.js';
 const safe=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const percent=(a,b)=>b?Math.round(a/b*100):0;
@@ -15,7 +16,7 @@ function unreferencedRows(c){
   const mastered=c.hasPassed(lesson),reason=c.legacyReason?.(lesson)||'Original independent practice';
   const origin=lesson.subtrack==='math'?'Mathematics Companion':lesson.subtrack==='guide'?'Exam Preparation · CETa Study Guide':'Other original instruction';
   return '<article class="legacy-source-row"><div class="legacy-source-row-head"><span class="v2-pill">'+safe(lesson.subtrack==='math'?'MATHEMATICS':'EXAM PREPARATION')+'</span><span class="legacy-lesson-state">'+(mastered?'Mastered':available?'Available':'Prerequisite not yet reached')+'</span></div>'+
-   '<h3>'+safe(lesson.title)+'</h3><p class="muted sm">'+safe(lesson.description)+'</p>'+
+   '<h3>'+safe(lesson.title)+'</h3><p class="muted sm">'+safe(lesson.description)+'</p><p class="lesson-page-reference"><strong>Reference pages:</strong> '+safe(lessonReferencePages(lesson))+'</p>'+
    '<p class="legacy-source-meta">'+safe(origin)+' · '+safe(lesson.minutes)+' min · '+answered+' / '+lesson.questions.length+' checks answered'+(answered?' · '+correct+' correct':'')+'</p>'+
    '<p class="legacy-source-reason">'+safe(reason)+'</p>'+
    '<button type="button" class="'+(mastered?'outline':'primary')+' small-button" data-goto="lesson" data-lesson="'+safe(lesson.id)+'" '+(available?'':'disabled')+'>'+
@@ -28,7 +29,7 @@ function archivedChapterRows(c){
  return rows.map((r,i)=>{
   const label=r.lesson.kind==='math'?'MATHEMATICS':r.lesson.libraryView==='reviews'?'REINFORCEMENT':'SOURCE-BASED STUDY';
   return '<article class="legacy-source-row"><div class="legacy-source-row-head"><span class="v2-pill">'+safe(label)+'</span><span class="legacy-lesson-state">'+(r.done?'Mastered':'Available')+'</span></div>'+
-   '<h3>'+safe(r.title)+'</h3><p class="muted sm">'+safe(r.lesson.description)+'</p>'+
+   '<h3>'+safe(r.title)+'</h3><p class="muted sm">'+safe(r.lesson.description)+'</p><p class="lesson-page-reference"><strong>Reference pages:</strong> '+safe(lessonReferencePages(r.lesson))+'</p>'+
    '<p class="legacy-source-meta">'+safe(r.lesson.module)+' · '+r.answered+' / '+r.total+' answered · '+r.correct+' correct</p>'+
    '<p class="legacy-source-reason">Approved scan-derived workbench preserved in Legacy; source citations and interactive activities are retained.</p>'+
    '<button type="button" class="'+(r.done?'outline':'primary')+' small-button" data-goto="generated-lesson" data-lesson="'+safe(r.id)+'">'+(r.done?'Revisit':'Study archived lesson')+' →</button></article>';

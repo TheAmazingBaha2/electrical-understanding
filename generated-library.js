@@ -49,6 +49,14 @@ function simulationForTitle(title){
  ["series.rlc|phasor interpretation","rlc"],["resonan","resonance"],["ohm.s law|power calculation","ohm"]];
  return choices.find(([expression])=>new RegExp(expression).test(name))?.[1]||null;
 }
+export function referencePages(job,sections){
+ const ids=new Set(sections.flatMap(s=>safeList(s.source_ids))),pages=[];
+ for(const fact of safeList(job.analysis?.facts)){
+  if(!ids.has(fact.id)||fact.confidence!=="high"||fact.source_job_id)continue;
+  for(const match of String(fact.location||"").matchAll(/\bprinted\s+pp?\.?\s*(\d+(?:\s*[–-]\s*\d+)?)/ig))if(!pages.includes(match[1]))pages.push(match[1]);
+ }
+ return pages.length?pages.join(', '):job.source_pages||job.lesson?.source?.pages||null;
+}
 export function makeWorkbenchLesson(job, unit, content, kind, order) {
  const rawId=String(unit.id||job.draft_id||job.id);
  const archived=!unit.curated&&isArchivedScanChapter(job);
@@ -102,7 +110,7 @@ export function makeWorkbenchLesson(job, unit, content, kind, order) {
  const curriculum=sourcePlacement(job,unit,kind);
  return {chapterSummary,curriculum,sourceContents:safeList(job.lesson?.source_catalog?.chapters),id,generated:true,subtrack:"generated",title:String(content.title||unit.plan?.title||"Approved lesson"),
    description:String(content.description||content.new_perspective||"Source-backed practice"),
-   module:job.source_book||job.title||"Source-backed chapter",sourceAttribution:citation,teachingSections:sections.map(part=>({heading:String(part.heading),source_ids:safeList(part.source_ids)})),
+   module:job.source_book||job.title||"Source-backed chapter",sourcePages:referencePages(job,sections),sourceAttribution:citation,teachingSections:sections.map(part=>({heading:String(part.heading),source_ids:safeList(part.source_ids)})),
    objectives:safeList(content.objectives),html,experiment:"generated",activities,questions:prompts,
    minutes:chapterSummary?10:Math.max(10,sections.length*6+10),simulator:chapterSummary?null:simulationForTitle(unit.plan?.title||content.title),kind:unit.plan?.kind||unit.kind||"concept",
    ordering:unit.plan?.ordering||unit.ordering||"independent",sourceUnitId:rawId,scanId:String(job.id),archived,curatedSeries:Boolean(unit.curated),seriesId:unit.series_id||null,seriesOrder:unit.series_order||null,overview:unit.overview||null,sourceTrack:job.source_track||"other",libraryView:archived?"legacy":sectionView(curriculum.section)};

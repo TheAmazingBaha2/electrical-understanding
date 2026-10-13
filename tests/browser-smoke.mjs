@@ -22,13 +22,14 @@ try{
   await page.waitForFunction(()=>JSON.parse(localStorage.getItem('eu_progress:hkwmtjhgrskidaizamwy:anonymous')||'{}').progress?.['EIM-BEC-PRELAB']?.answers?.p01?.correct===true);
   await page.locator('.lesson-tabs [data-lesson-tab="review"]').click();assert.equal(await page.locator('.lesson-review-item').count(),10);
   await page.locator('.workspace-top-tabs [data-view="textbooks"]').click();assert.equal(await page.locator('.source-book').count(),1);await page.locator('[data-disclosure="contents:geier:6"] > summary').click();
-  assert.equal(await page.locator('[data-goto="lesson"][data-lesson="BDMM-02"]').count(),0);await page.locator('[data-lesson="BDMM-01"]').click();assert.match(await page.locator('.lesson-overview').innerText(),/5.04 V/);
-  await page.locator('.lesson-tabs [data-lesson-tab="interact"]').click();assert.equal(await page.locator('.activity-step').count(),5);await page.locator('.lab-widget select[data-x="signal"]').selectOption('pulse');assert.match(await page.locator('.lab-output').innerText(),/time-domain trace/);
-  await page.locator('.activity-step[data-activity-index="1"]').click();await page.locator('.lab-widget input[data-x="reading"]').evaluate(el=>{el.value='5.40';el.dispatchEvent(new Event('input',{bubbles:true}));});assert.match(await page.locator('.lab-output').innerText(),/beyond this example/);
+  assert.equal(await page.locator('[data-goto="lesson"][data-lesson="BDMM-02"]').count(),1);await page.locator('[data-lesson="BDMM-01"]').click();assert.match(await page.locator('.lesson-overview').innerText(),/5.04 V/);
+  await page.locator('.lesson-tabs [data-lesson-tab="interact"]').click();assert.equal(await page.locator('.activity-step').count(),3);
+  await page.locator('[data-workshop-field="digits"]').selectOption('3');await page.locator('[data-workshop-field="error"]').selectOption('0.04');assert.match(await page.locator('.workshop-reading').innerText(),/0.040 V/);
+  await page.locator('.activity-step[data-activity-index="1"]').click();assert.equal(await page.locator('.case-stage').count(),3);
   await page.locator('.lesson-tabs [data-lesson-tab="quiz"]').click();await page.locator('.quiz-card input[value="0"]').check();await page.locator('[data-submit="b101"]').click();
   await page.waitForFunction(()=>JSON.parse(localStorage.getItem('eu_progress:hkwmtjhgrskidaizamwy:anonymous')||'{}').progress?.['BDMM-01']?.answers?.b101?.correct===true);
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('eu_progress:hkwmtjhgrskidaizamwy:anonymous')).progress['EIM-BEC-PRELAB'].answers.p01.correct),true);
-  await page.locator('.lesson-tabs [data-lesson-tab="review"]').click();assert.match(await page.locator('#main').innerText(),/Back to DMM companion/);
+  await page.locator('.lesson-tabs [data-lesson-tab="review"]').click();assert.match(await page.locator('#main').innerText(),/Back to your chapter/);
   const dims=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth}));assert.ok(dims.scroll<=dims.width+2);assert.deepEqual(errors,[]);
   await page.screenshot({path:'test-artifacts/source-workbench-'+width+'.png',fullPage:true});await page.close();
  }

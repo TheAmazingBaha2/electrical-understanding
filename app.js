@@ -1,5 +1,5 @@
 import {renderSavedReinforcement} from './source-navigation.js';
-import {placementForLesson,sectionView,nextSourceLesson} from './learning-structure.js';
+import {placementForLesson,sectionView,nextSourceLesson,lessonReferencePages} from './learning-structure.js';
 import { ProgressStore, cloudTransport } from './persistence.js';
 import { renderAIModelLab, attachAIModelLab } from './ai-model-lab.js';
 import { renderScanInbox, attachScanInbox, scanInboxAutoUpdatesPaused } from './scan-inbox.js';
@@ -10,10 +10,10 @@ import { lessons, books } from './lessons.js';
 import { v2Dashboard, v2Page } from './v2-panels.js';
 import { labLessons } from './lab-lessons.js';
 import { bookLessons as originalBookLessons } from './book-lessons.js';
-import {geierWorkshops} from './geier-workshops.js';
+import {geierWorkshops,reviseDmmLessons} from './geier-workshops.js';
 import {attachWorkshopWidgets} from './workshop-widgets.js';
 import {lessonRequirementsMet,workshopCheckUpdate} from './workshop-progress.js';
-const bookLessons=[...originalBookLessons,...geierWorkshops];
+const bookLessons=[...reviseDmmLessons(originalBookLessons),...geierWorkshops];
 import { cetaLessons } from './ceta-lessons.js';
 import {mathLessons, mathAvailability,relatedMath} from './math-lessons.js';
 import {legacyGroup,legacyReason,isArchivedLesson} from './legacy-groups.js';
@@ -224,7 +224,7 @@ function cloudBanner(){
  return '<div class="sync-notice"><span>'+ (configured?'Sign in to keep your lessons and progress synced across devices.':'Progress is saved on this device. Cloud sync is available on the staging site.')+'</span><button class="outline small-button" data-goto="account">Account & sync →</button></div>';
 }
 function renderDashboard(){return v2Dashboard(v2Context());}
-function lessonRows(group){return group.map(l=>{const i=lessons.indexOf(l),a=getAccuracy(l),passed=hasPassed(l),lock=!unlocked(i);return `<div class="lesson-row"><div class="lesson-num">${lock?'⌁':passed?'✓':String(i+1).padStart(2,'0')}</div><div class="lesson-info"><p class="smallcaps">${esc(l.module)} · ${l.minutes} MIN</p><h3>${esc(l.title)}</h3><p>${esc(l.description)}</p>${a.answered?`<p class="muted sm">${a.correct}/${a.total} checks correct</p>`:''}</div><button class="${lock?'ghost':passed?'outline':'primary'} small-button" ${lock?'disabled':''} data-goto="lesson" data-lesson="${l.id}">${lock?'Locked':passed?'Revisit':'Study lesson'}</button></div>`}).join('')}
+function lessonRows(group){return group.map(l=>{const i=lessons.indexOf(l),a=getAccuracy(l),passed=hasPassed(l),lock=!unlocked(i);return `<div class="lesson-row"><div class="lesson-num">${lock?'⌁':passed?'✓':String(i+1).padStart(2,'0')}</div><div class="lesson-info"><p class="smallcaps">${esc(l.module)} · ${l.minutes} MIN</p><h3>${esc(l.title)}</h3><p>${esc(l.description)}</p><p class="lesson-page-reference"><strong>Reference pages:</strong> ${esc(lessonReferencePages(l))}</p>${a.answered?`<p class="muted sm">${a.correct}/${a.total} checks correct</p>`:''}</div><button class="${lock?'ghost':passed?'outline':'primary'} small-button" ${lock?'disabled':''} data-goto="lesson" data-lesson="${l.id}">${lock?'Locked':passed?'Revisit':'Study lesson'}</button></div>`}).join('')}
 function renderCurriculum(){return v2Page('curriculum',v2Context());}
 function renderLibrary(){return v2Page('textbooks',v2Context());}
 function renderReviews(){const queue=reviewQueue();return renderSavedReinforcement(v2Context())+`<p class="muted">Reviews are scheduled after each check: one day after a missed answer, seven days after an initial success, and 21 days after a successful retry. Open a question to answer again.</p>${cloudBanner()}<div class="panel"><h2>Scheduled quiz reviews · ${queue.length} review${queue.length===1?'':'s'} due</h2>${queue.length?queue.map(({lesson,q,a})=>`<div class="review-item"><div><b>${esc(lesson.title)}</b><p class="muted sm">${esc(q.prompt)}<br>Scheduled ${duration(a.reviewDue)}</p></div><button class="primary small-button" data-goto="${lesson.generated?'generated-lesson':'lesson'}" data-lesson="${lesson.id}" data-question="${q.id}">Review →</button></div>`).join(''):`<div class="empty"><h3>You're caught up.</h3><p>When your completed questions become due, they'll appear here.</p></div>`}</div>`}

@@ -405,6 +405,52 @@ const chapter6=[
 ];
 
 export const geierWorkshops=[...chapter2,...chapter6];
+// User-authorized presentation revisions. Existing BDMM question objects/IDs are kept exactly.
+const dmmRevisions=[
+ workshop(6,1,'Read a DMM without overtrusting the display','A 5 V supply reads 5.04 V. Explore what that number establishes, what a short event can hide and which evidence to seek next.','97–98',[
+  section('A reading is evidence, not a diagnosis','97–98','A supply label describes an intended value. The meter reports a measurement under particular conditions, with its own limitations. A displayed 5.04 V does not by itself mean a nominal 5 V supply is broken or that every part is healthy.','Separate three questions: what value is expected under the specification, what behavior the circuit actually has, and what the instrument can reveal. The original quiz remains attached to this workshop, so earlier answers and review dates still belong to the same questions.'),
+  section('Change resolution independently of error','97–98','Resolution is the display increment. Accuracy concerns agreement with the actual quantity under the specified conditions. These properties can change independently. A finer-looking reading need not be closer to the truth.','In this virtual example the actual voltage is 5.000 V and the modeled error is +0.040 V. Selecting two decimals gives 5.04 V; selecting three gives 5.040 V. The display gained detail while the same 0.040 V error remained. Compare both settings before checking the activity.'),
+  section('A changing number needs context','97–98','A small fluctuation can reflect circuit variation, contact, noise or the instrument settling. Check the specifications and connection rather than assigning a unique failed component to a wobbling last digit.','A very brief interruption can also occur between numerical display updates. A suitable time trace can reveal information that a snapshot missed. The case activity supplies its observations explicitly; it does not diagnose an actual appliance.'),
+  section('Choose the next observation deliberately','97–98','For an approximately steady battery voltage, a correctly configured and rated DMM is useful. For a fast event or waveform shape, consider a suitable scope and its connection requirements. One instrument can answer the first question and another the next.','Do not substitute instrument prestige or more digits for a measurement plan. A useful conclusion states what the observation supports and what remains unknown.')
+ ],[
+  {kind:'simulation',model:'digits',title:'Separate the display step from the error',pages:'97–98',prompt:'Compare the two display resolutions. Finish at three decimals with +0.04 V error and select the supported conclusion.',fields:[field('digits','Decimal places',[['2','Two'],['3','Three']],'3'),field('error','Modeled error',[['0','0 V'],['0.04','+0.04 V']],'0.04'),field('meaning','The additional digit establishes',[['accuracy','Zero measurement error'],['detail','More display detail with the same modeled error']],'detail')],debrief:'5.040 V has more detail than 5.04 V. Neither removed the +0.040 V modeled error.'},
+  scenario('Follow the readings, not a guessed fault','97–98',[
+   decision('A nominal 5 V supply reads 5.04 V, but no tolerance has been supplied. What next?',['Declare the supply failed','Check its permitted range and measurement conditions','Certify every component healthy'],1,'A nominal label alone does not establish the allowable range.'),
+   decision('The symptom is a brief interruption, while the numerical snapshot remains near 5 V. Which evidence helps?',['A suitable captured time trace','An extra decimal place alone','A count of screws'],0,'The missing information is change through time.'),
+   decision('The last digit moves slightly when a contact moves. What is supported?',['One specific processor fault','A guaranteed perfect circuit','Investigate the connection and conditions before assigning a cause'],2,'The test connection can affect the result.')
+  ]),
+  inspect('Spot conclusions that go beyond the evidence','97–98','Select the unsupported claims.',[
+   {id:'digits',label:'Three decimals guarantee better accuracy',problem:true,note:'Resolution alone does not establish accuracy.'},
+   {id:'jitter',label:'Any moving last digit proves a failed part',problem:true,note:'Variation needs specifications and context.'},
+   {id:'trace',label:'A time trace can help investigate a brief interruption',problem:false,note:'It provides timing evidence.'},
+   {id:'all',label:'One plausible voltage proves every component healthy',problem:true,note:'One observation is not a whole-device health test.'}
+  ],'Keep the measurement’s limits in the conclusion. Extra detail, small variation and one plausible reading are not universal health judgments.')
+ ],[]),
+ workshop(6,2,'DC voltage · Choose two points and interpret the result','Place virtual probes, compare reference points and work through a 5 V supply-path case without confusing voltage with current placement.','98–99',[
+  section('The result compares red with black','98–99','Voltage is a difference between two selected points. In the model, red at +5 V and black at 0 V produce +5 V. Exchanging the probes produces −5 V: 0 − 5 = −5 V. The source did not become faulty when its display sign changed.','Both probes on the same node produce zero difference. That says something about the selected pair, not that every point in the circuit is at zero. Explore these combinations, then prepare the requested pair before saving the activity.'),
+  section('A reference must be identified','98–99','A circuit-common node verified by the diagram provides the intended reference in this model. A chassis, heat sink or speaker terminal is not automatically that node. Follow the actual circuit information rather than the appearance of a metal part.','This simplified training circuit identifies a 0 V common, a +5 V source and a downstream load node. The load node connects to common through its resistor. Those stated connections are essential to interpreting the open-switch case.'),
+  section('Compare points to narrow an open path','98–99','With the modeled switch closed, the source and load nodes are both +5 V relative to common. Opening the switch leaves the source at +5 V but the load node falls to common through its resistor.','That pair of observations supports investigating the interrupted path. It is not a universal rule that every open wire makes every downstream node zero; an otherwise floating node could behave differently. The case conclusion applies to the explicitly drawn resistor path.'),
+  section('Match function, input and range','98–99','Use the voltage input and a suitable DC voltage function for a DC question. A manual range must cover the expected value before refining the display. A too-small range can show overrange; it is not permission to exceed a real instrument’s input ratings.','The activity uses only a known-safe virtual 5 V circuit. Prepare a 20 V range, voltage input and the verified common reference. No workshop asks you to connect an actual meter to mains or an energized appliance.')
+ ],[
+  {kind:'simulation',model:'voltage',title:'Compare the two probe potentials',pages:'98–99',prompt:'Explore probe reversal and the modeled open switch. Finish with the switch open, red at load, black at verified common, DC volts, voltage input and a 20 V range.',fields:[field('red','Red probe',[['source','+5 V source'],['load','Load node'],['common','Verified 0 V common']],'load'),field('black','Black probe',[['common','Verified 0 V common'],['source','+5 V source'],['load','Load node']],'common'),field('switch','Modeled switch',[['closed','Closed'],['open','Open']],'open'),field('mode','Function',[['dc','DC volts'],['current','DC current']],'dc'),field('jack','Red input',[['volts','Voltage input'],['current','Current input']],'volts'),field('range','Manual voltage range',[['2','2 V'],['20','20 V']],'20')],debrief:'The source remains +5 V. The load reads 0 V relative to common because the open switch disconnects its supply and the drawn resistor connects it to common. Current input or current mode is blocked.'},
+  select('Select a reference from verified information','98–99','Use the diagram and task to select each conclusion.',[
+   field('reference','Which point is identified as common?',[['common','The marked and verified common node'],['sink','Any metal heat sink'],['speaker','Any speaker negative terminal']],'common'),
+   field('sign','Red at 0 V, black at +5 V reads',[['positive','+5 V'],['negative','−5 V'],['zero','0 V']],'negative'),
+   field('meaning','A negative sign by itself proves',[['failure','A failed battery'],['polarity','The red point is lower than the black point']],'polarity')
+  ],'The reference comes from circuit information. Reversal changes the comparison’s sign, not the source’s condition.'),
+  scenario('Use the supplied supply-path evidence','98–99',[
+   decision('Source is +5 V, load is 0 V in the open-switch/resistor model. What should be investigated?',['The interrupted source-to-load path','The display color','Every component must be shorted'],0,'The stated topology and readings narrow the investigation to the interrupted path.'),
+   decision('Can every possible downstream open node be assumed 0 V?',['Yes','No; the rest of its connections determine its potential'],1,'This model has an explicit resistor to common; other circuits can differ.')
+  ])
+ ],[])
+];
+export function reviseDmmLessons(original){
+ return original.map(lesson=>{
+  const i=['BDMM-01','BDMM-02'].indexOf(lesson.id);if(i<0)return lesson;
+  const presentation=dmmRevisions[i];
+  return {...presentation,id:lesson.id,questions:lesson.questions,activities:presentation.activities.map((a,j)=>({...a,id:lesson.id+'-WORKSHOP-A'+String(j+1).padStart(2,'0')}))};
+ });
+}
 export const workshopReferences=[
  {title:'Tektronix · floating measurements and protective grounding',url:'https://www.tek.com/en/documents/technical-brief/floating-oscilloscope-measurements-and-operator-protection'},
  {title:'Tektronix · identifying aliasing',url:'https://www.tek.com/en/support/faqs/what-aliasing-and-how-do-i-detect-it-and-fix-it-my-oscilloscope'},

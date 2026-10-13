@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import {mkdir} from 'node:fs/promises';
 import {chromium} from 'playwright';
-import {geierWorkshops} from '../geier-workshops.js';
+import {geierWorkshops,reviseDmmLessons} from '../geier-workshops.js';
+import {bookLessons} from '../book-lessons.js';
 const key='eu_progress:hkwmtjhgrskidaizamwy:anonymous';
 await mkdir('test-artifacts',{recursive:true});
 const browser=await chromium.launch({headless:true});
@@ -17,11 +18,14 @@ try{
    await page.locator('.workspace-top-tabs [data-view="textbooks"]').click();
    const chapter=page.locator('[data-disclosure="contents:geier:'+l.curriculum.chapter_id+'"]');
    if(!(await chapter.getAttribute('open')!==null))await chapter.locator('summary').first().click();
+   if(l.id==='GEIER-C2-W01')await chapter.locator('[data-content-lesson="'+l.id+'"]').screenshot({path:'test-artifacts/reference-card-'+width+'.png'});
    await chapter.locator('[data-goto="lesson"][data-lesson="'+l.id+'"]').click();await page.locator('.lesson-header').waitFor();
   }
   await page.locator('.workspace-top-tabs [data-view="textbooks"]').click();assert.equal(await page.locator('.content-chapter').count(),15);
   assert.match(await page.locator('[data-disclosure="contents:geier:6"]').innerText(),/Working Your Weapons/);
-  for(const l of geierWorkshops.filter(l=>l.workshop)){
+  assert.equal(await page.locator('.chapter-lesson-copy .lesson-page-reference').count(),16);
+  const referenceOrder=await page.locator('[data-content-lesson="GEIER-C2-W01"] .chapter-lesson-copy').evaluate(el=>{const nodes=[...el.children];return nodes.findIndex(n=>n.classList.contains('lesson-page-reference'))<nodes.findIndex(n=>n.tagName==='SMALL');});assert.equal(referenceOrder,true);
+  for(const l of [...reviseDmmLessons(bookLessons),...geierWorkshops].filter(l=>l.workshop)){
    await open(l);assert.match(await page.locator('.lesson-header').innerText(),/Self-paced workshop/);assert.equal(await page.locator('.lesson-tab').count(),5);
    // Tool reference is usable on Overview, not just Interact.
    if(l.id==='GEIER-C2-W01'){
@@ -48,7 +52,7 @@ try{
     }
     await widget.locator('[data-workshop-check]').click();await page.waitForFunction(({key,id,aid})=>JSON.parse(localStorage.getItem(key)||'{}').progress?.[id]?.workshopChecks?.[aid]?.correct===true,{key,id:l.id,aid:a.id});
     assert.match(await widget.locator('[data-workshop-feedback]').innerText(),/decisions fit/);
-    if(l.id==='GEIER-C2-W01'&&i===0||l.id==='GEIER-C2-W04'&&i===0||l.id==='GEIER-C2-W07'&&i===0){await page.screenshot({path:'test-artifacts/workshop-'+l.id+'-'+width+'.png',fullPage:true});}
+    if(l.id==='BDMM-01'&&i===0||l.id==='GEIER-C2-W01'&&i===0||l.id==='GEIER-C2-W04'&&i===0||l.id==='GEIER-C2-W07'&&i===0){await page.screenshot({path:'test-artifacts/workshop-'+l.id+'-'+width+'.png',fullPage:true});}
     assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),l.id+' '+a.id+' overflow');
    }
    await page.locator('.lesson-tabs [data-lesson-tab="review"]').click();assert.match(await page.locator('.workshop-review').innerText(),/complete/);

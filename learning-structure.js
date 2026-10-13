@@ -63,6 +63,14 @@ export function learningProgress(lessons,c={}){
  return {correct,incorrect,total,unanswered:total-correct-incorrect,mastered,lessons:lessons.length,percent:total?Math.round(correct/total*100):0};
 }
 export const chapterLabel=ch=>/^\d/.test(ch.id)?'Chapter '+ch.id:ch.id==='unassigned'?'Chapter assignment pending':ch.id;
+// References reflect supplied metadata, never a guessed book page based on the topic.
+export function lessonReferencePages(l){
+ const known={'EIM-BEC-PRELAB':'1–12','EIM-BEC-DC02':'21–27','CETA-G03-01':'16 · table of contents only; chapter text not used'};
+ const pages=l.sourcePages||l.referencePages||known[l.id]||(l.module||'').match(/\bpp?\.\s*(\d+(?:[–-]\d+)?)/)?.[1];
+ if(pages)return String(pages).replace(/^\s*pp?\.?(?=\s|\d)\s*/i,'');
+ if(l.generated||['exam','textbooks','labs'].includes(l.curriculum?.section)||l.subtrack==='geier')return 'Not recorded for this source';
+ return 'Original practice · no book pages';
+}
 export const sourceReturn=l=>{const p=placementForLesson(l);return {view:sectionView(p.section),key:p.source_id+':'+p.chapter_id};};
 export function nextSourceLesson(lesson,inventory){
  const p=placementForLesson(lesson);

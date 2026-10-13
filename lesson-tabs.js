@@ -1,3 +1,4 @@
+import {lessonReferencePages} from './learning-structure.js';
 import {renderWorkshopActivity} from './workshop-widgets.js';
 // Teaching-view presentation helpers. Does not mutate saved lesson answers.
 export const lessonTabs=[
@@ -107,7 +108,7 @@ export function renderActivitySelector(lesson,selected=0,state={}) {
   return '<div class="activity-shell"><div class="activity-step-top"><span class="v2-kicker">ACTIVITY '+(selectedIndex+1)+' / '+activities.length+'</span><span class="activity-caption">Try · Observe · Explain</span></div>'+
   '<div class="activity-steps" role="group" aria-label="Choose an activity">'+activities.map((a,i)=>
     '<button type="button" class="activity-step'+(i===selectedIndex?' selected':'')+(lesson.workshop&&state?.workshopChecks?.[a.id]?.correct===true?' checkpoint-complete':'')+'" data-activity-index="'+i+'" aria-current="'+(i===selectedIndex?'step':'false')+'" title="'+escapeHtml(a.title)+'">'+(i+1)+'</button>').join('')+'</div>'+
-  '<h3>'+escapeHtml(current.title)+'</h3><p class="muted">'+escapeHtml(current.description)+'</p>'+
+  '<h3>'+escapeHtml(current.title)+'</h3><p class="muted">'+escapeHtml(current.description)+'</p>'+(lesson.workshop?'':'<p class="lesson-page-reference"><strong>Reference pages:</strong> '+escapeHtml(lessonReferencePages(lesson))+'</p>')+
   (lesson.workshop?renderWorkshopActivity(current):current.kind==="generated-simulation"?'<p>'+escapeHtml(current.prompt||'Predict how changing an input changes the result.')+'</p><div data-generated-simulator="'+escapeHtml(current.simulator)+'"><p class="muted sm">Loading virtual experiment…</p></div>':
   current.kind==="generated-choice"?'<section class="generated-activity-check" data-generated-correct="'+current.correct+'"><p><strong>Choose your prediction:</strong> '+escapeHtml(current.prompt)+'</p><div class="options">'+current.choices.map((choice,i)=>'<label class="option"><input type="radio" name="generated-prediction" value="'+i+'">'+escapeHtml(choice)+'</label>').join('')+'</div><button type="button" class="primary small-button" data-generated-reveal>Check prediction</button><div class="feedback" data-generated-feedback hidden><strong data-generated-verdict></strong><p><b>Expected:</b> '+escapeHtml(current.answer)+'</p><p>'+escapeHtml(current.explanation)+'</p><p class="muted sm">Practice feedback; scored checks are in Quiz.</p></div></section>':
   current.kind==="generated-check"?'<section class="generated-activity-check"><p><strong>Predict before checking:</strong> '+escapeHtml(current.prompt)+'</p>'+
