@@ -23,16 +23,12 @@ test('model endpoint validates JWT and matches an owner row before test requests
  assert.match(edge,/ai_test_allowed_users/);
  assert.match(edge,/if\(!allowed\)return response\(\{error:"Private AI lab/);
 });
-test('model allowlist includes Luna, Sol and Astra with published premium cost',()=>{
+test('paused lab retains benchmark metadata without a provider dispatch path',()=>{
  assert.ok(fixtures.includes('export const MODELS = ["gpt-6-luna","gpt-6.1-sol","gpt-6-astra"]'));
- assert.ok(edge.includes('"gpt-6-astra":{input:10,output:50}'));
- assert.match(edge,/MODELS\.includes\(input\.model/);
-});
-test('paid calls fail closed without server-side API key',()=>{
- assert.match(edge,/OPENAI_API_KEY/);
- assert.match(edge,/if\(!apiKey\.startsWith\("sk-"\)\)return response/);
- assert.match(edge,/client\.rpc\("ai_test_reserve"/);
- assert.match(edge,/store:false/);
+ assert.match(edge,/models:MODELS/);
+ assert.match(edge,/ready:false,spendingProtected:false/);
+ assert.match(edge,/New lab\/tutor generation is paused/);
+ assert.doesNotMatch(edge,/api\.openai\.com|await fetch|ai_test_reserve/);
 });
 test('staging project and origin are exact; no production URL is embedded',()=>{
  assert.match(edge,/hkwmtjhgrskidaizamwy/);

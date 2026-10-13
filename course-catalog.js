@@ -38,7 +38,7 @@ export const catalog = [
     {id:'cabling',title:'Cabling: The Complete Guide to Copper and Fiber-Optic Networking',status:'awaiting-book',summary:'Awaiting your copy and edition confirmation.',units:[]}
   ]},
   {id:'labs',title:'Hands-On Laboratory',tagline:'Build, measure, explain and troubleshoot.',subtracks:[
-    {id:'basic',title:'EIM — Basic Electric Circuits',status:'active',summary:'Current kit priority. PreLab and DC 02 scanned; curated activities are in development.',units:eimBasicExperiments.map(([id,title,page,source])=>({id,title,page,source}))},
+    {id:'basic',title:'EIM — Basic Electric Circuits',status:'active',summary:'Current kit priority. PreLab and DC 02 have published virtual companions with interactive activities and quizzes.',units:eimBasicExperiments.map(([id,title,page,source])=>({id,title,page,source}))},
     {id:'analog',title:'EIM — Fundamental Analog Circuits and Semiconductors',status:'paused',summary:'Paused after Chapter 2, Section 2.1 (pp. 81–93); no new scans or projects until you resume.',units:[{id:'an-2.1',title:'Chapter 2 §2.1 — Equipment and Tools',summary:'Source reviewed; interactive companion drafted, not live.'}]},
     {id:'fpga',title:'EIM — Fundamental Digital Design with FPGA',status:'waiting',summary:'Waiting until one of the two allocated manuals is finished or changed.',units:[]},
     {id:'rp2040',title:'EIM — Introduction to Microcontroller with RP2040',status:'waiting',summary:'Waiting; kit parts remain separate from active manuals.',units:[]}

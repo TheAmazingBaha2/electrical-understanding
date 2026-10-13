@@ -23,12 +23,15 @@ export function renderLearnSteps(lesson,step=0){
  const intro=pieces.shift()||"";
  if(!pieces.length)return html;
  const current=Math.min(Math.max(0,step),pieces.length-1);
+ const evidence=lesson.teachingSections?.[current]?.source_ids||[];
+ const discussion=lesson.experiment==='generated'?(lesson.activities||[]).find(a=>(a.source_ids||[]).some(id=>evidence.includes(id))):null;
+ const discussionMarkup=discussion?'<aside class="lesson-practice-hint"><h4>Pause and explain</h4><p>'+escapeHtml(discussion.prompt)+'</p><p class="muted sm">Make a prediction and explain why before checking the activity feedback.</p><button class="outline small-button" data-lesson-tab="interact" type="button">Discuss and check in Interact →</button></aside>':'';
  const headings=pieces.map((part,i)=>part.match(/<h3>([\s\S]*?)<\/h3>/)?.[1]?.replace(/<[^>]+>/g,"")||"Concept "+(i+1));
  return '<div class="learning-concept"><div class="activity-step-top"><span class="v2-kicker">CONCEPT '+(current+1)+' OF '+pieces.length+'</span><span class="activity-caption">Small steps, lasting understanding</span></div>'+
  (current===0?'<div class="learning-intro">'+intro+'</div>':'')+
  '<div class="learning-concept-steps" role="group" aria-label="Choose a lesson concept">'+
  headings.map((head,i)=>'<button class="concept-step'+(current===i?' selected':'')+'" data-learn-index="'+i+'" aria-current="'+(current===i?'step':'false')+'" aria-label="'+escapeHtml(head)+'">'+(i+1)+'</button>').join('')+'</div>'+
- '<div class="learning-concept-reading">'+pieces[current]+'</div>'+
+ '<div class="learning-concept-reading">'+pieces[current]+'</div>'+discussionMarkup+
  '<div class="activity-nav"><button class="outline small-button" '+(current===0?'disabled':'data-learn-index="'+(current-1)+'"')+'>← Previous idea</button>'+
  '<span class="muted sm">'+(current+1)+' / '+pieces.length+'</span>'+
  '<button class="primary small-button" '+(current===pieces.length-1?'data-lesson-tab="interact"':'data-learn-index="'+(current+1)+'"')+'>'+(current===pieces.length-1?'Try the activities →':'Next idea →')+'</button></div></div>';

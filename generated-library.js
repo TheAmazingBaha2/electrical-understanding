@@ -53,10 +53,10 @@ export function makeWorkbenchLesson(job, unit, content, kind, order) {
  const sections=safeList(content.sections), original=safeList(content.questions);
  const prompts=original.map((q,i)=>{
    const value=String(q.answer||"").trim().replace(/,/g,"");
-   const parsed=value.match(/^([+-]?(?:[0-9]+(?:\\.[0-9]*)?|\\.[0-9]+)(?:e[+-]?[0-9]+)?)\\s*([a-zA-ZµμΩ%°/]+)?$/i);
+   const parsed=value.match(/^([+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)(?:e[+-]?[0-9]+)?)\s*([a-zA-ZµμΩ%°/]+)?$/i);
    const result={id:id+"-Q"+String(i+1).padStart(2,"0"),
      type:"reflection",prompt:cleanGeneratedPrompt(q.prompt),explain:String(q.explanation||""),
-     rubric:"Expected answer: "+String(q.answer||"")+"\\nReasoning: "+String(q.explanation||""),
+     rubric:"Expected answer: "+String(q.answer||"")+"\nReasoning: "+String(q.explanation||""),
      safety:false,source_ids:safeList(q.source_ids)};
    if(parsed&&Number.isFinite(Number(parsed[1]))){
      result.type="number";result.answer=Number(parsed[1]);result.unit=parsed[2]||"";
@@ -92,10 +92,10 @@ export function makeWorkbenchLesson(job, unit, content, kind, order) {
      explanation:String(q.explanation||""),source_ids:safeList(q.source_ids)}));
  const citation=[job.source_book||"Publication not recorded",job.source_pages||"Page reference not recorded"].join(" · ");
  const html='<p>'+esc(content.description||content.new_perspective||"Follow the approved source-backed explanation step by step.")+'</p>'+
- sections.map(part=>'<h3>'+esc(part.heading)+'</h3><p>'+esc(part.body).replace(/\\n/g,'</p><p>')+'</p><p class="muted sm">Source: '+attribution(job,part.source_ids)+'</p>').join("");
+ sections.map(part=>'<h3>'+esc(part.heading)+'</h3><p>'+esc(part.body).replace(/\r?\n|\\n/g,'</p><p>')+'</p><p class="muted sm">Source: '+attribution(job,part.source_ids)+'</p>').join("");
  return {id,generated:true,subtrack:"generated",title:String(content.title||unit.plan?.title||"Approved lesson"),
    description:String(content.description||content.new_perspective||"Source-backed practice"),
-   module:job.source_book||job.title||"Source-backed chapter",sourceAttribution:citation,
+   module:job.source_book||job.title||"Source-backed chapter",sourceAttribution:citation,teachingSections:sections.map(part=>({heading:String(part.heading),source_ids:safeList(part.source_ids)})),
    objectives:safeList(content.objectives),html,experiment:"generated",activities,questions:prompts,
    minutes:Math.max(10,sections.length*6+10),simulator:simulationForTitle(unit.plan?.title||content.title),kind:unit.plan?.kind||unit.kind||"concept",
    ordering:unit.plan?.ordering||unit.ordering||"independent",sourceUnitId:rawId,scanId:String(job.id),archived:isArchivedScanChapter(job),sourceTrack:job.source_track||"other",libraryView:isArchivedScanChapter(job)?"legacy":kind==="review"?"reviews":(["math","ceta","labs","textbooks"].includes(unit.dashboard_track)?unit.dashboard_track:(unit.plan?.kind||unit.kind)==="math"?"math":job.source_track==="guide"?"ceta":job.source_track==="basic"?"labs":"textbooks")};

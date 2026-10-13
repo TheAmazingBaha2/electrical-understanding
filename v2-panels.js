@@ -12,8 +12,9 @@ function stats(c){
 }
 function stat(label,value,description){return '<div class="v2-stat"><p class="v2-label">'+safe(label)+'</p><strong>'+safe(value)+'</strong><p class="muted sm">'+safe(description)+'</p></div>'}
 function ring(n){const c=2*Math.PI*57;return '<svg class="v2-donut" viewBox="0 0 160 160" role="img" aria-label="'+n+'% of active lab companions completed"><circle class="v2-ring-bg" cx="80" cy="80" r="57"/><circle class="v2-ring-fg" cx="80" cy="80" r="57" stroke-dasharray="'+(c*n/100)+' '+c+'" transform="rotate(-90 80 80)"/><text class="v2-ring-num" x="80" y="79" text-anchor="middle">'+n+'%</text><text class="v2-ring-desc" x="80" y="100" text-anchor="middle">ACTIVE LABS</text></svg>'}
-function subcard(s){
- const highlights=s.id==='guide'?'<div class="path-card-details"><div><strong>09</strong><span>Units indexed</span></div><div><strong>22</strong><span>Chapters mapped</span></div><div><strong>1</strong><span>Published lesson</span></div></div>':
+function subcard(s,c){
+ const guideCount=(c.activeCetaLessons||[]).length+(c.activeGeneratedLessons||[]).filter(l=>l.libraryView==='ceta').length;
+ const highlights=s.id==='guide'?'<div class="path-card-details"><div><strong>09</strong><span>Units indexed</span></div><div><strong>22</strong><span>Chapters mapped</span></div><div><strong>'+guideCount+'</strong><span>Active guide lessons</span></div></div>':
  s.id==='exam'?'<div class="path-plan-points"><span>Fault diagnosis</span><span>Mixed-topic checks</span><span>Spaced review</span></div>':'';
  return '<article class="v2-subcard">'+tag(s.status)+'<h3>'+safe(s.title)+'</h3><p class="muted sm">'+safe(s.summary)+'</p>'+highlights+'<button class="outline small-button" data-goto="subtrack" data-lesson="'+safe(s.id)+'">Explore sub-track →</button></article>';
 }
@@ -110,7 +111,7 @@ function trackView(t,c){
  const displayed=t.id==='ceta'?t.subtracks.filter(s=>s.id!=='core'):t.subtracks;
  const legacyFooter=t.id==='ceta'?'<div class="legacy-footnote"><span>Original lessons are preserved in two groups.</span> <button type="button" class="legacy-minilink" data-goto="legacy">Open Legacy Lessons <span aria-hidden="true">↗</span></button><small>Group 1: CETa Pilot · Group 2: Original and unreferenced companions. All prior progress stays intact.</small></div>':'';
  return '<header class="v2-intro"><p class="v2-kicker">TRACK '+(catalog.indexOf(t)+1)+' OF 4</p><h2>'+safe(t.title)+'</h2><p>'+safe(t.tagline)+'</p></header>'+
- '<div class="v2-subcards">'+displayed.map(subcard).join('')+'</div>'+legacyFooter;
+ '<div class="v2-subcards">'+displayed.map(sub=>subcard(sub,c)).join('')+'</div>'+legacyFooter;
 }
 function unreferencedRows(c){
  const lessons=c.archivedUnreferencedLessons||[];

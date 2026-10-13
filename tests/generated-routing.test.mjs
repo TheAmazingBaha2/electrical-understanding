@@ -75,10 +75,11 @@ test('scan actions and spending controls precede a collapsed and preserved attem
  const start=src.indexOf('function detail(job)');
  const end=src.indexOf('export function attachScanInbox',start);
  const detail=src.slice(start,end);
- assert.ok(detail.indexOf('scan-approve-actions')<detail.indexOf('explainAnalysis(job.analysis)'));
- assert.ok(detail.indexOf('scan-approve-actions')<detail.indexOf('attemptLog(job)'));
+ assert.ok(detail.indexOf('mainScanControls(job)')<detail.indexOf('explainAnalysis(job.analysis)'));
+ assert.ok(detail.indexOf('mainScanControls(job)')<detail.indexOf('attemptLog(job)'));
  assert.match(src,/scan-attempt-log/);
  assert.match(src,/data-scan-expand="attempt-history"/);
- assert.match(src,/querySelector\('\.scan-approve-actions'\)\?\.after\(controls\)/);
+ assert.match(src,/mainScanControls\(job\)/);
+ assert.match(src,/data-run-scan/);
  assert.match(src,/Download saved response & error/);
 });

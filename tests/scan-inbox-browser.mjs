@@ -51,7 +51,7 @@ try{
     }
     if(body.action==='plan'){job.analysis={planning_brief:{astra_guidance:'Verify',lesson_guidance:'Explain',review_guidance:'Check'}};job.revision++;}
     if(body.action==='outline'){job.state='outlined';job.lesson={lessons:[],pending:[],current:null};job.revision++;job.analysis.chapter_outline={chapter_title:'One unit',units:[{id:'U01',title:'Circuit',kind:'math',destination:'source',ordering:'independent',prerequisites:[]}]};}
-    if(body.action==='analyze'){job.state='analyzed';job.analysis=exampleAnalysis;}
+    if(body.action==='analyze'){job.state='analyzed';job.analysis={...exampleAnalysis,planning_brief:job.analysis.planning_brief};job.revision++;}
     if(body.action==='draft'){window.__batchCalls.push('draft');job.state='drafted';job.lesson={...job.lesson,current:{...lesson,plan:job.analysis.chapter_outline.units[(job.lesson.lessons?.length||0)+(job.lesson.pending?.length||0)]}};job.revision++;}
     if(body.action==='review'){window.__batchCalls.push('review');job.state='reviewed';job.review=sampleReview;job.revision++;}
     if(body.action==='queue-reviewed'){job.lesson.pending=[...(job.lesson.pending||[]),{...job.lesson.current,technical_review:job.review}];job.lesson.current=null;job.review=null;job.state=job.lesson.pending.length===job.analysis.chapter_outline.units.length?'reviewed':'outlined';job.revision++;}
@@ -79,28 +79,24 @@ try{
  assert.equal(await page.evaluate(()=>window.__uploadCount),1,'Registration retry must not upload a duplicate');
  assert.match(await page.locator('#scan-status').innerText(),/No AI charges yet/);
  const acceptPaid=dialog=>dialog.accept();page.on('dialog',acceptPaid);
- await page.locator('[data-scan-action="plan"]').click();
- await page.locator('[data-scan-action="analyze"]').click();
- await page.locator('.scan-evidence-row').first().waitFor();
- assert.match(await page.locator('#scan-detail').innerText(),/S1/);
- await page.locator('[data-scan-action="outline"]').click();
- await page.locator('[data-scan-action="draft"]').click();
- await page.locator('.scan-quiz-item').first().waitFor();
+ await page.locator('[data-run-scan]').click();
+ await page.locator('[data-scan-action="approve-batch"]').waitFor();
+ assert.deepEqual(await page.evaluate(()=>window.__batchCalls),['draft','review']);
+ assert.equal(await page.locator('.scan-chapter-pending').count(),1);
+ assert.equal(await page.locator('.scan-chapter-accepted').count(),0);
  assert.equal(await page.locator('.scan-lesson-section').count(),3);
  await page.locator('.scan-quiz-item').first().locator('summary').click();
  assert.match(await page.locator('.scan-quiz-item').first().innerText(),/0\.005 A/);
- await page.locator('[data-scan-action="review"]').click();
- await page.locator('[data-scan-action="approve"]').waitFor();
- await page.locator('[data-scan-action="approve"]').click();
+ await page.locator('[data-scan-action="approve-batch"]').click();
  page.off('dialog',acceptPaid);
  await page.waitForFunction(()=>document.querySelector('#scan-detail')?.innerText.includes('Approved · available'));
  assert.match(await page.locator('#scan-detail').innerText(),/Approved lesson 1/i);
  assert.equal(await page.locator('.scan-chapter-current').count(),0);
  await page.evaluate(()=>window.__setBatch());
  await page.locator('#scan-refresh').click();
- await page.locator('[data-chapter-batch]').waitFor();
+ await page.locator('[data-run-scan]').waitFor();
  page.on('dialog',acceptPaid);
- await page.locator('[data-chapter-batch]').click();
+ await page.locator('[data-run-scan]').click();
  await page.locator('[data-scan-action="approve-batch"]').waitFor();
  assert.equal(await page.locator('.scan-chapter-pending').count(),2);
  assert.equal(await page.locator('.scan-chapter-accepted').count(),0);

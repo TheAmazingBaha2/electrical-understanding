@@ -188,7 +188,7 @@ test('CETa cards show actual source inventory and label exam plans without claim
  const html=v2Page('ceta',context());
  assert.match(html,/09<\/strong><span>Units indexed/);
  assert.match(html,/22<\/strong><span>Chapters mapped/);
- assert.match(html,/1<\/strong><span>Published lesson/);
+ assert.match(html,/0<\/strong><span>Active guide lessons/);
  assert.match(html,/Fault diagnosis/);
  assert.ok(!html.includes('data-goto="lesson" data-lesson="L01"'));
 });

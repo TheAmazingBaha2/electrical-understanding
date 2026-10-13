@@ -44,7 +44,7 @@ export function renderScanInbox(user){
  if(!user)return '<header class="v2-intro"><p class="v2-kicker">PRIVATE SOURCE LIBRARY</p><h2>Scan Inbox</h2><p>Sign in to your staging study account before uploading and building lessons.</p><button class="primary" data-goto="account">Sign in →</button></header>';
  return `<section id="scan-root" class="scan-workbench">
  <header class="v2-intro"><p class="v2-kicker">SOURCE-BASED LEARNING · PRIVATE STAGING</p><h2>Scan Inbox & lesson studio</h2>
-  <p>Upload a short, legible textbook excerpt. Sol prepares a teaching brief, Sol extracts the evidence, Sol writes a teaching draft, and Sol reviews its accuracy. Only your manual approval adds it to your private lesson library.</p></header>
+  <p>Upload a short, legible textbook excerpt. Sol prepares a teaching brief, Sol extracts the evidence, Sol writes a teaching draft, and Sol reviews its accuracy. Run scan builds the chapter through saved checkpoints. Only your manual approval adds it to your private lesson library.</p></header>
  <div class="scan-upload-panel panel"><h3>1 · Add a private source</h3>
   <p class="muted sm">PDF, JPG, PNG or WebP · up to 5 MB each. For affordable, reliable interpretation, upload 1–3 clear pages per source. Do not include personal identifying information.</p>
   <form id="scan-upload-form" class="scan-upload-form">
@@ -88,7 +88,7 @@ export function renderScanInbox(user){
   <div id="scan-list" class="scan-list"></div>
  </div>
  <div id="scan-detail" class="scan-detail"></div>
- <p class="muted sm">Planning, extraction, outlining, drafting and review are separate paid Sol requests. Use individual stage buttons or explicitly authorize a whole-chapter draft/review batch. Scan quotas: 10 calls/minute, 60/hour, 200/day. The separate model lab and tutor are paused until equivalent spending safeguards are available. One started scan may use up to four completion calls beyond the limits per rolling 24 hours. Only your clicks start paid generation. Running requests can continue if you close this page. Responses are retained by OpenAI for recovery and saved privately here; incomplete output is not approved lesson content.</p>
+ <p class="muted sm">Planning, extraction, outlining, drafting and review are separate paid Sol requests. Run scan continues through saved stages and the chapter lessons under your authorized spending session. Advanced stage controls remain available for investigation and separately confirmed retries. Scan quotas: 10 calls/minute, 60/hour, 200/day. The separate model lab and tutor are paused until equivalent spending safeguards are available. One started scan may use up to four completion calls beyond the limits per rolling 24 hours. Only your clicks start paid generation. Running requests can continue if you close this page. Responses are retained by OpenAI for recovery and saved privately here; incomplete output is not approved lesson content.</p>
  </section>`;
 }
 const bubble=(name,content)=>'<div class="ai-dialogue-bubble ai-dialogue-answer"><strong>'+esc(name)+'</strong><div class="ai-dialogue-copy">'+esc(content)+'</div></div>';
@@ -207,6 +207,50 @@ export async function runChapterBatch({getJob,stage,refresh,stopped=()=>false,on
   await stage(body);await refresh();
  }
 }
+// One user-authorized run, many durable checkpoints. Never approves or retries
+// uncertain/invalid provider submissions. The caller owns the spending session.
+export function scanRunLabel(job){
+ const begun=job.state!=='uploaded'||job.analysis?.planning_brief||job.attempts?.length;
+ return begun?'Resume scan & lessons':'Run scan & build lessons';
+}
+export async function runScanWorkflow({getJob,stage,refresh,stopped=()=>false,onProgress=()=>{},beforeChapter=async()=>{},learnerContext='',initialRetryOf=null}){
+ const first=getJob(),identity=JSON.stringify([first.id,first.source_book,first.source_pages,first.source_track,first.source_path]);
+ let steps=0;
+ while(!stopped()){
+  const job=getJob();
+  if(!job||JSON.stringify([job.id,job.source_book,job.source_pages,job.source_track,job.source_path])!==identity)throw Error('Source changed; run stopped.');
+  if(job.state==='approved')return;
+  if(job.state==='needs_revision')throw Error('Technical review requested changes. Use the advanced revision control; no automatic paid revision.');
+  if(job.analysis?.chapter_outline){
+   await beforeChapter(job);
+   if(stopped())return;
+   return runChapterBatch({getJob,stage,refresh,stopped,onProgress,initialRetryOf});
+  }
+  const action=job.state==='uploaded'?(job.analysis?.planning_brief?'analyze':'plan'):job.state==='analyzed'?'outline':null;
+  if(!action)throw Error('Older single-lesson checkpoint: use advanced controls to finish its review and approval.');
+  const attempt=job.attempts?.find(a=>a.base_revision===job.revision&&a.phase===action);
+  const body={action,jobId:job.id,expectedRevision:job.revision,learnerContext};
+  if(attempt&&['starting','running','received'].includes(attempt.status)){body.action='check';body.attemptId=attempt.id;}
+  else if(attempt&&['failed','unknown','invalid','incomplete'].includes(attempt.status)){
+   if(attempt.id!==initialRetryOf||attempt.status!=='failed'||!attempt.error_message?.startsWith('Budget reservation refused. No provider request was sent.'))
+    throw Error('Saved failed stage requires investigation or a separately confirmed retry. No new request started.');
+   body.retry=true;body.retryOf=attempt.id;initialRetryOf=null;
+  }
+  if(++steps>3)throw Error('Run checkpoint did not advance; refresh before resuming.');
+  onProgress({action:body.action,unit:0,total:0});
+  await stage(body);await refresh();
+  if(getJob()?.revision===body.expectedRevision)throw Error('Saved checkpoint did not advance; refresh before resuming.');
+ }
+}
+function mainScanControls(job){
+ const ready=job.state==='reviewed';
+ return '<div class="scan-approve-actions">'+
+  (job.state!=='approved'&&(!ready||job.lesson?.current)?'<button type="button" class="primary" data-run-scan>'+esc(scanRunLabel(job))+'</button>':'')+
+  '<button type="button" class="outline" id="scan-free-preflight">Verify data (free)</button>'+
+  (ready?buttonFor(job):job.state==='approved'?'<span class="success">Approved · available in your private lesson library below.</span>':'')+
+  (job.state!=='approved'?'<button type="button" class="outline" data-chapter-pause>Pause after current request</button>':'')+'</div>'+
+  '<details class="scan-advanced-controls" data-scan-expand="advanced-controls"><summary>Advanced stage controls & recovery</summary><p class="muted sm">Check or revalidate saved output for free. Paid retry and revision require a separate confirmation.</p>'+(!ready&&job.state!=='approved'?buttonFor(job):'')+'</details>';
+}
 export function buttonFor(job){
  const attempt=job.attempts?.find(a=>a.base_revision===job.revision);
  if(attempt&&["starting","running","received"].includes(attempt.status))return '<button class="primary" data-scan-action="check" data-scan-attempt="'+esc(attempt.id)+'">Resume / check saved request (no new AI call)</button>';
@@ -319,7 +363,7 @@ function detail(job){
  '<p class="muted sm">Book and page labels are user-entered. Source fact locations below must be checked against the original pages.</p></div>'+
  '<button class="outline small-button" id="scan-download-source">Download original private source</button> <button class="outline small-button" id="scan-delete-source">Delete scan & generated content</button>'+
  '<p class="scan-phase-banner" role="status">'+esc(scanPhaseMessage(job))+'</p>'+scanTrackerMarkup(job)+
- '<div class="scan-approve-actions"><button type="button" class="outline" id="scan-free-preflight">Check pipeline readiness (free)</button>'+buttonFor(job)+'</div>'+
+ mainScanControls(job)+
  '<div id="scan-free-preflight-result" class="scan-preflight-result" role="status" aria-live="polite" hidden></div>'+
  (job.analysis?.planning_brief?'<details data-scan-expand="sol-brief"><summary>Sol’s saved teaching brief</summary>'+bubble('Your instructions',job.analysis.planning_brief.learner_context||'Default teaching guidance')+bubble('Sol extraction',job.analysis.planning_brief.astra_guidance)+bubble('Lesson drafting',job.analysis.planning_brief.lesson_guidance)+bubble('Technical review',job.analysis.planning_brief.review_guidance)+'</details>':'')+
  (job.state==='uploaded'&&!job.analysis?.planning_brief?'<label>Additional instructions for Sol (optional)<textarea id="scan-learner-context" maxlength="2000" rows="4" placeholder="Leave blank for Sol to plan from the scanned pages."></textarea></label>':'')+
@@ -330,6 +374,7 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
  const root=by('#scan-root');
  if(!root||!supabase||!user)return;
  const id=user.id;
+ let runAuthorizing=false;
  let jobs=[],preparedFile=null,preparing=null,pendingUpload=null,budgetSessionId=null,budgetAuthorizedUSD=null,budgetAvailableUSD=null,batchPrices=null;
   let books=[],bookCatalogReady=false,bookCatalogBusy=false;
  let renderedJobId=null,renderedSignature=null;
@@ -591,33 +636,36 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
    const banner=root.querySelector('.scan-phase-banner');
    if(banner)banner.textContent=scanPhaseMessage(latest,phase);
   };
-  if(job.analysis?.chapter_outline&&job.state!=='approved'){
-   const controls=document.createElement('section');controls.className='panel scan-batch-controls';
-   controls.innerHTML='<h3>Whole-chapter generation</h3><p>Draft and technically review all remaining outlined lessons with Sol. Saved reviewed drafts wait for your human approval. Failures stop the batch; no automatic paid retries. Keep this page open while it runs; return and explicitly resume after leaving.</p><button class="primary" data-chapter-batch>Draft & review the remaining chapter</button> <button class="outline" data-chapter-pause>Pause after current request</button><p class="muted sm" data-chapter-batch-status></p>';
-   // Batch actions stay above the history, directly after manual action controls.
-   div.querySelector('.scan-approve-actions')?.after(controls);
-   controls.querySelector('[data-chapter-pause]').onclick=()=>{batchStop=true;status('Batch pause requested. The current response remains recoverable; no next generation will start.');};
-   controls.querySelector('[data-chapter-batch]').onclick=async()=>{
-    if(operation)return;
+  div.querySelector('[data-chapter-pause]')?.addEventListener('click',()=>{batchStop=true;status('Pause requested. The current response remains recoverable; no next generation will start.');});
+  div.querySelector('[data-run-scan]')?.addEventListener('click',async()=>{
+   if(operation||runAuthorizing)return;
+   runAuthorizing=true;
+   try{
+   await loadBudget();
+   if(!budgetSessionId)return notify('Authorize a spending session first. No request started.');
+   const failed=job.attempts?.find(a=>a.base_revision===job.revision&&a.status==='failed'&&a.error_message?.startsWith('Budget reservation refused. No provider request was sent.'));
+   const session=budgetSessionId,jobId=job.id,learnerContext=div.querySelector('#scan-learner-context')?.value||'';
+   const checkChapter=async latest=>{
     await loadBudget();
-    if(!budgetSessionId)return notify('Authorize and refresh a spending session first.');
-    let exposure;try{exposure=chapterBatchExposure(job,batchPrices);}catch(error){return notify(error.message);}
-    if(!Number.isFinite(budgetAvailableUSD)||budgetAvailableUSD+1e-8<exposure.requiredUSD){status('Batch not started: remaining chapter exposure requires $'+exposure.requiredUSD.toFixed(4)+' available; your session has $'+Number(budgetAvailableUSD||0).toFixed(4)+'. Updating the limit does not start generation.');return;}
-    const total=job.analysis.chapter_outline.units.length,done=(job.lesson?.lessons||[]).length+(job.lesson?.pending||[]).length;
-    const failed=job.attempts?.find(a=>a.base_revision===job.revision&&a.status==='failed'&&a.error_message?.startsWith('Budget reservation refused. No provider request was sent.'));
-    if(!window.confirm('Authorize Sol to draft and review all '+(total-done)+' remaining chapter lessons, up to '+exposure.requests+' new paid requests under your displayed session limit? Each request reserves exposure. No human approvals occur automatically. Any failure halts the batch.'+(failed?' This explicitly starts the stage previously blocked before provider submission.':'')))return;
-    const session=budgetSessionId,jobId=job.id;operation=true;batchStop=false;
-    try{
-     await runChapterBatch({getJob:()=>jobs.find(j=>j.id===jobId),refresh:()=>refresh(false),stopped:()=>batchStop||!root.isConnected,
-      initialRetryOf:failed?.id||null,stage:body=>runStage({...body,budgetSessionId:session}),onProgress:({unit,total,action})=>{
-       status('Chapter batch: lesson '+unit+' of '+total+' · '+action+'. No automatic paid retries.');
-       const latest=jobs.find(j=>j.id===jobId);if(latest)updateLiveStage(action);
-      }});
-     status(batchStop?'Batch paused; saved checkpoints retained.':'Chapter drafting and review complete. Inspect every reviewed draft, then use free batch approval.');
-    }catch(error){await refresh(false);status('Chapter batch stopped: '+error.message);notify(error.message);}
-    finally{operation=false;}
+    if(budgetSessionId!==session)throw Error('Spending session changed; saved work retained.');
+    const exposure=chapterBatchExposure(latest,batchPrices);
+    if(!Number.isFinite(budgetAvailableUSD)||budgetAvailableUSD+1e-8<exposure.requiredUSD)
+     throw Error('Remaining lessons require $'+exposure.requiredUSD.toFixed(4)+' in conservative reservations; available $'+Number(budgetAvailableUSD||0).toFixed(4)+'. Saved source work is retained. Update your limit only if you choose, then Resume.');
    };
-  }
+   try{if(job.analysis?.chapter_outline)await checkChapter(job);}
+   catch(error){status(error.message);return;}
+   const count=job.analysis?.chapter_outline?chapterBatchExposure(job,batchPrices).requests:'up to 3 source-stage requests followed by up to 2 requests per outlined lesson (maximum 40 lessons)';
+   if(!window.confirm('Run or resume this scan through evidence, chapter outline, detailed lessons and separate Sol reviews? This authorizes '+count+' new paid requests, limited by your $'+Number(budgetAuthorizedUSD).toFixed(2)+' spending session. Saved stages are reused; failures halt without automatic paid retries. Approval stays manual. Keep Scan Inbox open; leaving pauses the sequence after the current request.'+(failed?' Includes the exact stage previously refused before provider submission.':'')))return;
+   operation=true;batchStop=false;
+   try{
+    await runScanWorkflow({getJob:()=>jobs.find(j=>j.id===jobId),stage:body=>runStage({...body,budgetSessionId:session}),
+     refresh:()=>refresh(false),stopped:()=>batchStop||!root.isConnected,beforeChapter:checkChapter,learnerContext,initialRetryOf:failed?.id||null,
+     onProgress:({unit,total,action})=>{status((total?'Lesson '+unit+' of '+total+' · ':'Scan · ')+action+' · checkpoints saved; approval remains manual.');updateLiveStage(action);}});
+    status(batchStop||!root.isConnected?'Run paused; saved checkpoints retained.':'Generation complete. Inspect the reviewed lessons, Verify data, then Approve (free).');
+   }catch(error){await refresh(false);status('Scan stopped: '+error.message);notify(error.message);}
+   finally{operation=false;}
+   }finally{runAuthorizing=false;}
+  });
   div.querySelector('#scan-free-preflight')?.addEventListener('click',async e=>{
    const button=e.currentTarget,output=div.querySelector('#scan-free-preflight-result');
    if(operation)return;
@@ -732,7 +780,7 @@ export function attachScanInbox(supabase,user,notify=()=>{}){
    const registered=await invoke({action:'register',path:pending.path,title:name,book,pages,track});
    selectedId=registered.jobId;root.querySelector('#scan-upload-form').reset();
    chooseBook('');preparedFile=null;preparing=null;pendingUpload=null;
-   await refresh(false);status('Source uploaded. No AI charges yet. Select Ask Sol to plan (one paid request) when ready.');
+   await refresh(false);status('Source uploaded. No AI charges yet. Select Run scan & build lessons when ready.');
    button.textContent='Upload privately (no AI charge)';
   }catch(error){
    status('Upload failed while '+phase+': '+error.message+'. Tap Retry upload to try again.');
