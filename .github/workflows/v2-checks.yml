@@ -45,14 +45,11 @@ jobs:
           sleep 2
       - name: Run real desktop and mobile smoke tests
         run: |
-          node tests/browser-smoke.mjs
-          node tests/persistence-browser.mjs
-          node tests/ai-model-lab-browser.mjs
-          node tests/ai-chat-browser.mjs
-          node tests/scan-inbox-browser.mjs
-          node tests/math-browser.mjs
-          node tests/adaptive-browser.mjs
-          node tests/source-browser.mjs
+          result=0
+          for suite in source-browser browser-smoke persistence-browser ai-model-lab-browser ai-chat-browser scan-inbox-browser math-browser adaptive-browser; do
+            node "tests/$suite.mjs" || result=1
+          done
+          exit "$result"
       - name: Save visual QA screenshots
         uses: actions/upload-artifact@v4
         if: always()
