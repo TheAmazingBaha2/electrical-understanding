@@ -53,6 +53,7 @@ export function makeWorkbenchLesson(job, unit, content, kind, order) {
  const rawId=String(unit.id||job.draft_id||job.id);
  const archived=!unit.curated&&isArchivedScanChapter(job);
  const id=kind==="review"?rawId+"-R"+String(order+1).padStart(2,"0"):rawId;
+ const chapterSummary=unit.chapter_summary===true||(unit.plan?.kind||unit.kind)==="summary";
  const sections=safeList(content.sections), original=safeList(content.questions);
  const prompts=original.map((q,i)=>{
    const value=String(q.answer||"").trim().replace(/,/g,"");
@@ -88,7 +89,7 @@ export function makeWorkbenchLesson(job, unit, content, kind, order) {
      rubric:reference,safety:false,source_ids:safeList(part?.source_ids||sample?.source_ids)});
  }
  const activitySource=safeList(content.activities);
- const activities=activitySource.length?activitySource.map((a,i)=>({
+ const activities=chapterSummary?[]:activitySource.length?activitySource.map((a,i)=>({
    title:String(a.title||"Guided activity "+(i+1)),prompt:cleanGeneratedPrompt(a.prompt||"Make a prediction."),
    answer:String(a.expected||a.answer||""),explanation:String(a.explanation||""),
    source_ids:safeList(a.source_ids),kind:a.kind,choices:safeList(a.choices),correct:a.correct,simulator:a.simulator})):
@@ -96,14 +97,14 @@ export function makeWorkbenchLesson(job, unit, content, kind, order) {
      title:"Prediction "+(i+1),prompt:cleanGeneratedPrompt(q.prompt),answer:String(q.answer),
      explanation:String(q.explanation||""),source_ids:safeList(q.source_ids)}));
  const citation=[job.source_book||"Publication not recorded",job.source_pages||"Page reference not recorded"].join(" · ");
- const html='<p>'+esc(content.description||content.new_perspective||"Follow the approved source-backed explanation step by step.")+'</p>'+
+ const html=chapterSummary?'<p>'+esc(content.description)+'</p><h3>Key takeaways</h3><ul class="chapter-takeaways">'+sections.flatMap(part=>String(part.body).split(/\r?\n/).filter(line=>line.trim()).map(line=>'<li>'+esc(line.replace(/^\s*[-•]\s*/,""))+'</li>')).join("")+'</ul><p class="muted sm">Source: '+attribution(job,sections.flatMap(part=>safeList(part.source_ids)))+'</p>':'<p>'+esc(content.description||content.new_perspective||"Follow the approved source-backed explanation step by step.")+'</p>'+
  sections.map(part=>'<h3>'+esc(part.heading)+'</h3><p>'+esc(part.body).replace(/\r?\n|\\n/g,'</p><p>')+'</p><p class="muted sm">Source: '+attribution(job,part.source_ids)+'</p>').join("");
  const curriculum=sourcePlacement(job,unit,kind);
- return {curriculum,sourceContents:safeList(job.lesson?.source_catalog?.chapters),id,generated:true,subtrack:"generated",title:String(content.title||unit.plan?.title||"Approved lesson"),
+ return {chapterSummary,curriculum,sourceContents:safeList(job.lesson?.source_catalog?.chapters),id,generated:true,subtrack:"generated",title:String(content.title||unit.plan?.title||"Approved lesson"),
    description:String(content.description||content.new_perspective||"Source-backed practice"),
    module:job.source_book||job.title||"Source-backed chapter",sourceAttribution:citation,teachingSections:sections.map(part=>({heading:String(part.heading),source_ids:safeList(part.source_ids)})),
    objectives:safeList(content.objectives),html,experiment:"generated",activities,questions:prompts,
-   minutes:Math.max(10,sections.length*6+10),simulator:simulationForTitle(unit.plan?.title||content.title),kind:unit.plan?.kind||unit.kind||"concept",
+   minutes:chapterSummary?10:Math.max(10,sections.length*6+10),simulator:chapterSummary?null:simulationForTitle(unit.plan?.title||content.title),kind:unit.plan?.kind||unit.kind||"concept",
    ordering:unit.plan?.ordering||unit.ordering||"independent",sourceUnitId:rawId,scanId:String(job.id),archived,curatedSeries:Boolean(unit.curated),seriesId:unit.series_id||null,seriesOrder:unit.series_order||null,overview:unit.overview||null,sourceTrack:job.source_track||"other",libraryView:archived?"legacy":sectionView(curriculum.section)};
 }
 

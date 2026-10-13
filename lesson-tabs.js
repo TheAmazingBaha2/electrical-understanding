@@ -18,6 +18,7 @@ export function learningContent(lesson) {
 // bite-sized concept cards instead of five sections in one scrolling document.
 export function renderLearnSteps(lesson,step=0){
  const html=learningContent(lesson);
+ if(lesson.chapterSummary)return html;
  if(!["embedded","generated"].includes(lesson.experiment))return html;
  const pieces=html.split(/(?=<h3>)/);
  const intro=pieces.shift()||"";
@@ -38,6 +39,7 @@ export function renderLearnSteps(lesson,step=0){
 }
 
 export function lessonActivities(lesson) {
+  if(lesson.chapterSummary)return [];
   if (lesson.experiment==="generated") {
     const checks=(lesson.activities||[]).map((a,i)=>({
       kind:a.kind==="simulation"?"generated-simulation":a.kind==="choice"?"generated-choice":"generated-check",simulator:a.simulator,choices:a.choices||[],correct:a.correct,title:a.title||"Prediction "+(i+1),description:"Make a prediction, explain your reasoning, then compare it with the approved reference.",
@@ -96,6 +98,7 @@ export function renderLessonTabs(active,answersCount,questionCount) {
   ).join('')+'</nav>';
 }
 export function renderActivitySelector(lesson,selected=0) {
+  if(lesson.chapterSummary)return '<section class="panel"><h3>A quick chapter check</h3><p>Use the key takeaways, then test the important ideas in the quiz. Revisit the earlier lessons for interactive practice.</p><button class="primary" data-lesson-tab="quiz">Start the summary quiz →</button></section>';
   const activities=lessonActivities(lesson);
   const selectedIndex=Math.min(Math.max(0,selected),activities.length-1);
   const current=activities[selectedIndex];

@@ -12,3 +12,5 @@ Before changing this project, read `docs/v2/TEACHING_AND_DESIGN_CONTRACT.md` and
 - Run `npm run check`, `npm test`, `npm run build`, `node tests/deploy.validation.mjs`. For UI changes run the affected Chromium suite and verify desktop/phone behavior. Changes to prompts/scan flow also require the workflow and prompt contract tests. Do not call paid providers as a regression test.
 - Deploy frontend only after complete CI passes on the exact commit. Deploy/read back matching staging Edge source when it changes; never claim a frontend publish updates backend functions automatically.
 - Record actual verification limits and unresolved design choices in the audit report. Automated prompts and same-model review cannot guarantee educational quality or source correctness.
+
+- Every newly covered chapter from any source ends in one concise chapter-summary lesson: key takeaways and a flexible mostly selectable quiz, with no fixed question count or one-per-lesson quota. Mark chapter_summary/kind summary and keep it last in the shared source chapter. Append with new stable IDs; never rewrite older quizzes/progress. Incomplete uploads must not be called complete chapters.

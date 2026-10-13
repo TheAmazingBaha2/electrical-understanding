@@ -52,7 +52,7 @@ export function sourceIndex(c={}){
   if(!chapter){chapter={id:String(p.chapter_id||'unassigned'),title:p.chapter_title||'Source chapter to be assigned',lessons:[]};source.chapters.push(chapter);}
   chapter.lessons.push(l);
  }
- for(const s of sources)for(const ch of s.chapters)ch.lessons.sort((a,b)=>(a.curriculum.order||0)-(b.curriculum.order||0));
+ for(const s of sources)for(const ch of s.chapters)ch.lessons.sort((a,b)=>Number(Boolean(a.chapterSummary))-Number(Boolean(b.chapterSummary))||(a.curriculum.order||0)-(b.curriculum.order||0));
  return sources;
 }
 export function learningProgress(lessons,c={}){

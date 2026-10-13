@@ -1,7 +1,7 @@
 """Author the private Chapter 3 companion from its saved extraction, without API calls.
 Output is an additive curated_series payload; no original approval/progress is replaced.
 """
-import json, math, sys
+import json, math, sys, subprocess
 from pathlib import Path
 SOURCE=json.loads(Path(sys.argv[1]).read_text())
 LESSONS=[]
@@ -351,6 +351,10 @@ for i,l in enumerate(LESSONS,1):
   if a['kind']=='choice':assert a['expected']==a['choices'][a['correct']]
  for part in l['sections']:assert 130<=len(part['body'])<=2500,(l['title'],len(part['body']))
  for x in l['sections']+l['questions']+l['activities']:assert set(x['source_ids'])<=set(f['id'] for f in SOURCE['analysis']['facts'])
+# The recap is independently authored and appended after the immutable core.
+summary_module=Path(__file__).with_name('chapter3-summary.mjs').resolve().as_uri()
+summary_code="import {readFileSync} from 'node:fs';import {chapter3Summary} from '"+summary_module+"';process.stdout.write(JSON.stringify(chapter3Summary(JSON.parse(readFileSync(process.argv[1])))));"
+LESSONS.append(json.loads(subprocess.check_output(['node','--input-type=module','-e',summary_code,sys.argv[1]],text=True)))
 SERIES={'id':'C3-CURATED-20261013','version':1,'status':'ready','title':'Chapter 3 · Guided Math for Electronics','source_scan_id':SOURCE['id'],'authorship':'Authored in the current Work conversation from saved Chapter 3 extraction; no paid API generation.','authorization':'James explicitly requested design, implementation and installation of the first 15–16 lesson series on October 13, 2026.','verification':'Deterministic calculations, grounded references and renderer checks; original image pages were not re-inspected in this authorship pass.','lessons':LESSONS}
 Path(sys.argv[2]).write_text(json.dumps(SERIES,ensure_ascii=False,indent=2))
 print(json.dumps({'lessons':len(LESSONS),'questions':sum(len(l['questions']) for l in LESSONS),'activities':sum(len(l['activities']) for l in LESSONS),'written':sum(q['type']=='reflection' for l in LESSONS for q in l['questions']),'words':sum(len(s['body'].split()) for l in LESSONS for s in l['sections'])}))

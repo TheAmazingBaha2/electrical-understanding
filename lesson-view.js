@@ -54,10 +54,10 @@ export function tabbedLesson(ctx) {
  const sections=lessonActivities(lesson).length;
  let contents="";
  if(active==="overview"){
-  contents=lessonOverview(lesson);
+  contents=lesson.chapterSummary?'<section class="panel reading chapter-summary-reading">'+renderLearnSteps(lesson,0)+'<button class="primary" data-lesson-tab="quiz">Start the summary quiz →</button></section>':lessonOverview(lesson);
  } else if (active==="learn"){
   contents='<section class="panel reading lesson-reading"><p class="v2-kicker">THE CONCEPTS</p>'+renderLearnSteps(lesson,ctx.learnIndex||0)+(isPilot?'<p class="muted sm">Pilot Unit 1 is self-contained. Textbook-specific study is in the companion sub-tracks.</p>':'')+'</section>'+
-  '<div class="lesson-step-footer"><span class="muted sm">Read at your own pace</span><button class="primary" data-lesson-tab="interact">Try the interactive example →</button></div>';
+  '<div class="lesson-step-footer"><span class="muted sm">Read at your own pace</span><button class="primary" data-lesson-tab="'+(lesson.chapterSummary?'quiz':'interact')+'">'+(lesson.chapterSummary?'Start the summary quiz →':'Try the interactive example →')+'</button></div>';
  } else if (active==="interact"){
   contents=renderActivitySelector(lesson,activityIndex);
  } else if (active==="quiz"){
