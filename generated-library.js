@@ -32,7 +32,7 @@ function lessonContent(lesson,job,idPrefix){
 
 function simulationForTitle(title){
  const name=String(title||"").toLowerCase();
- const choices=[["scientific notation|prefix conversions","prefixes"],["variables|formula rearrangement","ohm"],["resistor network","network"],
+ const choices=[["scientific notation|prefix conversions","prefixes"],["variables|formula rearrangement","algebra"],["resistor network","network"],
  ["internal resistance|terminal voltage","internal"],["sinusoid|amplitude measure","sine"],["period and frequency","period"],
  ["charge and stored energy","energy"],["capacitor network","capnetwork"],["time constant|exponential response","rc"],
  ["capacitive reactance","xc"],["combining inductors|inductance and","inductors"],["inductive reactance","xl"],
