@@ -1,0 +1,60 @@
+name: Verify Electrical Understanding v2
+on:
+  pull_request:
+  push:
+    branches:
+      - release/v2
+      - main
+      - draft/v2-dmm-companion
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check module syntax
+        run: npm run check
+      - name: Verify release build
+        run: |
+          npm run build
+          node tests/deploy.validation.mjs
+      - name: Run source and UI smoke tests
+        run: npm test
+
+  browser-smoke:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Chromium test runner
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Build Cloudflare static assets
+        run: npm run build
+      - name: Start static site
+        run: |
+          python3 -m http.server 8080 --directory dist > /tmp/eu-site.log 2>&1 &
+          sleep 2
+      - name: Run real desktop and mobile smoke tests
+        run: |
+          result=0
+          for suite in sidebar-browser dashboard-browser source-browser workshops-browser browser-smoke persistence-browser ai-model-lab-browser ai-chat-browser scan-inbox-browser math-browser adaptive-browser; do
+            node "tests/$suite.mjs" || result=1
+          done
+          exit "$result"
+      - name: Save visual QA screenshots
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v2-visual-qa
+          path: test-artifacts/
+          if-no-files-found: ignore

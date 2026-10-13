@@ -1,0 +1,5 @@
+# Official V2 release preparation — 2026-10-13
+
+User explicitly authorized backup and V2 production promotion with the existing staging retained for eventual V3. Existing stage-only guards cannot simply be copied to production. Release changes promote the current learning database in place, preserve IDs/accounts/progress/history, permit exact official frontend destinations and update Edge CORS without touching paid authorization or budgets. Main deploys the official Worker; the existing staging Worker/branch is retained with cloud and paid AI disabled until a dedicated development backend is configured. V1 source and database remain intact.
+
+Local syntax, 207 unit/contract tests, build and deployment checks pass. Release CI must pass before main is advanced. Production hosting and auth URL settings require account access; do not claim either is complete without readback. No paid calls, reauthoring or learning-record writes are part of this release. See V2_RELEASE_CHECKLIST.md for preserved commits, private data backup and rollback instructions.

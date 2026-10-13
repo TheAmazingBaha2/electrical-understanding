@@ -1,15 +1,12 @@
 {
   "name": "electrical-understanding",
-  "version": "0.1.0",
   "private": true,
   "type": "module",
   "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "check": "node --check persistence.js && node --check app.js && node --check lessons.js && node --check course-catalog.js && node --check v2-panels.js && node --check lab-lessons.js && node --check lab-widgets.js && node --check lesson-tabs.js && node --check lesson-view.js && node --check lab-visuals.js && node --check lesson-overviews.js && node --check geier-catalog.js && node --check geier-workshops.js && node --check workshop-widgets.js && node --check workshop-progress.js && node --check book-lessons.js && node --check dmm-widgets.js && node --check ceta-lessons.js && node --check ceta-widgets.js && node --check ai-model-lab.js && node --check ai-chat-widget.js && node --check scan-inbox.js && node --check math-lessons.js && node --check math-widgets.js && node --check math-track.js && node --check legacy-groups.js && node --check generated-library.js && node --check generated-simulations.js && node --check scripts/build.mjs && node --check learning-structure.js && node --check source-navigation.js",
     "build": "node scripts/build.mjs",
-    "dev": "npm run build && wrangler dev",
-    "deploy": "npm run build && wrangler deploy",
-    "check": "node --check app.js && node --check lessons.js && node --check config.js && npm run build && wrangler deploy --dry-run"
+    "deploy": "npm run build && npx wrangler deploy"
   },
-  "devDependencies": {
-    "wrangler": "4.149.0"
-  }
+  "version": "2.0.0"
 }

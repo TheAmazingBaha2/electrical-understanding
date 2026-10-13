@@ -1,5 +1,7 @@
-// Replace these two PUBLIC settings with your Supabase project's values.
-// NEVER include a Supabase service_role or secret key in browser code.
-// Public browser configuration. Never add a secret or service_role key.
-export const SUPABASE_URL = 'https://wwvpzyqcgwlwcetwlime.supabase.co';
-export const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_cW9TVBCyTQMHjYOIwIh9iw_a0hUiFig';
+// Official V2 uses the existing learning database; no data migration or rekeying.
+export const SUPABASE_URL = 'https://hkwmtjhgrskidaizamwy.supabase.co';
+export const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_2lV_l7v4q14RY-UITnYlUg_SFdewEYZ';
+export const SUPABASE_ENVIRONMENT = 'production';
+export function syncAllowed(location){
+ return location.protocol==='https:' && (location.hostname==='electrical-understanding.vanguardcorbett.workers.dev' || location.hostname==='theamazingbaha2.github.io' && /^\/electrical-understanding(?:\/|$)/.test(location.pathname));
+}

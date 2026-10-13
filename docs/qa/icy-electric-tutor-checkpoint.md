@@ -1,0 +1,11 @@
+# Icy electric theme, converging bolts and draggable tutor — 2026-10-13
+
+User requested a movable Study tutor launcher, less dominant blue, icy cyan lighting and small lightning-yellow accents, plus three aggressive nonuniform branching bolts approaching the center from different angles.
+
+Implemented charcoal frosted surfaces with cyan/white gradients, bright hover lighting, yellow focus and selected edges. Compact dashboard layout and separate arrows stay unchanged. SVG branding has three asymmetric branched paths and a central discharge; raster 192/512, safe-zone maskable 512 and Apple-touch 180 assets now accompany the versioned icon/manifest for phone launchers. Existing installed shortcuts may retain their cached icon until the platform refreshes or the shortcut is re-added.
+
+The launcher supports mouse drag, a 220ms touch hold then drag, and Alt+arrow keyboard movement. Drag release suppresses the opening click. Local normalized coordinates persist separately for desktop/phone, restore when signed in, and clamp on viewport changes. Chat panel placement remains its existing responsive layout. No owner visibility, authorization, model choices, paid send, lesson IDs, answers, review schedules or cloud data changes.
+
+Syntax, all 206 unit/contract tests, static build and deployment allowlist validation pass locally. Branding checks verify raster dimensions and maskable manifest. Existing chat browser suite now checks actual touch and mouse dragging, no opening during drag, keyboard move, reload restoration, viewport clamping and normal chat opening with mocked services. Full eleven-suite CI must pass on the exact commit before staging promotion. Local preview unavailable under managed Sites rules without control-browser; inspect CI screenshots. No paid calls or real learner writes used for verification. Production is outside this update.
+
+CI follow-up: all original study suites and touch/mouse/keyboard/reload tutor checks passed. The final narrow-viewport assertion exposed rounding and resize timing; bounds now use precise rendered button dimensions and the browser check waits for the resize event to settle before checking a half-pixel tolerance. Full CI must pass on the correction commit.

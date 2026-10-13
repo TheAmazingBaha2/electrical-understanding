@@ -1,53 +1,11 @@
-# Electrical Understanding
+# Electronic Learning Workbench V2
 
-CETa learning workbench with lessons, interactive circuits, knowledge checks, and review scheduling.
+Official personal electronics learning site: https://theamazingbaha2.github.io/electrical-understanding/
 
-## Publish the existing GitHub repository on Cloudflare
+`main` holds official V2. Its Cloudflare Worker is `electrical-understanding`; build with `npm run build`, deploy with `npx wrangler deploy`. Root assets also support the existing GitHub Pages branch deployment. Only exact official hosts can connect to the current private learning database.
 
-In the [Cloudflare dashboard](https://dash.cloudflare.com/), open **Workers & Pages → Create application → Import a repository** and select `TheAmazingBaha2/electrical-understanding`.
+The unchanged staging URL https://eu-v2-staging.vanguardcorbett.workers.dev/ and `draft/v2-dmm-companion` branch are reserved for V3 development. Development must not write official learning records; cloud/AI testing requires a separately configured backend.
 
-Use these settings:
+V1 source is preserved on `backup/v1-2026-10-13`. Both prior databases and source uploads remain intact. Release backup details and rollback procedures are in V2_RELEASE_CHECKLIST.md.
 
-| Setting | Value |
-| --- | --- |
-| Worker name | `electrical-understanding` |
-| Production branch | `main` |
-| Root directory | Repository root |
-| Build command | `npm run build` |
-| Deploy command | `npm run deploy` |
-
-Cloudflare installs the dependencies from `package-lock.json`. The build copies only the seven public app assets into `dist/`. After the first successful deployment, open the HTTPS `workers.dev` URL shown by Cloudflare. Future pushes to `main` are deployed through the connected repository.
-
-Alternatively, the button below starts Cloudflare's guided flow, which creates a **new copy of this repository** in your GitHub account:
-
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/TheAmazingBaha2/electrical-understanding)
-
-## Local development and deployment
-
-Use a supported Node.js LTS version (Node 24 recommended).
-
-```sh
-npm ci
-npm run check
-npm run dev
-```
-
-For a deployment from an authenticated development environment:
-
-```sh
-npm run deploy
-```
-
-The deployment URL depends on the Cloudflare account's Workers subdomain and is reported after deployment; this repository does not assume one.
-
-## Phone and desktop access
-
-Open the same deployed HTTPS URL on both devices. Bookmark it on desktop; on a phone, use the browser's **Add to Home Screen** option where available. Local practice progress stays in that browser. Sign in to the same study account on each device to use the app's existing cloud sync.
-
-The app requires an internet connection for cloud sync and does not include an offline service worker.
-
-## Cloudflare agent setup
-
-Official instructions: <https://developers.cloudflare.com/agent-setup/prompt.md>.
-
-Cloudflare skills and the MCP server are installed separately in the developer's agent environment, not in the website. MCP authentication requires network access to Cloudflare and account authorization. Installing skills or registering the server does not deploy this site.
+Use `npm run check`, `npm test`, `npm run build`, and `node tests/deploy.validation.mjs`. Complete CI must pass on the exact source commit before publishing. Backend changes require separate deployment and readback. Tests use local or mocked services, never paid inference or real learner-progress writes.
