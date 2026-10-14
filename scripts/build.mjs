@@ -20,7 +20,7 @@ if(isWorkersBuild){
 const output = "dist";
 const publicFiles = [
   "index.html",
-  "app.js", "persistence.js", "ai-model-lab.js", "ai-chat-widget.js", "scan-inbox.js", "generated-library.js", "generated-simulations.js", "legacy-groups.js", "math-lessons.js", "math-widgets.js", "math-track.js",
+  "app.js", "persistence.js", "approved-lessons.js", "ai-chat-widget.js", "generated-library.js", "generated-simulations.js", "legacy-groups.js", "math-lessons.js", "math-widgets.js", "math-track.js",
   "lessons.js",
   "course-catalog.js", "learning-structure.js", "source-navigation.js",
   "v2-panels.js",
@@ -49,7 +49,7 @@ for (const file of publicFiles) {
   const info = await stat(file);
   if (!info.isFile()) throw new Error("Expected web file: " + file);
   const source = await (await import('node:fs/promises')).readFile(file, 'utf8');
-  if (/wwvpzyqcgwlwcetwlime|sb_secret_[A-Za-z0-9_-]+/.test(source)) throw new Error('Production or secret configuration in public asset: ' + file);
+  if (/https:\/\/hkwmtjhgrskidaizamwy|wwvpzyqcgwlwcetwlime|sb_secret_[A-Za-z0-9_-]+/.test(source)) throw new Error('Production or secret configuration in public asset: ' + file);
   await copyFile(file, join(output, file));
 }
 // Verify every local ES module dependency makes it into the exact public assets

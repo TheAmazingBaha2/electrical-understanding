@@ -2,7 +2,7 @@ import {go} from './navigation-helper.mjs';
 // Real phone/desktop navigation and offline math saving; no paid APIs.
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
-const browser=await chromium.launch({headless:true});
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH||undefined,args:process.env.CHROMIUM_PATH?['--no-sandbox']:[]});
 try{
  const page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1});
  const errors=[];page.on('pageerror',e=>errors.push(e.message));

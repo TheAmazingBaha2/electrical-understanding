@@ -64,7 +64,7 @@ test('prior-source grounding retains original citations and rejects invented cro
  const bad=prepared(p);assert.equal((await bad.invoke({action:'draft'})).status,422);
 });
 test('chapter intake controls and durable design rules match new preferences',()=>{
- const s=readFileSync(new URL('../scan-inbox.js',import.meta.url),'utf8');assert.match(s,/scan-chapter-group/);assert.match(s,/Partial \/ continuing material/);assert.match(s,/partKind:/);
+ const s=readFileSync(new URL('../archive/authoring/scan-inbox.js',import.meta.url),'utf8');assert.match(s,/scan-chapter-group/);assert.match(s,/Partial \/ continuing material/);assert.match(s,/partKind:/);
  const contract=readFileSync(new URL('../docs/v2/TEACHING_AND_DESIGN_CONTRACT.md',import.meta.url),'utf8');assert.match(contract,/no target of ten/);assert.match(contract,/optional and limited to one/);assert.match(contract,/namespaced references/);
 });
 

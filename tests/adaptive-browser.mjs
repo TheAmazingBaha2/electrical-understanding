@@ -3,7 +3,7 @@ import {chromium} from 'playwright';
 import {authoredSeries} from './chapter3-series-fixture.mjs';
 const curated=authoredSeries();
 // Vetted widgets and model-selected formats only; no provider or private account.
-const browser=await chromium.launch({headless:true});
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH||undefined,args:process.env.CHROMIUM_PATH?['--no-sandbox']:[]});
 try{
  for(const width of [390,1280]){
   const page=await browser.newPage({viewport:{width,height:900}});const errors=[];page.on('pageerror',e=>errors.push(e.message));

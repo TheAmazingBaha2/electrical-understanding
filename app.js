@@ -1,9 +1,7 @@
 import {renderSavedReinforcement} from './source-navigation.js';
 import {placementForLesson,sectionView,nextSourceLesson,lessonReferencePages,studySections,studyInventory,learningProgress} from './learning-structure.js';
 import { ProgressStore, cloudTransport } from './persistence.js';
-import { renderAIModelLab, attachAIModelLab } from './ai-model-lab.js';
-import { renderScanInbox, attachScanInbox, scanInboxAutoUpdatesPaused } from './scan-inbox.js';
-import { approvedWorkbenchLessons } from './generated-library.js';
+import { preservedLessons } from './approved-lessons.js';
 import { mountAIChat, updateAIChatSession, refreshAIChatContext } from './ai-chat-widget.js';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_ENVIRONMENT } from './config.js';
 import { lessons, books } from './lessons.js';
@@ -32,9 +30,9 @@ const now = () => Date.now();
 const DAY = 24*60*60*1000;
 const sourceLessons=[...lessons,...labLessons,...bookLessons,...cetaLessons];
 const allLessons=[...sourceLessons,...mathLessons];
-// Approved, user-owned scan lessons are loaded only after authentication.
+// Previously approved lessons use repository assets, independent of retired authoring.
 // Their IDs and existing graded answers are never rewritten on library refresh.
-const generatedLessons=new Map();
+const generatedLessons=new Map(preservedLessons.map(lesson=>[lesson.id,lesson]));
 const findLesson=id=>allLessons.find(l=>l.id===id)||generatedLessons.get(id);
 const labUnlocked=l=>l?.id===labLessons[0].id || Boolean(labLessons.length && hasPassed(labLessons[0]));
 const bookUnlocked=l=>l?.independent===true || l?.id===bookLessons[0].id || Boolean(bookLessons.length && hasPassed(bookLessons[0]));
@@ -52,7 +50,7 @@ let lessonTab='overview', activityIndex=0, quizIndex=0, learnIndex=0;
 // Only Cloudflare preview hosts may connect to the isolated staging project.
 const stagingPreview = /(^|\.)(?:pages|workers)\.dev$/i.test(window.location.hostname);
 // Cloudflare staging is isolated from production Supabase progress by design.
-const stagingBackend = SUPABASE_ENVIRONMENT === 'staging' && SUPABASE_URL === 'https://hkwmtjhgrskidaizamwy.supabase.co';
+const stagingBackend = false; // Separate V3 backend requires explicit authorization.
 const configured = stagingPreview && stagingBackend && Boolean(SUPABASE_PUBLISHABLE_KEY);
 // Fail closed if this development build is opened anywhere other than Cloudflare's staging domain.
 let toastTimer;
@@ -81,7 +79,7 @@ async function connect(){
    const pkg=await import('https://esm.sh/@supabase/supabase-js@2.57.4');
    supabase=pkg.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
    supabase.auth.onAuthStateChange((_event,session)=>{
-     if(session?.user?.id!==user?.id){user=session?.user||null;generatedLessons.clear();progress=localLoad();updateAIChatSession(user,supabase);syncLabel(user?'Staging cloud connected':'Sign in for staging sync',!!user);render();if(user){void loadCloud();void loadApprovedInventory();}}
+     if(session?.user?.id!==user?.id){user=session?.user||null;progress=localLoad();updateAIChatSession(user,supabase);syncLabel(user?'Staging cloud connected':'Sign in for staging sync',!!user);render();if(user){void loadCloud();void loadApprovedInventory();}}
    });
    const {data,error}=await supabase.auth.getSession();if(error)throw error;
    user=data.session?.user||null;progress=localLoad();updateAIChatSession(user,supabase);syncLabel(user?'Cloud connected':'Sign in to synchronize',!!user);
@@ -90,20 +88,8 @@ async function connect(){
  render();
 }
 async function loadApprovedInventory(){
- if(!supabase||!user)return;
- const owner=user.id;
- try{
-  const {data,error}=await supabase.from('scan_lesson_jobs')
-   .select('id,title,source_book,source_pages,source_track,state,lesson,analysis,approved_at,created_at')
-   .in('state',['outlined','drafted','reviewed','needs_revision','approved'])
-   .order('created_at',{ascending:false}).limit(200);
-  if(error)throw error;
-  if(user?.id!==owner)return;
-  generatedLessons.clear();
-  for(const lesson of approvedWorkbenchLessons(data||[]))generatedLessons.set(lesson.id,lesson);
-  // Dashboard, Legacy and every learning track derive counts from this same inventory.
-  if(!['scan-inbox','lesson'].includes(view))render();
- }catch(error){console.warn('Approved lesson inventory not available:',error.message);}
+ // Repository-owned approved artifacts are already registered. No authoring database needed.
+ return preservedLessons;
 }
 let syncTask = null, syncAgain = false;
 async function loadCloud(){
@@ -147,6 +133,7 @@ async function saveAnswer(lessonId,qid,update){
  finally{busy=false;if(saved)render()}
 }
 function switchTo(next,id=null,qid=null){
+ if(['scan-inbox','ai-lab'].includes(next))next='account';
  const startingLesson=['lesson','generated-lesson'].includes(next)&&(view!==next||activeLesson!==id);
  if(startingLesson){lessonTab=qid?'quiz':'overview';activityIndex=0;learnIndex=0;quizIndex=Math.max(0,findLesson(id)?.questions.findIndex(q=>q.id===qid)||0);}
  view=next;activeLesson=id;focusQuestion=qid;
@@ -156,7 +143,7 @@ function switchTo(next,id=null,qid=null){
  if(next==='legacy'&&id==='chapter')setTimeout(()=>document.getElementById('legacy-scanned-chapter')?.scrollIntoView({behavior:'smooth',block:'start'}),90);
  if(view!=='scan-inbox'&&user&&supabase&&['dashboard','legacy','reviews','ceta','textbooks','math','labs','subtrack'].includes(next))void loadApprovedInventory();
 }
-function allowAutomaticCloudSync(){return view!=='scan-inbox'||!scanInboxAutoUpdatesPaused()}
+function allowAutomaticCloudSync(){return true}
 function setSidebarOpen(open){
  $('.sidebar').classList.toggle('open',open);
  $('#menu-toggle').setAttribute('aria-expanded',String(open));
@@ -225,7 +212,7 @@ function render(){setNav();refreshAIChatContext();const names={'generated-lesson
  $('#page-title').textContent=names[view]||names.dashboard;
  const main=$('#main');
  const disclosures=new Set([...main.querySelectorAll('details[data-disclosure][open]')].map(el=>el.dataset.disclosure));
- main.innerHTML=view==='dashboard'?renderDashboard():['lesson','generated-lesson'].includes(view)?renderLesson():view==='reviews'?'<header class="source-heading"><p class="v2-kicker">RETURN TO THE IDEAS</p><h2>Review</h2><p>Review brings ideas from your regular lessons back into practice. The broader format is still to be decided; your scheduled quiz checks remain available below.</p></header>'+renderReviews():view==='account'?renderAccount():view==='scan-inbox'?renderScanInbox(user):view==='ai-lab'?renderAIModelLab(user):view==='library'?renderLibrary():v2Page(view,v2Context(),activeLesson);
+ main.innerHTML=view==='dashboard'?renderDashboard():['lesson','generated-lesson'].includes(view)?renderLesson():view==='reviews'?'<header class="source-heading"><p class="v2-kicker">RETURN TO THE IDEAS</p><h2>Review</h2><p>Review brings ideas from your regular lessons back into practice. The broader format is still to be decided; your scheduled quiz checks remain available below.</p></header>'+renderReviews():view==='account'?renderAccount():view==='library'?renderLibrary():v2Page(view,v2Context(),activeLesson);
  for(const el of main.querySelectorAll('details[data-disclosure]'))if(disclosures.has(el.dataset.disclosure))el.open=true;
  main.querySelectorAll('[data-toggle-panel]').forEach(button=>{
   const panel=document.getElementById(button.dataset.togglePanel);if(!panel)return;
@@ -260,8 +247,6 @@ function render(){setNav();refreshAIChatContext();const names={'generated-lesson
   attachGeneratedPredictions(main,notify);
 }const workshop=findLesson(activeLesson);if(workshop?.workshop)attachWorkshopWidgets(main,workshop,getState(workshop.id),(id,value,correct)=>saveWorkshopCheck(workshop.id,id,value,correct));}
  if(view==='account')attachAuth();
- if(view==='ai-lab'&&user)attachAIModelLab(supabase,notify);
- if(view==='scan-inbox'&&user)attachScanInbox(supabase,user,notify);
 
 }
 function cloudBanner(){
@@ -346,7 +331,7 @@ function recoveryPanel(){
 function renderAccount(){return `<div class="auth-card"><div class="panel"><h2>Account and cross-device sync</h2>${user?`<div class="success">Connected as <b>${esc(user.email||'your account')}</b>.<br>Answers save on this device first. Check the sync status for cloud confirmation or conflicts.</div><div class="actions"><button id="refresh-sync" class="outline">Refresh cloud progress</button><button class="outline" data-goto="ai-lab">Private AI model tests →</button><button id="sign-out" class="ghost">Sign out</button></div>`:
  !configured?`<div class="flash"><b>V3 development workspace.</b> Cloud sync and paid AI are disabled here to protect official V2 progress.</div>`:
   configured?`<p class="muted">Sign in with the same email address on your phone and your computer. You'll receive an email with a secure sign-in link.</p><label for="email">Email address</label><input class="email-input" type="email" id="email" autocomplete="email" placeholder="you@example.com"><div class="actions"><button id="email-login" class="primary">Email me a sign-in link</button></div>`:`<div class="flash"><b>Cloud service not configured.</b> This starter can be previewed in local practice mode, but it cannot synchronize devices until the Supabase connection is set up.</div><p class="muted sm">Follow SETUP.md in the project to create a Supabase project, apply the database rules and enter its URL and <em>publishable</em> key into <code>site/config.js</code>. Never put a secret/service-role key in the site.</p>`}
- <hr class="divider"><details class="account-maintenance"><summary>Archived material and authoring tools</summary><p class="muted sm">Earlier study material and source uploads stay available here.</p><div class="actions"><button class="outline small-button" data-goto="legacy">Archived study material</button><button class="outline small-button" data-goto="scan-inbox">Scan & upload</button></div></details><h3>Progress storage</h3><p class="muted sm">${user?'You are in cloud mode.':'You are in device-only practice mode.'} Local storage is used as a cache. Cloud records are private to the authenticated account through database access policies.</p>${user&&!storageError?`<button id="import-demo" class="outline small-button">Import this device's local practice</button><p class="muted sm">Practice stays separate until you import it. Differences require review.</p>`:''}
+ <hr class="divider"><details class="account-maintenance"><summary>Archived study material</summary><p class="muted sm">Previously approved lessons and their study history stay available here.</p><div class="actions"><button class="outline small-button" data-goto="legacy">Archived study material</button></div></details><h3>Progress storage</h3><p class="muted sm">${user?'You are in cloud mode.':'You are in device-only practice mode.'} Local storage is used as a cache. Cloud records are private to the authenticated account through database access policies.</p>${user&&!storageError?`<button id="import-demo" class="outline small-button">Import this device's local practice</button><p class="muted sm">Practice stays separate until you import it. Differences require review.</p>`:''}
  ${recoveryPanel()}<div class="actions" style="margin-top:20px"><button id="export-progress" class="outline small-button">Export my progress (JSON)</button></div>
  </div><div class="panel" style="margin-top:16px"><h3>How synchronization behaves</h3><p class="muted sm">A submitted answer is saved locally and then sent to your account. Switching devices checks cloud revisions. If the cloud cannot be reached, the device keeps a local copy and retries when you return online. Simultaneous changes to the same lesson pause synchronization for that lesson. Both copies remain available in Account for explicit review. Device clocks never decide which answers survive.</p></div></div>`}
 function attachAuth(){const login=$('#email-login');if(login)login.addEventListener('click',async()=>{const email=$('#email').value.trim();if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){notify('Enter a valid email address.');return}login.disabled=true;login.textContent='Sending…';const {error}=await supabase.auth.signInWithOtp({email,options:{emailRedirectTo:location.origin+location.pathname}});login.disabled=false;login.textContent='Email me a sign-in link';notify(error?'Sign-in failed: '+error.message:'Check your email for the sign-in link.');});

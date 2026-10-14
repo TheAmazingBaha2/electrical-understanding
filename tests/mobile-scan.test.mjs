@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {prepareScanFile} from '../scan-inbox.js';
+import {prepareScanFile} from '../archive/authoring/scan-inbox.js';
 test('reads phone provider bytes immediately, accepts missing MIME, and normalizes by content',async()=>{
  let reads=0;
  const bytes=new TextEncoder().encode('%PDF-test').buffer;

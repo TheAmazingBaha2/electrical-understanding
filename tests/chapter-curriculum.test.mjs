@@ -4,9 +4,9 @@ import {readFileSync} from 'node:fs';
 import {sourcePlacement,sectionView} from '../learning-structure.js';
 import {mathAvailability} from '../math-lessons.js';
 
-const backend=readFileSync(new URL('../supabase/functions/scan-lesson-pipeline/index.ts',import.meta.url),'utf8');
+const backend=readFileSync(new URL('../archive/authoring/scan-lesson-pipeline/index.ts',import.meta.url),'utf8');
 const moduleSource=readFileSync(new URL('../generated-library.js',import.meta.url),'utf8');
-const scanUI=readFileSync(new URL('../scan-inbox.js',import.meta.url),'utf8');
+const scanUI=readFileSync(new URL('../archive/authoring/scan-inbox.js',import.meta.url),'utf8');
 const app=readFileSync(new URL('../app.js',import.meta.url),'utf8');
 const migration=readFileSync(new URL('../supabase/migrations/20261012183000_chapter_outlines_and_independent_lessons.sql',import.meta.url),'utf8');
 const phaseMigration=readFileSync(new URL('../supabase/migrations/20261012183500_chapter_outline_attempt_phase.sql',import.meta.url),'utf8');

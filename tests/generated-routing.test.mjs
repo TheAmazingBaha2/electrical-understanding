@@ -63,15 +63,15 @@ test('new chapter goes into active dashboard, reviews and correct category with 
  assert.match(ui,/chapter-pie/);
 });
 test('new approval includes server-assigned track and unified dashboard-readiness metadata',()=>{
- const src=readFileSync(new URL('../supabase/functions/scan-lesson-pipeline/index.ts',import.meta.url),'utf8');
+ const src=readFileSync(new URL('../archive/authoring/scan-lesson-pipeline/index.ts',import.meta.url),'utf8');
  assert.match(src,/function dashboardTrack\(job:any,unit:any\)/);
  assert.match(src,/dashboard_track:dashboardTrack\(job,unit\),dashboard_ready:true/);
  const app=readFileSync(new URL('../app.js',import.meta.url),'utf8');
- assert.match(app,/approvedWorkbenchLessons\(data\|\|\[\]\)/);
+ assert.match(app,/preservedLessons/);
  assert.match(app,/archivedGeneratedLessons,activeGeneratedLessons/);
 });
 test('scan actions and spending controls precede a collapsed and preserved attempt history',()=>{
- const src=readFileSync(new URL('../scan-inbox.js',import.meta.url),'utf8');
+ const src=readFileSync(new URL('../archive/authoring/scan-inbox.js',import.meta.url),'utf8');
  const start=src.indexOf('function detail(job)');
  const end=src.indexOf('export function attachScanInbox',start);
  const detail=src.slice(start,end);

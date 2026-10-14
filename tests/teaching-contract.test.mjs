@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {setup} from './scan-harness.mjs';
-import {runScanWorkflow,scanRunLabel} from '../scan-inbox.js';
+import {runScanWorkflow,scanRunLabel} from '../archive/authoring/scan-inbox.js';
 import {makeWorkbenchLesson} from '../generated-library.js';
 import {renderLearnSteps} from '../lesson-tabs.js';
 const units=[1,2].map(i=>({key:'U0'+i,title:'Unit '+i,goal:'Calculate safely',focus:'Explain steps',kind:'math',destination:'source',ordering:'independent',prerequisites:[],source_ids:['S1']}));
@@ -66,7 +66,7 @@ test('decimal and scientific answers produce numeric checks and paragraphs displ
  }
 });
 test('unprotected paused endpoints have no dormant provider call; future design contract remains tracked',()=>{
- const lab=readFileSync(new URL('../supabase/functions/ai-model-lab/index.ts',import.meta.url),'utf8');assert.doesNotMatch(lab,/api\.openai\.com|await fetch/);
+ const lab=readFileSync(new URL('../archive/authoring/ai-model-lab/index.ts',import.meta.url),'utf8');assert.doesNotMatch(lab,/api\.openai\.com|await fetch/);
  const rules=readFileSync(new URL('../AGENTS.md',import.meta.url),'utf8');assert.match(rules,/stable lesson\/question IDs/);assert.match(rules,/No design edit may enable a paid request/);
 });
 

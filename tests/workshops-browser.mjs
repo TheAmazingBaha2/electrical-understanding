@@ -6,7 +6,7 @@ import {geierWorkshops,reviseDmmLessons} from '../geier-workshops.js';
 import {bookLessons} from '../book-lessons.js';
 const key='eu_progress:hkwmtjhgrskidaizamwy:anonymous';
 await mkdir('test-artifacts',{recursive:true});
-const browser=await chromium.launch({headless:true});
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH||undefined,args:process.env.CHROMIUM_PATH?['--no-sandbox']:[]});
 try{
  for(const width of [390,1440]){
   const page=await browser.newPage({viewport:{width,height:1000}}),errors=[],providerRequests=[];

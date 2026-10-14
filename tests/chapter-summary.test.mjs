@@ -44,5 +44,5 @@ test('new complete intake requires one final summary, while old outlines and par
 });
 test('summary stays last even when its numeric order is smaller and prompts never impose a sixteen-question quota',()=>{
  const all=approvedWorkbenchLessons([job()]);all.at(-1).curriculum.order=0;const ch=sourceIndex({activeGeneratedLessons:all}).find(s=>s.id==='associate-cet').chapters.find(ch=>ch.id==='3');assert.equal(ch.lessons.at(-1).chapterSummary,true);
- const src=readFileSync(new URL('../supabase/functions/scan-lesson-pipeline/index.ts',import.meta.url),'utf8');assert.match(src,/no target of sixteen/);assert.match(src,/1-40 technical bound/);
+ const src=readFileSync(new URL('../archive/authoring/scan-lesson-pipeline/index.ts',import.meta.url),'utf8');assert.match(src,/no target of sixteen/);assert.match(src,/1-40 technical bound/);
 });

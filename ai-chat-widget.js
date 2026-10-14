@@ -19,18 +19,7 @@ function setControls(){
  if(model)model.disabled=!authorized||pending;
 }
 async function verifyAccess(){
- const id=currentId,usedClient=client;
- authorized=false;setControls();setStatus('Checking private tutor access…');
- if(!id||!usedClient)return;
- try{
-  const {data,error}=await usedClient.functions.invoke('ai-model-lab',{body:{action:'status'}});
-  if(id!==currentId||usedClient!==client)return;
-  if(error)throw new Error(error.message||'Private gateway unavailable');
-  if(!data?.authorized)throw new Error('Account is not authorized for the private tutor');
-  if(!data.ready)throw new Error(data.note||'New tutor generation is paused pending spending protection');
-  authorized=true;setStatus('Private tutor ready · metered calls · shared hourly quota');
- }catch(e){if(id===currentId)setStatus('Private tutor unavailable: '+e.message)}
- setControls();
+ authorized=false;setControls();setStatus('V3 tutor is disabled until a separate backend and budget are authorized.');
 }
 function syncLessonLabel(){
  const ctx=lessonGetter?.();
@@ -85,40 +74,8 @@ export function mountAIChat(getLesson=()=>null){
  by('ai-chat-new').addEventListener('click',()=>{
   messages=[];by('ai-chat-messages').replaceChildren();append('assistant','New conversation started. Ask me about electronics, measurements, or the current lesson.');
  });
- by('ai-chat-form').addEventListener('submit',async event=>{
-  event.preventDefault();
-  if(!authorized||pending||!currentId)return;
-  const area=by('ai-chat-input'),message=area.value.trim();
-  if(!message||message.length>800){setStatus('Enter a question up to 800 characters.');return}
-  const history=messages.slice(-8).map(m=>({role:m.role,content:m.content}));
-  // Keep recent context within the backend size limit, even after long replies.
-  while(history.length && history.reduce((sum,m)=>sum+m.content.length,0)>3200)history.shift();
-  const id=currentId,usedClient=client,context=lessonGetter?.();
-  const selected=by('ai-chat-model').value;
-  messages.push({role:'user',content:message});append('user',message);
-  area.value='';pending=true;setControls();setStatus('Waiting for '+selected+'…');
-  const working=append('assistant','Thinking…');
-  try{
-   const {data,error}=await usedClient.functions.invoke('ai-model-lab',{
-     body:{action:'chat',model:selected,message,history,context:context||undefined}
-   });
-   if(id!==currentId||usedClient!==client)return;
-   if(error){const detail=await error.context?.json?.().catch?.(()=>null);throw new Error(detail?.error||error.message||'Request failed')}
-   const reply=data?.reply||'(No readable response was returned.)';
-   working.querySelector('.ai-dialogue-copy').textContent=reply;
-   const summary=data?.tokens?data.tokens.input+' input · '+data.tokens.output+' output tokens · approximately $'+Number(data.estimatedUSD).toFixed(5):'';
-   if(summary){const small=document.createElement('small');small.className='ai-chat-bubble-meta';small.textContent=summary;working.append(small)}
-   messages.push({role:'assistant',content:reply.slice(0,1000)});
-   setStatus('Ready · each message uses your private API quota');
-  }catch(error){
-   if(id===currentId&&usedClient===client){
-    working.querySelector('.ai-dialogue-copy').textContent='Could not complete the request: '+error.message;
-    // Failed prompts are displayed but excluded from model history on retry.
-    messages.pop();setStatus('Not sent · '+error.message);
-   }
-  }finally{
-   if(id===currentId&&usedClient===client){pending=false;setControls();by('ai-chat-messages').scrollTop=by('ai-chat-messages').scrollHeight;}
-  }
+ by('ai-chat-form').addEventListener('submit',event=>{
+  event.preventDefault();void verifyAccess();
  });
  append('assistant','Ask me to explain a concept, troubleshoot a simulated circuit, or help with the lesson you are studying.');
 }

@@ -39,7 +39,7 @@ test('missing TOC data stays pending, textbook placeholders are limited to the t
 test('scan and archive are absent from both navigation; account and sync stay available',()=>{
  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');assert.doesNotMatch(html,/data-view="(?:scan-inbox|legacy)"/);
  assert.equal((html.match(/data-view="account"/g)||[]).length,1);assert.equal((html.match(/data-view="ceta"/g)||[]).length,1);
- const app=readFileSync(new URL('../app.js',import.meta.url),'utf8');assert.match(app,/data-goto="scan-inbox"/);assert.match(app,/loadCloud/);assert.match(app,/data-disclosure/);
+ const app=readFileSync(new URL('../app.js',import.meta.url),'utf8');assert.doesNotMatch(app,/data-goto="scan-inbox"/);assert.match(app,/loadCloud/);assert.match(app,/data-disclosure/);
 });
 test('future paid authoring retains source chapter placement and explicitly opted-in math refreshers',async()=>{
  for(const mode of ['source','math']){

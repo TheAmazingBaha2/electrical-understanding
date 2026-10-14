@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {setup} from './scan-harness.mjs';
-import {buttonFor} from '../scan-inbox.js';
+import {buttonFor} from '../archive/authoring/scan-inbox.js';
 test('background Resume polls the original response and does not reserve another paid call',async()=>{
  const h=setup({background:true});
  const start=await h.invoke({action:'plan',learnerContext:'Fractions'});assert.equal(start.status,202);

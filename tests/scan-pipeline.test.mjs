@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {renderScanInbox} from '../scan-inbox.js';
-const source=readFileSync(new URL('../supabase/functions/scan-lesson-pipeline/index.ts',import.meta.url),'utf8');
+import {renderScanInbox} from '../archive/authoring/scan-inbox.js';
+const source=readFileSync(new URL('../archive/authoring/scan-lesson-pipeline/index.ts',import.meta.url),'utf8');
 const schema=readFileSync(new URL('../supabase/migrations/20261011223000_private_scan_lesson_pipeline.sql',import.meta.url),'utf8');
 const build=readFileSync(new URL('../scripts/build.mjs',import.meta.url),'utf8');
 const app=readFileSync(new URL('../app.js',import.meta.url),'utf8');
@@ -18,7 +18,7 @@ test('signed-in scan upload requires explicit consent and shows all four stages'
  assert.match(html,/Sol extracts.*Sol writes.*Sol reviews/);
 });
 test('staging source and API secrets never appear in public assets',()=>{
- assert.match(build,/"scan-inbox.js"/);
+ assert.doesNotMatch(build,/"scan-inbox.js"/);
  assert.doesNotMatch(build,/"supabase\/functions\/scan-lesson-pipeline\/index.ts"/);
  assert.doesNotMatch(app,/SUPABASE_SERVICE_ROLE_KEY|OPENAI_API_KEY/);
 });

@@ -27,7 +27,7 @@ export function setup(options={}){
   };
   const q={select(){return q},eq(k,v){filters.push([k,v,'eq']);return q},neq(k,v){filters.push([k,v,'neq']);return q},in(k,v){filters.push([k,v,'in']);return q},order(){return q},limit(n){limit=n;return q},delete(){isDelete=true;return q},update(v){patch=v;return q},insert(v){insert=v;return q},then(resolve,reject){return Promise.resolve().then(execute).then(resolve,reject)},single:async()=>{single=true;return execute()},maybeSingle:async()=>{single=true;return execute()}};return q;
  }};
- const source=readFileSync(new URL('../supabase/functions/scan-lesson-pipeline/index.ts',import.meta.url),'utf8');
+ const source=readFileSync(new URL('../archive/authoring/scan-lesson-pipeline/index.ts',import.meta.url),'utf8');
  const code=stripTypeScriptTypes(source.replace(/^import .*;$/m,''));
  const provider=async(url,opts)=>{
   if(opts.method==='GET'){calls.push({method:'GET'});if(options.pollError)return new Response('upstream unavailable',{status:502});return Response.json(responses.get(url.split('/').pop()),{headers:{'x-request-id':'req-poll'}});}

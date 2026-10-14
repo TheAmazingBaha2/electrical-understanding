@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 // Mock the owner account, private Storage and AI pipeline. NO real model inference or charges.
-const browser=await chromium.launch({headless:true});
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH||undefined,args:process.env.CHROMIUM_PATH?['--no-sandbox']:[]});
 try{
  const page=await browser.newPage({viewport:{width:390,height:840}});
  const errors=[];page.on('pageerror',e=>errors.push(e.message));

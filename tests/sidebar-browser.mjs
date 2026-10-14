@@ -3,7 +3,7 @@ import {chromium} from 'playwright';
 import {mkdir} from 'node:fs/promises';
 import {go} from './navigation-helper.mjs';
 await mkdir('test-artifacts',{recursive:true});
-const browser=await chromium.launch({headless:true});
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH||undefined,args:process.env.CHROMIUM_PATH?['--no-sandbox']:[]});
 try{
  for(const mobile of [false,true]){
   const page=await browser.newPage({viewport:{width:mobile?390:1440,height:900},hasTouch:mobile}),errors=[];

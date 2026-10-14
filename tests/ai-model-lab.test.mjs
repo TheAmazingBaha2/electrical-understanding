@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {renderAIModelLab} from '../ai-model-lab.js';
-const edge=readFileSync(new URL('../supabase/functions/ai-model-lab/index.ts',import.meta.url),'utf8');
+import {renderAIModelLab} from '../archive/authoring/ai-model-lab.js';
+const edge=readFileSync(new URL('../archive/authoring/ai-model-lab/index.ts',import.meta.url),'utf8');
 const fixtures=readFileSync(new URL('../supabase/functions/ai-model-lab/cases.ts',import.meta.url),'utf8');
 const schema=readFileSync(new URL('../supabase/migrations/20261011_private_ai_model_lab.sql',import.meta.url),'utf8');
 const astraMigration=readFileSync(new URL('../supabase/migrations/20261011214000_enable_astra_benchmarks.sql',import.meta.url),'utf8');
@@ -53,12 +53,12 @@ test('test fixtures span electronics topics but no scans or progress records',()
  assert.doesNotMatch(fixtures,/L01\/L02/);
 });
 test('public build contains UI only, never Edge Function or prompt fixtures',()=>{
- assert.match(build,/"ai-model-lab\.js"/);
+ assert.doesNotMatch(build,/"ai-model-lab\.js"/);
  assert.doesNotMatch(build,/"supabase\/functions\/ai-model-lab\/index\.ts"/);
  assert.doesNotMatch(app,/api\.openai\.com|OPENAI_API_KEY/);
 });
 test('private lab does not alter lesson IDs or local progress',()=>{
- assert.match(app,/view==='ai-lab'\?renderAIModelLab\(user\)/);
- assert.match(app,/attachAIModelLab\(supabase,notify\)/);
+ assert.doesNotMatch(app,/renderAIModelLab/);
+ assert.doesNotMatch(app,/attachAIModelLab/);
  assert.ok(!edge.includes("lesson_progress"));
 });

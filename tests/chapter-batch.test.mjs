@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {setup} from './scan-harness.mjs';
-import {runChapterBatch} from '../scan-inbox.js';
+import {runChapterBatch} from '../archive/authoring/scan-inbox.js';
 const section={heading:'Worked example',body:'Explain the known values, symbols, units and the calculation step by step. '.repeat(3),source_ids:['S1']};
 const qs=Array.from({length:10},(_,i)=>({prompt:'Calculate and explain example '+(i+1)+'.',answer:'2',explanation:'Substitute the supplied values and check units.',source_ids:['S1']}));
 const activities=[{title:'Predict the result',prompt:'What result do you expect?',expected:'2',explanation:'Substitute and calculate.',source_ids:['S1']},
@@ -58,7 +58,7 @@ test('saved reviewed drafts enter the next unit prompt but are not treated as hu
  const before=structuredClone(h.job.lesson.pending);await h.invoke({action:'review'});assert.deepEqual(h.job.lesson.pending,before);
 });
 
-import {chapterBatchExposure} from '../scan-inbox.js';
+import {chapterBatchExposure} from '../archive/authoring/scan-inbox.js';
 const price={model:'gpt-6.1-sol',tier:'default',valid_until:'2099-01-01',context_tokens:1050000,input_rate:2,cached_rate:.1,write_rate:2.5,long_input:2,output_rate:10,long_output:1.5,safety_multiplier:1.1};
 test('batch exposure counts only unfinished calls and fails closed on pricing',async()=>{
  const h=await chapter();const e=chapterBatchExposure(h.job,price);assert.equal(e.requests,6);assert.ok(e.requiredUSD>=35.15984&&e.requiredUSD<=35.15986);

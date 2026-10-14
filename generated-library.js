@@ -150,7 +150,7 @@ function cards(jobs,filter,register=()=>{}){
   }
  }
  if(!entries.length)return '<p class="muted">No approved '+(filter==="review"?'reinforcement lessons':'source-specific lessons')+
-  ' here yet. Completed chapter units appear as you approve them; drafts remain private in Scan Inbox.</p>';
+  ' here yet. Lessons appear after owner-approved repository publication.</p>';
  return entries.map(({job,unit,lesson,kind,order,meta})=>{
   const workbench=makeWorkbenchLesson(job,unit,lesson,kind,order);
   register(workbench);
@@ -190,25 +190,5 @@ export function generatedLibrarySlot(filter){
   '<button type="button" class="outline small-button" data-refresh-generated>Refresh library</button></div>'+
   '<div id="generated-library-list" data-track="'+esc(filter)+'">Loading private approved lessons…</div></section>';
 }
-export function attachGeneratedLibrary(supabase,user,notify=()=>{},onRegister=()=>{},onOpen=()=>{}){
- const region=document.querySelector('#generated-library-list');
- if(!region||!user||!supabase)return;
- const container=region.closest('.generated-library-panel');
- const refresh=async()=>{
-  if(!region.isConnected)return;
-  const button=container.querySelector('[data-refresh-generated]');
-  if(button)button.disabled=true;
-  try{
-   const {data,error}=await supabase.from('scan_lesson_jobs')
-    .select('id,title,source_book,source_pages,source_track,state,lesson,analysis,approved_at,created_at')
-    .in('state',['outlined','drafted','reviewed','needs_revision','approved']).order('created_at',{ascending:false}).limit(200);
-   if(error)throw error;
-   if(!region.isConnected)return;
-   region.innerHTML=cards(data||[],region.dataset.track,onRegister);
-   region.querySelectorAll('[data-generated-lesson]').forEach(button=>button.addEventListener('click',()=>onOpen(button.dataset.generatedLesson)));
-  }catch(error){if(region.isConnected)region.textContent='Approved lessons could not be loaded: '+error.message;}
-  finally{if(button?.isConnected)button.disabled=false;}
- };
- container.querySelector('[data-refresh-generated]')?.addEventListener('click',()=>void refresh());
- void refresh();
-}
+// Historical renderer is kept for preservation; runtime inventory is repository-owned.
+export function attachGeneratedLibrary(){return;}

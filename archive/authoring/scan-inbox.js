@@ -1,4 +1,4 @@
-import { cleanGeneratedPrompt } from './generated-library.js';
+import { cleanGeneratedPrompt } from '../../generated-library.js';
 // Private scan review workspace. Source files live in protected Supabase Storage, not public assets.
 // Never inserts generated drafts into legacy lessons or graded progress automatically.
 const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));

@@ -1,7 +1,7 @@
 // Browser UI contract for private AI benchmark; mock transport means NO paid API calls.
 import assert from "node:assert/strict";
 import {chromium} from "playwright";
-const browser=await chromium.launch({headless:true});
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH||undefined,args:process.env.CHROMIUM_PATH?['--no-sandbox']:[]});
 try {
  const page=await browser.newPage({viewport:{width:1024,height:768}});
  await page.goto("http://127.0.0.1:8080/",{waitUntil:"domcontentloaded"});

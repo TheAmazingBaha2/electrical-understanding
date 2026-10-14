@@ -1,0 +1,10 @@
+# Review-only production plan — nothing applied
+
+1. Back up structured educational data and retain secure financial/attempt audit records. Validate `content/approved` fingerprints against a fresh read-only export. Preserve all progress/history, IDs, references and unknown fields.
+2. Accept the repository lesson inventory and five-tab preview. V2 main remains unchanged until an explicitly authorized release; its current scan-table reading path works without a PDF. Never retire SELECT access while a released client still uses it.
+3. Authorize production gateway retirement separately. Deploy/read back the HTTP 410 scan-lesson-pipeline tombstone. The legacy ai-model-lab is shared with tutor; the V3 tutor is already detached. Trace released clients before authorizing retirement of that gateway. No new paid tutor backend is part of this work.
+4. Authorize removing only `eu_owner_upload_scans` INSERT policy on storage.objects after rechecking current policies. Existing SELECT policy may remain for audit until raw cleanup. Recheck broad storage policies for any alternate insertion path. Revoke unused scan write/reservation RPC execution only after tracing service and client callers. Never revoke progress RPCs or generic project-file permissions.
+5. Approve the exact RAW_SCAN_CLEANUP.json manifest. Delete only the listed raw object via Storage API after rechecking owner/job/revision and preservation. Retain job, evidence, lessons, reviews, financial history and progress. Do not use whole-job deletion. Verify absence through a fresh storage inventory and record the response.
+6. Bucket removal is separately destructive and needs explicit approval after empty inventory and confirmation no project feature uses it. No table drops are proposed. No automatic cleanup service is needed.
+
+Rollbacks must consider backend/client compatibility independently. Reverting a frontend does not restore a deleted raw file or revoked policies. No permanent backup of the raw PDF is created. Raw deletion intentionally removes its binary; the educational structured result remains.

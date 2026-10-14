@@ -5,7 +5,7 @@ import {mkdir} from 'node:fs/promises';
 import {authoredSeries} from './chapter3-series-fixture.mjs';
 const {source,series}=authoredSeries({includeSummary:true});const job={...source,state:'approved',lesson:{lessons:[],curated_series:series}};
 await mkdir('test-artifacts',{recursive:true});
-const browser=await chromium.launch({headless:true});
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH||undefined,args:process.env.CHROMIUM_PATH?['--no-sandbox']:[]});
 try{
  for(const width of [390,1440]){
   const page=await browser.newPage({viewport:{width,height:1000}}),errors=[];page.on('pageerror',e=>errors.push(e.message));

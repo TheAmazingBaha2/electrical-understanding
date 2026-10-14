@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-10-14T00:17:04Z",
+  "project": "hkwmtjhgrskidaizamwy",
+  "bucket": "eu-private-scans",
+  "status": "PENDING_OWNER_APPROVAL_NO_DELETION_PERFORMED",
+  "objects": [{
+    "objectId": "6af2b8b1-5eaf-4ae7-ad6a-5e586e45ef98",
+    "path": "b4a4d670-f848-466f-a1d3-023c3211a369/1d7cef8e-4c5d-42bb-94f2-cde801db6b2f.pdf",
+    "bytes": 3312722,
+    "mimeType": "application/pdf",
+    "jobId": "75f4c1db-1d8c-40df-890b-4211862bcfc4",
+    "jobRevision": 61,
+    "ownerMatchesJob": true,
+    "approvedAt": "2026-10-13T04:08:32.348Z",
+    "preservedStructuredArtifact": "content/approved/source-jobs.json",
+    "runtimeInventory": "content/approved/inventory.json",
+    "runtimeReadsBinary": false,
+    "deletionAuthorized": false,
+    "deleted": false,
+    "absenceVerified": false
+  }],
+  "requiredBeforeDeletion": [
+    "Owner accepts preserved content in V3 desktop and phone preview",
+    "Re-inventory production storage and approved source revisions; stop on any mismatch",
+    "Separately approve and retire production upload/generation paths and upload INSERT policy",
+    "Owner approves this exact raw-only object deletion manifest",
+    "Use Storage API remove with only the authorized path; never delete SQL storage rows or whole jobs",
+    "Re-list bucket; verify exact object absent and approved inventory/progress counts preserved",
+    "Record actual deletion response and absence evidence; bucket deletion needs separate approval"
+  ]
+}

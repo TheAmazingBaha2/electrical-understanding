@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {renderScanInbox} from '../scan-inbox.js';
+import {renderScanInbox} from '../archive/authoring/scan-inbox.js';
 
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
-const scan=read('scan-inbox.js'),sql=read('supabase/migrations/20261012194500_private_book_catalog.sql');
+const scan=read('archive/authoring/scan-inbox.js'),sql=read('supabase/migrations/20261012194500_private_book_catalog.sql');
 const styles=read('styles.css');
 const sources=scan.replace(/^import .*?;\s*$/gm,'').replace(/\bexport\s+(?=(?:async\s+)?(?:function|const|let)\b)/g,'');
 const catalogBookTitle=new Function(sources+';return catalogBookTitle;')();
