@@ -11,3 +11,8 @@ test('quality gate fails closed on unavailable or unfinished CI',async()=>{
  await assert.rejects(requireCI(sha,{fetcher:async()=>({ok:false,status:403})}),/HTTP 403/);
  await assert.rejects(requireCI(sha,{fetcher:async()=>({ok:true,json:async()=>({workflow_runs:[]})}),tries:1}),/has not passed/);
 });
+
+test('optional CI token is passed only to the GitHub quality gate and never weakens exact-head checks',async()=>{
+ let headers,url;await requireCI(sha,{token:'fixture-read-only-token',fetcher:async(u,options)=>{url=u;headers=options.headers;return {ok:true,json:async()=>({workflow_runs:[run]})};},tries:1});assert.match(url,/api\.github\.com/);assert.equal(headers.Authorization,'Bearer fixture-read-only-token');
+ await assert.rejects(requireCI(sha,{token:'fixture-read-only-token',fetcher:async()=>({ok:true,json:async()=>({workflow_runs:[{...run,head_sha:'b'.repeat(40)}]})}),tries:1}),/has not passed/);
+});

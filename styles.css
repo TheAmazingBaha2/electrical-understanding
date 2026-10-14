@@ -1103,3 +1103,5 @@ button:focus-visible,summary:focus-visible,input:focus-visible,textarea:focus-vi
 @media(max-width:700px){.electronics-lab .lab-workspace-selector{position:static;display:flex;flex-wrap:nowrap;gap:4px}.electronics-lab .lab-workspace-selector button{flex:1 1 0;min-width:0;padding:6px 3px}.electronics-lab .component-palette{position:static}.electronics-lab .lab-live-reading{position:static}.electronics-lab .board-view-tools{position:relative;z-index:1}}
 
 .electronics-lab .component-palette .part-art{width:48px;height:28px;min-width:0;max-width:100%}.electronics-lab .component-palette .graphic-choice{padding:6px 3px;font-size:.7rem;min-width:0}.electronics-lab .component-palette .graphic-choice span{overflow-wrap:normal;word-break:normal}.electronics-lab .lab-advanced select,.electronics-lab .lab-advanced input{min-width:0;max-width:100%}.electronics-lab .breadboard-editor{margin-inline:0}
+
+button.dial-face{display:grid;place-items:center;padding:0;min-width:44px;min-height:44px;align-self:center;border:0;background:transparent;cursor:pointer;border-radius:50%}button.dial-face:focus-visible{outline:3px solid #ffe269;outline-offset:3px}

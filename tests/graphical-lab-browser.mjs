@@ -7,7 +7,7 @@ try{for(const width of [320,390,1440]){
  page.on('pageerror',e=>errors.push(e.message));await page.route('**/*',r=>{if(new URL(r.request().url()).hostname==='127.0.0.1')return r.continue();external.push(r.request().url());return r.abort();});
  await page.goto('http://127.0.0.1:8080/');await go(page,'workbench');
  const pane=async name=>{if(width<700)await page.locator('[data-lab-pane="'+name+'"]').tap();};
- const command=async(name,value,root=page)=>{const node=root.locator('[data-graphic-command="'+name+'"]'+(value===undefined?'':'[data-graphic-value="'+value+'"]')+':visible').first();if(width<700)await node.tap();else await node.click();};
+ const command=async(name,value,root=page)=>{const node=root.locator('[data-graphic-command="'+name+'"]'+(value===undefined?'':'[data-graphic-value="'+value+'"]')+':visible').first();if(name==='select-wire'){await node.scrollIntoViewIfNeeded();const point=await node.evaluate(el=>{const path=el.querySelector('.jumper-lead'),p=path.getPointAtLength(path.getTotalLength()/2);const screen=new DOMPoint(p.x,p.y).matrixTransform(path.getScreenCTM());return {x:screen.x,y:screen.y};});if(width<700)await page.touchscreen.tap(point.x,point.y);else await page.mouse.click(point.x,point.y);}else if(width<700)await node.tap();else await node.click();};
  const hole=async name=>{const node=page.locator('[data-breadboard-hole="'+name+'"]');await node.scrollIntoViewIfNeeded();if(width<700)await node.tap();else await node.click();};
  const noNumbers=async()=>{for(const input of await page.locator('.electronics-lab input[type="number"]').all())assert.equal(await input.isVisible(),false,'Default lab exposes a numeric keyboard field');};
  // The existing reviewed guide uses these same graphical controls, without advanced forms.

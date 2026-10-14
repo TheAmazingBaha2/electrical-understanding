@@ -8,6 +8,7 @@ jobs:
     timeout-minutes: 12
     permissions:
       contents: read
+      actions: read
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -16,6 +17,8 @@ jobs:
       - name: Build expected staging assets
         run: npm run build
       - name: Wait for exact-commit CI and read back staging
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/verify-staging.mjs "$GITHUB_SHA"
       - uses: actions/upload-artifact@v4
         if: always()
