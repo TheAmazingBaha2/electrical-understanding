@@ -17,14 +17,14 @@ export function isDivider(c){
  const v=c.components.find(p=>p.id==='V1'),a=c.components.find(p=>p.id==='R1'),b=c.components.find(p=>p.id==='R2');
  return c.components.length===3&&v?.type==='dc-source'&&a?.type==='resistor'&&b?.type==='resistor'&&v.terminals[0].nodeId==='source'&&v.terminals[1].nodeId==='common'&&a.terminals[0].nodeId==='source'&&a.terminals[1].nodeId==='output'&&b.terminals[0].nodeId==='output'&&b.terminals[1].nodeId==='common'&&!c.connections.some(w=>w.closed);
 }
-export function stepFeedback(activity,state,circuit){
+export function stepFeedback(activity,state,circuit,instrumentSettings={}){
  const step=activity.steps.find(s=>s.id===state.stepId)||activity.steps[0],parts=Object.fromEntries(circuit.components.map(p=>[p.id,p])),meter=circuit.instruments[0];
  const connected=isDivider(circuit)&&circuit.state.powered&&!parts.V1.state.open&&!parts.R1.state.open&&!parts.R2.state.open;
  for(const rule of step.requirements||[]){
   let valid=false,message='';
   if(rule.kind==='divider-connected'){valid=connected;message='Use the three-component divider with power on and V1, R1 and R2 paths connected.';}
   if(rule.kind==='equal-resistors'){valid=isDivider(circuit)&&parts.R1.properties.resistanceOhms===parts.R2.properties.resistanceOhms;message='Use equal R1 and R2 values for this prediction.';}
-  if(rule.kind==='probes'){valid=meter?.redNode===rule.red&&meter?.blackNode===rule.black;message='Select '+rule.red+' for red and '+rule.black+' for black.';}
+  if(rule.kind==='probes'){valid=meter?.redNode===rule.red&&meter?.blackNode===rule.black&&(!instrumentSettings.mode||instrumentSettings.mode==='voltage')&&(!instrumentSettings.jack||instrumentSettings.jack==='VΩ');message='Use DC voltage with the VΩ jack. Select '+rule.red+' for red and '+rule.black+' for black.';}
   if(rule.kind==='lower-larger'){valid=isDivider(circuit)&&parts.R2.properties.resistanceOhms>parts.R1.properties.resistanceOhms;message='Increase R2 above R1, then compare the output reading.';}
   if(rule.kind==='open-upper'){valid=isDivider(circuit)&&circuit.state.powered&&!parts.V1.state.open&&parts.R1.state.open&&!parts.R2.state.open;message='Disconnect R1 and leave the source and R2 connected.';}
   if(rule.kind==='isolated-output'){valid=isDivider(circuit)&&parts.R1.state.open&&parts.R2.state.open;message='Disconnect both R1 and R2 to isolate output.';}

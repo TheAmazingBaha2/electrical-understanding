@@ -35,11 +35,15 @@ function linearSolve(matrix,rhs){
  }
  const result=a.map(row=>row[n]);if(result.some(v=>!Number.isFinite(v)))throw Error('Unstable circuit calculation');return result;
 }
-export function solveDC(c){
+export function circuitNodeMap(c){
  validateCircuit(c);const parent=new Map(c.nodes.map(n=>[n.id,n.id]));
  const root=id=>{while(parent.get(id)!==id)id=parent.get(id);return id;};
  const terminals=new Map([...(c.externalTerminals||[]).map(t=>[t.id,t.nodeId]),...c.components.flatMap(p=>p.terminals.map(t=>[t.id,t.nodeId]))]);
  for(const wire of c.connections)if(wire.closed)parent.set(root(terminals.get(wire.from)),root(terminals.get(wire.to)));
+ return Object.fromEntries(c.nodes.map(n=>[n.id,root(n.id)]));
+}
+export function solveDC(c){
+ const netsByNode=circuitNodeMap(c),root=id=>netsByNode[id];
  const ground=root(c.groundNode),parts=c.components.filter(p=>!p.state.open&&(c.state.powered||p.type!=='dc-source')).map(p=>({...p,a:root(p.terminals[0].nodeId),b:root(p.terminals[1].nodeId)}));
  const adjacent=new Map(c.nodes.map(n=>[root(n.id),new Set()]));
  for(const p of parts){adjacent.get(p.a).add(p.b);adjacent.get(p.b).add(p.a);}

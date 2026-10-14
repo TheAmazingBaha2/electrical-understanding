@@ -9,8 +9,8 @@ export function voltageExplanation(c,measurement,result){
  if(isDivider(c)&&c.state.powered&&!c.components.some(p=>p.state.open)){const v=c.components.find(p=>p.id==='V1'),r1=c.components.find(p=>p.id==='R1'),r2=c.components.find(p=>p.id==='R2');const a=r1.properties.resistanceOhms,b=r2.properties.resistanceOhms;text+='Connected divider: '+v.properties.voltageVolts+' V × '+b+' / ('+a+' + '+b+') = '+voltageDisplay(result.nodeVoltages.output)+' at output relative to common. ';}
  return text+'Display is rounded; the ideal voltage meter does not load the circuit.';
 }
-export function renderCircuitView(c,{hidden=false}={}){
- const probe=c.instruments[0];
+export function renderCircuitView(c,{hidden=false,instrumentSettings={}}={}){
+ const current=instrumentSettings.mode==='current',connection=instrumentSettings.currentConnection,probe=current?null:c.instruments[0];
  if(isDivider(c)){
   const part=id=>c.components.find(p=>p.id===id),v=part('V1'),a=part('R1'),b=part('R2');
   const resistor=(p,y)=>'<g><path d="M410 '+(y-30)+' V'+(y-15)+' M410 '+(y+15)+' V'+(y+30)+'" class="lab-wire"/><rect x="387" y="'+(y-15)+'" width="46" height="30" rx="5" class="lab-resistor"/>'+ (p.state.open?'<path d="M387 '+(y+15)+' L433 '+(y-15)+'" stroke="#f9bb71" stroke-width="5"/>':'')+'<text x="448" y="'+y+'" class="lab-svg-label">'+p.id+' · '+esc(p.properties.resistanceOhms)+' Ω</text><text x="448" y="'+(y+18)+'" class="lab-svg-info">'+(p.state.open?'DISCONNECTED':'Connected')+'</text></g>';

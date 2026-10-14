@@ -29,3 +29,10 @@ Breadboard local verification: 225 deterministic tests plus syntax/build/allowli
 Owner reports staging is deployed and production authoring is retired. Read-only inventory confirms the previous PDF absent and no nonempty Storage objects; one zero-byte folder placeholder remains. Nothing was deleted/uploaded here. Do not call the bucket empty or retire it automatically. Current cleanup artifact is aggregate-only and does not republish internal object/user/path identifiers. Approved educational exports were not changed; broader public-history/content exposure decisions require owner review.
 
 PR #4's browser assertion was repaired separately at 5718c99b19005b0119870ea2e4fdb5d1c03b1f94; run 38496606032 passed. It remains unmerged. Cloudflare branch restrictions must stay in place for that maintenance branch. Local shell proxy/socket restrictions still prevent live staging read-back; an owner-reported deployment is not a new exact-commit deployment verification.
+
+
+## Shared DMM extension
+
+Resistance derives equivalent resistor-network resistance using the same nodal solver with an isolated ideal 1 V meter test source. Existing energized sources block ohms/continuity. Internally connected breadboard contacts correctly read zero; open paths produce OL. Continuity uses a documented example threshold of 30 Ω. DC current requires an explicitly selected component branch prepared while power is off; the ideal zero-burden series connector leaves the underlying DC circuit electrically unchanged, so the reading is the actual solved branch current, with optional reversed polarity. This is not a realistic fused/shunt meter. Across-node current probing, wrong jacks and missing/deleted series branches are blocked. No existing graded DMM lesson scenario was changed.
+
+The runner staging read-back checks the exact commit, branch/Worker identity and every public asset hash after primary CI success. Only its verified report establishes a served deployment; pushing a commit alone does not. Cross-device contracts remain local deterministic logic without a cloud connection.

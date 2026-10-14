@@ -1,0 +1,25 @@
+name: Read back Electrical Workbench V3 staging
+on:
+  push:
+    branches: [draft/v2-dmm-companion]
+jobs:
+  readback:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Build expected staging assets
+        run: npm run build
+      - name: Wait for exact-commit CI and read back staging
+        run: node scripts/verify-staging.mjs "$GITHUB_SHA"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: v3-staging-readback
+          path: test-artifacts/staging-readback.json
+          if-no-files-found: ignore

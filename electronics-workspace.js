@@ -1,3 +1,4 @@
+import {sharedMeterReading,formatMeterReading,prepareCurrentConnection} from './shared-multimeter.js';
 import {newBreadboardProject} from './breadboard-project.js';
 import {compileBreadboard,boardHistoryEdit,boardUndo,boardRedo,holeNode,breadboardHoles,emptyBreadboard,dividerBreadboard} from './breadboard-model.js';
 import {renderBreadboardEditor} from './breadboard-view.js';
@@ -15,7 +16,7 @@ export function renderElectronicsWorkspace(){return `<section class="electronics
  <div class="lab-workspace-selector" role="group" aria-label="Focused workspace"><button data-lab-pane="circuit" class="outline">Circuit</button><button data-lab-pane="meter" class="outline">Meter</button><button data-lab-pane="project" class="outline">Project</button></div>
  <div class="lab-workspace-grid" data-focused-pane="circuit">
  <section class="panel workspace-pane" data-pane="circuit"><h3>Circuit</h3><div data-breadboard-editor></div><div data-circuit-scene></div><label class="lab-control workspace-check"><input type="checkbox" data-circuit-power checked> Circuit power enabled</label><div data-circuit-controls></div><div data-circuit-values></div></section>
- <section class="panel workspace-pane" data-pane="meter"><h3>Digital multimeter</h3><div data-meter-controls></div><div data-meter-scene></div><p data-meter-explanation></p><label class="lab-control">Difficulty<select data-lab-difficulty><option value="beginner">Beginner · guided</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced · model limits apply</option></select></label><label class="lab-control">Instrument view<select data-meter-view><option value="realistic">Instrument</option><option value="educational">Measurement explanation</option></select></label></section>
+ <section class="panel workspace-pane" data-pane="meter"><h3>Digital multimeter</h3><label class="lab-control">Meter function<select data-meter-mode><option value="voltage">DC voltage · across two nodes</option><option value="resistance">Resistance · sources disconnected</option><option value="continuity">Continuity · sources disconnected</option><option value="current">DC current · prepared series branch</option></select></label><label class="lab-control">Red input jack<select data-meter-jack><option value="VΩ">VΩ</option><option value="A">A</option></select></label><p class="muted sm">Black lead: COM. This instrument is ideal; accuracy, current fuses and burden voltage are not modeled.</p><div data-meter-controls></div><div data-current-connection></div><div data-meter-scene></div><p data-meter-explanation></p><label class="lab-control">Difficulty<select data-lab-difficulty><option value="beginner">Beginner · guided</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced · model limits apply</option></select></label><label class="lab-control">Instrument view<select data-meter-view><option value="realistic">Instrument</option><option value="educational">Measurement explanation</option></select></label></section>
  <section class="panel workspace-pane" data-pane="project"><h3>Personal project</h3><p class="muted sm">Experiments save locally, separately from lesson grades. Cloud synchronization is not enabled.</p><label class="lab-control">Notes<textarea data-project-notes rows="4"></textarea></label><label class="lab-control">Snapshot name<input data-snapshot-name placeholder="Before opening R1"></label><button class="outline" data-save-snapshot>Save snapshot</button><details data-snapshot-manager class="snapshot-manager"><summary>Manage snapshots <span data-snapshot-count></span></summary><div data-snapshots></div></details><div data-project-conflicts></div><div class="actions"><button class="outline" data-project-export>Export project</button><label class="project-import-control">Import project JSON<input type="file" data-project-import accept="application/json,.json"></label></div><button class="outline" data-export-project-recovery>Export saved copies</button></section>
  </div><p data-project-status role="status" aria-live="polite"></p><details class="panel"><summary>Model limitations and safety</summary><ul>${circuitLimitations.map(l=>'<li>'+esc(l)+'</li>').join('')}</ul><p>Use this trainer for simulated low-voltage experiments only. Advanced presentation uses the same ideal DC solver; it does not enable unsupported realism.</p></details></section>`;}
 export function attachElectronicsWorkspace(root,storage=localStorage){
@@ -30,7 +31,7 @@ export function attachElectronicsWorkspace(root,storage=localStorage){
  function focusPane(pane){at('.lab-workspace-grid').dataset.focusedPane=pane;}
  function guidance(){
   const open=at('[data-guide-hint]')?.open,state=currentGuide();
-  at('[data-lab-guide]').innerHTML=renderGuidance(dividerActivity,state,stepFeedback(dividerActivity,state,project.circuit));
+  at('[data-lab-guide]').innerHTML=renderGuidance(dividerActivity,state,stepFeedback(dividerActivity,state,project.circuit,project.instrumentSettings[project.circuit.instruments[0]?.id]));
   if(open&&at('[data-guide-hint]'))at('[data-guide-hint]').open=true;
   for(const b of scope.querySelectorAll('[data-experiment-mode]'))b.setAttribute('aria-pressed',String(b.dataset.experimentMode===state.mode));
  }
@@ -39,7 +40,7 @@ export function attachElectronicsWorkspace(root,storage=localStorage){
   at('[data-project-conflicts]').innerHTML=(saved?.conflicts||[]).map(c=>'<section class="project-conflict"><p>Saved copy conflict · '+esc(c.savedAt)+'. Both versions are preserved. Export unsaved changes before choosing a full copy.</p><button class="outline" data-resolve-project="'+esc(c.id)+'" data-use-incoming="false">Keep current saved copy</button><button class="outline" data-resolve-project="'+esc(c.id)+'" data-use-incoming="true">Use conflicting copy</button></section>').join('');
  }
  function board(){return project.experimentState.breadboard;}
- function boardView(){at('[data-breadboard-editor]').innerHTML=board()?renderBreadboardEditor(board(),boardUI):'';at('[data-circuit-scene]').hidden=Boolean(board());}
+ function boardView(){at('[data-breadboard-editor]').innerHTML=board()?renderBreadboardEditor(board(),{...boardUI,instrumentSettings:project.instrumentSettings.DMM1}):'';at('[data-circuit-scene]').hidden=Boolean(board());}
  function syncBoard(){if(!board())return;project.circuit=compileBreadboard(board().state);project.componentInventory=project.circuit.components.map(c=>({componentId:c.id,quantity:1}));}
  function nextPartLabel(prefix){const used=new Set(board().state.placements.map(p=>p.label||p.id));let i=1;while(used.has(prefix+i))i++;return prefix+i;}
  function applyBoard(action){if(blocked)throw Error('Resolve saved copies before editing');project.experimentState.breadboard=boardHistoryEdit(board(),action);syncBoard();boardView();controls();autosave();}
@@ -48,16 +49,17 @@ export function attachElectronicsWorkspace(root,storage=localStorage){
  function save(){saveChain=saveChain.then(persist);return saveChain;}
  function autosave(){clearTimeout(timer);timer=setTimeout(save,250);}
  function scene(result,hidden){
-  at('[data-circuit-scene]').innerHTML=renderCircuitView(project.circuit,{hidden});
+  at('[data-circuit-scene]').innerHTML=renderCircuitView(project.circuit,{hidden,instrumentSettings:project.instrumentSettings[project.circuit.instruments[0]?.id]});
   at('[data-circuit-values]').innerHTML='<p class="muted sm">Common is the circuit’s reference node. '+(hidden?'Measurements are hidden until you make a prediction; Free Experiment reveals them immediately.':'Probe readings use the actual solved node potentials.')+'</p><ul>'+project.circuit.nodes.filter(n=>n.used!==false).map(n=>'<li>'+esc(n.label||n.id)+': '+(hidden?'measurement hidden':result.nodeVoltages[n.id]===null?'unknown floating potential':Number(result.nodeVoltages[n.id].toPrecision(6))+' V')+'</li>').join('')+'</ul>';
  }
  function readings(){try{
   const result=solveDC(project.circuit),meter=project.circuit.instruments[0];if(!meter)throw Error('Workspace needs a DC voltage instrument');
-  const reading=measureVoltage(project.circuit,meter.redNode,meter.blackNode,result),hidden=hideGuidedMeasurements(dividerActivity,currentGuide()),display=hidden?'PREDICT FIRST':voltageDisplay(reading.valueVolts);
+  const settings=project.instrumentSettings[meter.id]||{difficulty:'beginner',presentation:'realistic'},reading=sharedMeterReading(project.circuit,settings),hidden=hideGuidedMeasurements(dividerActivity,currentGuide()),display=hidden?'PREDICT FIRST':reading.mode==='voltage'&&reading.status!=='blocked'?voltageDisplay(reading.value):formatMeterReading(reading);
   project.measurementResults=[{instrumentId:meter.id,...reading}];scene(result,hidden);
-  const settings=project.instrumentSettings[meter.id]||{difficulty:'beginner',presentation:'realistic'};
-  at('[data-meter-scene]').innerHTML=settings.presentation==='educational'?'<output class="shared-meter-reading">'+esc(display)+'</output>':visualDMM(display,'', 'Shared DC voltage · red minus black');
-  at('[data-meter-explanation]').textContent=hidden?'Make a prediction in the guide before checking the reading.':voltageExplanation(project.circuit,reading,result);
+  at('[data-meter-controls]').hidden=settings.mode==='current';
+  at('[data-current-connection]').hidden=settings.mode!=='current';
+  at('[data-meter-scene]').innerHTML=settings.presentation==='educational'?'<output class="shared-meter-reading">'+esc(display)+'</output>':visualDMM(display,'', 'Shared circuit · '+(settings.mode||'voltage'));
+  at('[data-meter-explanation]').textContent=hidden?'Make a prediction in the guide before checking the reading.':reading.mode==='voltage'&&reading.status!=='blocked'?voltageExplanation(project.circuit,reading,result):reading.reason||((reading.mode==='continuity'?'Continuity threshold: ≤30 Ω in this example. '+(reading.continuity?'Connected path detected. ':'No continuity indication. '):'Equivalent resistance of the connected resistor network. ')+'Ideal 1 V test with modeled power sources disconnected; actual hardware requires power/stored-energy verification.');
   guidance();
  }catch(error){project.measurementResults=[];at('[data-circuit-values]').textContent='Electrical results unavailable: '+error.message;at('[data-meter-scene]').textContent='Unsupported circuit state: '+error.message;at('[data-meter-explanation]').textContent='No reading is available for this configuration. Review the connections and solver message before continuing.';status(error.message);guidance();}}
  function controls(){
@@ -68,6 +70,8 @@ export function attachElectronicsWorkspace(root,storage=localStorage){
   at('[data-meter-controls]').innerHTML=['redNode','blackNode'].map(key=>'<label class="lab-control">'+(key==='redNode'?'Red probe':'Black probe')+'<select data-probe="'+key+'">'+project.circuit.nodes.map(n=>'<option value="'+esc(n.id)+'" '+(n.id===meter[key]?'selected':'')+'>'+esc(n.label||n.id)+'</option>').join('')+'</select></label>').join('');
   at('[data-project-notes]').value=project.notes;
   const settings=project.instrumentSettings[meter.id]||{difficulty:'beginner',presentation:'realistic'};project.instrumentSettings[meter.id]=settings;
+  at('[data-meter-mode]').value=settings.mode||'voltage';at('[data-meter-jack]').value=settings.jack||'VΩ';
+  at('[data-current-connection]').innerHTML='<label class="lab-control">Series component branch<select data-current-branch>'+project.circuit.components.map(p=>'<option value="'+p.id+'" '+(settings.currentConnection?.componentId===p.id?'selected':'')+'>'+esc(p.label||p.id)+'</option>').join('')+'</select></label><button class="outline" data-prepare-current>Prepare series connection · power off first</button><label class="lab-control workspace-check"><input type="checkbox" data-current-reverse '+(settings.currentConnection?.polarity==='reverse'?'checked':'')+'> Reverse current connection polarity</label>';
   at('[data-lab-difficulty]').value=settings.difficulty;at('[data-meter-view]').value=settings.presentation;
   snapshots();conflicts();readings();
  }
@@ -88,7 +92,14 @@ export function attachElectronicsWorkspace(root,storage=localStorage){
    if(input.matches('[data-board-new-value]')){boardUI.newValue=input.value;return;}
    if(input.matches('[data-board-move-id]')){boardUI.moveId=input.value;return;}
    if(input.matches('[data-board-reroute-id]')){boardUI.rerouteId=input.value;return;}
-   if(board()){
+   if(input.matches('[data-meter-mode],[data-meter-jack],[data-current-reverse]')){
+    const settings=project.instrumentSettings[project.circuit.instruments[0].id];
+    if(input.matches('[data-meter-mode]'))settings.mode=input.value;
+    if(input.matches('[data-meter-jack]'))settings.jack=input.value;
+    if(input.matches('[data-current-reverse]')){if(!settings.currentConnection)throw Error('Prepare a series connection first');settings.currentConnection.polarity=input.checked?'reverse':'forward';}
+    readings();autosave();return;
+   }
+   if(board()){ 
     if(input.matches('[data-circuit-power]'))applyBoard({type:'power',powered:input.checked});
     else if(input.dataset.componentValue)applyBoard({type:'value',id:input.dataset.componentValue,value:input.value.trim()?Number(input.value):NaN});
     else if(input.dataset.componentOpen)applyBoard({type:'open',id:input.dataset.componentOpen,open:input.checked});
@@ -110,6 +121,7 @@ export function attachElectronicsWorkspace(root,storage=localStorage){
  });
  at('[data-project-notes]').addEventListener('input',event=>{project.notes=event.target.value;autosave();});
  scope.addEventListener('click',async event=>{const button=event.target.closest('button');if(!button)return;try{
+  if(button.hasAttribute('data-prepare-current')){const settings=project.instrumentSettings[project.circuit.instruments[0].id];settings.currentConnection=prepareCurrentConnection(project.circuit,at('[data-current-branch]').value);readings();autosave();return;}
   if(button.dataset.breadboardHole){
    const hole=button.dataset.breadboardHole;
    if(['red','black'].includes(boardUI.tool)){applyBoard({type:'probe',probe:boardUI.tool,hole});return;}
