@@ -1,0 +1,53 @@
+// Actual published UI; all external services are blocked. No paid providers or production writes.
+import assert from 'node:assert/strict';
+import {chromium} from 'playwright';
+import {mkdir} from 'node:fs/promises';
+import {go} from './navigation-helper.mjs';
+await mkdir('test-artifacts',{recursive:true});
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH||undefined,args:process.env.CHROMIUM_PATH?['--no-sandbox']:[]});
+try{for(const width of [320,390,1440]){
+ const page=await browser.newPage({viewport:{width,height:1000},hasTouch:width<700}),errors=[],external=[];
+ page.on('pageerror',e=>errors.push(e.message));
+ await page.route('**/*',route=>{const u=new URL(route.request().url());if(u.hostname==='127.0.0.1')return route.continue();external.push(u.hostname);return route.abort();});
+ await page.goto('http://127.0.0.1:8080/');await page.locator('.dashboard-welcome').waitFor();
+ await go(page,'account');assert.equal(await page.locator('[data-goto="scan-inbox"],[data-goto="ai-lab"],#scan-upload-form').count(),0);
+ await go(page,'workbench');await page.locator('.electronics-lab').waitFor();
+ assert.match(await page.locator('[data-circuit-values]').innerText(),/output: 2.5 V/);
+ if(width<700)await page.locator('[data-lab-pane="meter"]').tap();
+ assert.match(await page.locator('[data-meter-scene]').innerText(),/2.500 V/);
+ await page.locator('[data-probe="redNode"]').selectOption('source');assert.match(await page.locator('[data-meter-scene]').innerText(),/5.000 V/);
+ await page.locator('[data-probe="redNode"]').selectOption('common');await page.locator('[data-probe="blackNode"]').selectOption('source');assert.match(await page.locator('[data-meter-scene]').innerText(),/-5.000 V/);
+ await page.locator('[data-probe="redNode"]').selectOption('output');await page.locator('[data-probe="blackNode"]').selectOption('common');
+ if(width<700)await page.locator('[data-lab-pane="project"]').tap();
+ await page.locator('[data-project-notes]').fill('Named snapshot before fault');await page.locator('[data-snapshot-name]').fill('Before fault');await page.locator('[data-save-snapshot]').click();
+ await page.locator('[data-restore-snapshot]').waitFor();
+ if(width<700)await page.locator('[data-lab-pane="circuit"]').tap();
+ await page.locator('[data-component-open="R1"]').check();assert.match(await page.locator('[data-circuit-values]').innerText(),/output: 0 V/);
+ if(width<700)await page.locator('[data-lab-pane="meter"]').tap();
+ assert.match(await page.locator('[data-meter-scene]').innerText(),/0.000 V/);
+ if(width<700)await page.locator('[data-lab-pane="circuit"]').tap();
+ await page.locator('[data-component-open="R2"]').check();
+ if(width<700)await page.locator('[data-lab-pane="meter"]').tap();
+ assert.match(await page.locator('[data-meter-scene]').innerText(),/UNKNOWN/);
+ if(width<700)await page.locator('[data-lab-pane="project"]').tap();
+ await page.locator('[data-restore-snapshot]').click();
+ if(width<700)await page.locator('[data-lab-pane="meter"]').tap();
+ assert.match(await page.locator('[data-meter-scene]').innerText(),/2.500 V/);
+ await page.locator('[data-lab-difficulty]').selectOption('advanced');await page.locator('[data-meter-view]').selectOption('educational');assert.match(await page.locator('.shared-meter-reading').innerText(),/2.500 V/);
+ await go(page,'account');await go(page,'workbench');
+ if(width<700)await page.locator('[data-lab-pane="project"]').tap();
+ assert.equal(await page.locator('[data-project-notes]').inputValue(),'Named snapshot before fault');assert.equal(await page.locator('[data-restore-snapshot]').count(),1);
+ await page.reload();await go(page,'workbench');
+ if(width<700)await page.locator('[data-lab-pane="meter"]').tap();
+ assert.match(await page.locator('.shared-meter-reading').innerText(),/2.500 V/);
+ assert.equal(await page.locator('[data-lab-difficulty]').inputValue(),'advanced');
+ assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),'Workspace overflow at '+width);
+ if(width<700)assert.equal(await page.locator('[data-pane="circuit"]').isVisible(),false);
+ await page.screenshot({path:'test-artifacts/v3-workspace-'+width+'.png',fullPage:true});
+ // Reusable tutor shell still moves; even an injected session/client cannot dispatch.
+ await page.evaluate(async()=>{window.__tutorCalls=0;const {updateAIChatSession}=await import('/ai-chat-widget.js');updateAIChatSession({id:'synthetic-owner'},{functions:{invoke:()=>{window.__tutorCalls++;throw Error('Forbidden');}}});});
+ const launcher=page.locator('#ai-chat-launch');await launcher.click();assert.equal(await page.locator('#ai-chat-send').isDisabled(),true);assert.match(await page.locator('#ai-chat-status').innerText(),/disabled/);assert.equal(await page.evaluate(()=>window.__tutorCalls),0);
+ await page.locator('#ai-chat-close').click();await launcher.press('Alt+ArrowLeft');
+ assert.equal(await page.evaluate(()=>localStorage.getItem('eu_projects_v1:local:divider-project')!==null),true);
+ assert.deepEqual(external,[]);assert.deepEqual(errors,[]);await page.close();
+}console.log('PASS: 320/390/1440px shared DC readings, open/floating fault, mobile touch panes, snapshots/restore, offline saving, navigation, disabled tutor and no external requests.');}finally{await browser.close();}

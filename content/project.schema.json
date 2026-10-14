@@ -1,0 +1,195 @@
+{
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "createdAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "updatedAt": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "title",
+        "createdAt",
+        "updatedAt"
+      ],
+      "additionalProperties": true
+    },
+    "circuit": {
+      "$ref": "urn:electrical-workbench:circuit:1"
+    },
+    "componentInventory": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "widgetInstances": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "instanceId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "widgetId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "instanceId",
+          "widgetId",
+          "version"
+        ],
+        "additionalProperties": true
+      }
+    },
+    "instrumentSettings": {
+      "type": "object"
+    },
+    "measurementResults": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "notes": {
+      "type": "string"
+    },
+    "experimentState": {
+      "type": "object"
+    },
+    "snapshots": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "createdAt": {
+            "type": "string",
+            "minLength": 1
+          },
+          "experiment": {
+            "type": "object",
+            "properties": {
+              "circuit": {
+                "$ref": "urn:electrical-workbench:circuit:1"
+              },
+              "widgetInstances": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "instanceId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "widgetId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "version": {
+                      "type": "string",
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "instanceId",
+                    "widgetId",
+                    "version"
+                  ],
+                  "additionalProperties": true
+                }
+              },
+              "instrumentSettings": {
+                "type": "object"
+              },
+              "measurementResults": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
+              },
+              "notes": {
+                "type": "string"
+              },
+              "experimentState": {
+                "type": "object"
+              }
+            },
+            "required": [
+              "circuit",
+              "widgetInstances",
+              "instrumentSettings",
+              "measurementResults",
+              "notes",
+              "experimentState"
+            ],
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "createdAt",
+          "experiment"
+        ],
+        "additionalProperties": true
+      }
+    },
+    "lessonReferences": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "id",
+    "metadata",
+    "circuit",
+    "componentInventory",
+    "widgetInstances",
+    "instrumentSettings",
+    "measurementResults",
+    "notes",
+    "experimentState",
+    "snapshots",
+    "lessonReferences"
+  ],
+  "additionalProperties": true,
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:electrical-workbench:project:1",
+  "title": "Independent electronics project v1"
+}

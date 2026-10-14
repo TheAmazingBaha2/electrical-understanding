@@ -1,3 +1,4 @@
+import {renderElectronicsWorkspace,attachElectronicsWorkspace} from './electronics-workspace.js';
 import {renderSavedReinforcement} from './source-navigation.js';
 import {placementForLesson,sectionView,nextSourceLesson,lessonReferencePages,studySections,studyInventory,learningProgress} from './learning-structure.js';
 import { ProgressStore, cloudTransport } from './persistence.js';
@@ -133,7 +134,8 @@ async function saveAnswer(lessonId,qid,update){
  }catch(error){notify('Answer not saved: '+error.message);syncLabel('Storage blocked · export your progress')}
  finally{busy=false;if(saved)render()}
 }
-function switchTo(next,id=null,qid=null){
+async function switchTo(next,id=null,qid=null){
+ await workspaceCleanup?.();workspaceCleanup=null;
  if(['scan-inbox','ai-lab'].includes(next))next='account';
  const startingLesson=['lesson','generated-lesson'].includes(next)&&(view!==next||activeLesson!==id);
  if(startingLesson){lessonTab=qid?'quiz':'overview';activityIndex=0;learnIndex=0;quizIndex=Math.max(0,findLesson(id)?.questions.findIndex(q=>q.id===qid)||0);}
@@ -209,11 +211,13 @@ function setNav(){const current=view==='generated-lesson'?(generatedLessons.get(
  for(const section of studySections){const status=$('[data-nav-status="'+section.id+'"]');if(status){const graded=learningProgress(inventory.filter(l=>l.curriculum.section===section.section),context).total;status.textContent=graded||(section.id==='reviews'&&context.reviews)?'':'TBD'}}
 }
 const dashboardPanelStates=new Map();
-function render(){setNav();refreshAIChatContext();const names={'generated-lesson':'Approved lesson workbench',dashboard:'Your learning dashboard',ceta:'Exam Prep',curriculum:'Legacy lessons',legacy:'Legacy lessons',textbooks:'Textbook companions',labs:'Labs',math:'Math Practice',subtrack:'Learning sub-track',lesson:'Lesson workbench',reviews:'Review',library:'Textbook companions','scan-inbox':'Scan Inbox',account:'Your study account','ai-lab':'Private AI model tests'};
+let workspaceCleanup=null;
+function render(){setNav();refreshAIChatContext();const names={'generated-lesson':'Approved lesson workbench',dashboard:'Your learning dashboard',ceta:'Exam Prep',curriculum:'Legacy lessons',legacy:'Legacy lessons',textbooks:'Textbook companions',labs:'Labs',math:'Math Practice',subtrack:'Learning sub-track',lesson:'Lesson workbench',reviews:'Review',workbench:'Electronics lab',library:'Textbook companions','scan-inbox':'Scan Inbox',account:'Your study account','ai-lab':'Private AI model tests'};
  $('#page-title').textContent=names[view]||names.dashboard;
  const main=$('#main');
+ workspaceCleanup?.();workspaceCleanup=null;
  const disclosures=new Set([...main.querySelectorAll('details[data-disclosure][open]')].map(el=>el.dataset.disclosure));
- main.innerHTML=view==='dashboard'?renderDashboard():['lesson','generated-lesson'].includes(view)?renderLesson():view==='reviews'?'<header class="source-heading"><p class="v2-kicker">RETURN TO THE IDEAS</p><h2>Review</h2><p>Review brings ideas from your regular lessons back into practice. The broader format is still to be decided; your scheduled quiz checks remain available below.</p></header>'+renderReviews():view==='account'?renderAccount():view==='library'?renderLibrary():v2Page(view,v2Context(),activeLesson);
+ main.innerHTML=view==='workbench'?renderElectronicsWorkspace():view==='dashboard'?renderDashboard():['lesson','generated-lesson'].includes(view)?renderLesson():view==='reviews'?'<header class="source-heading"><p class="v2-kicker">RETURN TO THE IDEAS</p><h2>Review</h2><p>Review brings ideas from your regular lessons back into practice. The broader format is still to be decided; your scheduled quiz checks remain available below.</p></header>'+renderReviews():view==='account'?renderAccount():view==='library'?renderLibrary():v2Page(view,v2Context(),activeLesson);
  for(const el of main.querySelectorAll('details[data-disclosure]'))if(disclosures.has(el.dataset.disclosure))el.open=true;
  main.querySelectorAll('[data-toggle-panel]').forEach(button=>{
   const panel=document.getElementById(button.dataset.togglePanel);if(!panel)return;
@@ -248,6 +252,7 @@ function render(){setNav();refreshAIChatContext();const names={'generated-lesson
   attachGeneratedPredictions(main,notify);
 }const workshop=findLesson(activeLesson);if(workshop?.workshop)attachWorkshopWidgets(main,workshop,getState(workshop.id),(id,value,correct)=>saveWorkshopCheck(workshop.id,id,value,correct));}
  if(view==='account')attachAuth();
+ if(view==='workbench')workspaceCleanup=attachElectronicsWorkspace(main);
 
 }
 function cloudBanner(){
@@ -329,7 +334,7 @@ function recoveryPanel(){
  ${Object.entries(doc.conflicts).map(([id,c])=>`<div class="panel"><b>${esc(id)} · ${esc(c.kind)} conflict</b><details><summary>Compare saved copies</summary><p>This device</p>${conflictCopy(doc.progress[id])}<p>Incoming</p>${conflictCopy(c.incoming)}</details><button data-resolve="${esc(id)}" data-incoming="false">Keep this device's copy</button> <button data-resolve="${esc(id)}" data-incoming="true">Use incoming copy</button><p class="muted sm">Both versions are backed up before resolution.</p></div>`).join('')}
  <label>Local recovery point <select id="backup-select">${store.backups().map(k=>`<option value="${esc(k)}">${esc(new Date(Number(k.split(':backup:')[1].split(':')[0])).toLocaleString())}</option>`).join('')}</select></label><button id="restore-backup">Restore through conflict review</button>`;
 }
-function renderAccount(){return `<div class="auth-card"><div class="panel"><h2>Account and cross-device sync</h2>${user?`<div class="success">Connected as <b>${esc(user.email||'your account')}</b>.<br>Answers save on this device first. Check the sync status for cloud confirmation or conflicts.</div><div class="actions"><button id="refresh-sync" class="outline">Refresh cloud progress</button><button class="outline" data-goto="ai-lab">Private AI model tests →</button><button id="sign-out" class="ghost">Sign out</button></div>`:
+function renderAccount(){return `<div class="auth-card"><div class="panel"><h2>Account and cross-device sync</h2>${user?`<div class="success">Connected as <b>${esc(user.email||'your account')}</b>.<br>Answers save on this device first. Check the sync status for cloud confirmation or conflicts.</div><div class="actions"><button id="refresh-sync" class="outline">Refresh cloud progress</button><button id="sign-out" class="ghost">Sign out</button></div>`:
  !configured?`<div class="flash"><b>V3 development workspace.</b> Cloud sync and paid AI are disabled here to protect official V2 progress.</div>`:
   configured?`<p class="muted">Sign in with the same email address on your phone and your computer. You'll receive an email with a secure sign-in link.</p><label for="email">Email address</label><input class="email-input" type="email" id="email" autocomplete="email" placeholder="you@example.com"><div class="actions"><button id="email-login" class="primary">Email me a sign-in link</button></div>`:`<div class="flash"><b>Cloud service not configured.</b> This starter can be previewed in local practice mode, but it cannot synchronize devices until the Supabase connection is set up.</div><p class="muted sm">Follow SETUP.md in the project to create a Supabase project, apply the database rules and enter its URL and <em>publishable</em> key into <code>site/config.js</code>. Never put a secret/service-role key in the site.</p>`}
  <hr class="divider"><details class="account-maintenance"><summary>Archived study material</summary><p class="muted sm">Previously approved lessons and their study history stay available here.</p><div class="actions"><button class="outline small-button" data-goto="legacy">Archived study material</button></div></details><h3>Progress storage</h3><p class="muted sm">${user?'You are in cloud mode.':'You are in device-only practice mode.'} Local storage is used as a cache. Cloud records are private to the authenticated account through database access policies.</p>${user&&!storageError?`<button id="import-demo" class="outline small-button">Import this device's local practice</button><p class="muted sm">Practice stays separate until you import it. Differences require review.</p>`:''}

@@ -47,7 +47,7 @@ export function lessonActivities(lesson) {
   if (lesson.experiment==="generated") {
     const checks=(lesson.activities||[]).map((a,i)=>({
       kind:a.kind==="simulation"?"generated-simulation":a.kind==="choice"?"generated-choice":"generated-check",simulator:a.simulator,choices:a.choices||[],correct:a.correct,title:a.title||"Prediction "+(i+1),description:"Make a prediction, explain your reasoning, then compare it with the approved reference.",
-      widget:a.widget,prompt:a.prompt,answer:a.answer,explanation:a.explanation,source_ids:a.source_ids||[]
+      id:a.id,widget:a.widget,prompt:a.prompt,answer:a.answer,explanation:a.explanation,source_ids:a.source_ids||[]
     }));
     if(lesson.simulator&&!checks.some(a=>a.kind==="generated-simulation"&&a.simulator===lesson.simulator))checks.push({kind:"generated-simulation",title:"Adjust the virtual experiment",description:"Change an ideal circuit value and predict how the result responds.",simulator:lesson.simulator});
     return checks;

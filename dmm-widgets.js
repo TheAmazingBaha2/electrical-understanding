@@ -4,7 +4,7 @@ const choose=(key,label,choices)=>'<label class="lab-control">'+escapeDMM(label)
 const slide=(key,label,min,max,start,step)=>'<label class="lab-control">'+escapeDMM(label)+'<input type="range" data-x="'+key+'" min="'+min+'" max="'+max+'" step="'+step+'" value="'+start+'"></label>';
 const get=(el,key)=>el.querySelector('[data-x="'+key+'"]')?.value;
 const val=(el,key)=>Number(get(el,key));
-function visualDMM(reading,scene,label,warning=false){
+export function visualDMM(reading,scene,label,warning=false){
  const title='<text x="22" y="28" fill="#D8F6FF" font-size="18" font-weight="700">'+escapeDMM(label)+'</text>';
  const housing='<rect x="413" y="36" width="186" height="203" rx="22" fill="#4A9EB8" stroke="#C7F4FF" stroke-width="3"/>'+
  '<rect x="431" y="53" width="150" height="78" rx="10" fill="'+(warning?"#67453E":"#15384D")+'" stroke="#BDE7F6" stroke-width="2"/>'+

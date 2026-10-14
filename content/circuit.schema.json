@@ -1,0 +1,199 @@
+{
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "analysisMode": {
+      "const": "dc"
+    },
+    "groundNode": {
+      "type": "string",
+      "minLength": 1
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "additionalProperties": true
+      }
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "type": {
+            "enum": [
+              "resistor",
+              "dc-source"
+            ]
+          },
+          "terminals": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "nodeId": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "id",
+                "nodeId"
+              ],
+              "additionalProperties": true
+            },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "properties": {
+            "type": "object",
+            "properties": {
+              "resistanceOhms": {
+                "type": "number",
+                "minimum": 0.001,
+                "maximum": 1000000000.0
+              },
+              "voltageVolts": {
+                "type": "number",
+                "minimum": -24,
+                "maximum": 24
+              }
+            },
+            "required": [],
+            "additionalProperties": true
+          },
+          "state": {
+            "type": "object",
+            "properties": {
+              "open": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "open"
+            ],
+            "additionalProperties": true
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "terminals",
+          "properties",
+          "state"
+        ],
+        "additionalProperties": true
+      }
+    },
+    "connections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "from": {
+            "type": "string",
+            "minLength": 1
+          },
+          "to": {
+            "type": "string",
+            "minLength": 1
+          },
+          "closed": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "from",
+          "to",
+          "closed"
+        ],
+        "additionalProperties": true
+      }
+    },
+    "instruments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "type": {
+            "const": "dmm"
+          },
+          "mode": {
+            "const": "dc-voltage"
+          },
+          "redNode": {
+            "type": "string",
+            "minLength": 1
+          },
+          "blackNode": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "mode",
+          "redNode",
+          "blackNode"
+        ],
+        "additionalProperties": true
+      }
+    },
+    "state": {
+      "type": "object",
+      "properties": {
+        "powered": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "powered"
+      ],
+      "additionalProperties": true
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "analysisMode",
+    "groundNode",
+    "nodes",
+    "components",
+    "connections",
+    "instruments",
+    "state"
+  ],
+  "additionalProperties": true,
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:electrical-workbench:circuit:1",
+  "title": "Shared DC circuit v1"
+}

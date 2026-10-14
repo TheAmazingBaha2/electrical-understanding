@@ -26,7 +26,7 @@ try{
   assert.equal(await page.locator('[data-disclosure="contents:associate-cet:3"] .chapter-lesson').last().getAttribute('data-content-lesson'),'C3-CURATED-SUMMARY');
   await page.locator('[data-disclosure="contents:associate-cet:3"] [data-lesson="C3-CURATED-U01"]').click();assert.match(await page.locator('.bread').innerText(),/Exam Prep.*Chapter 3/);
   await page.locator('.lesson-tabs [data-lesson-tab="quiz"]').click();const correct=series.lessons[0].questions[0].correct;await page.locator('.quiz-card input[value="'+correct+'"]').check();await page.locator('[data-submit="C3-CURATED-U01-Q01"]').click();
-  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('eu_progress:hkwmtjhgrskidaizamwy:fixture-owner')||'{}').progress?.['C3-CURATED-U01']?.answers?.['C3-CURATED-U01-Q01']?.correct===true);
+  await page.waitForFunction(()=>JSON.parse(localStorage.getItem('eu_progress:hkwmtjhgrskidaizamwy:anonymous')||'{}').progress?.['C3-CURATED-U01']?.answers?.['C3-CURATED-U01-Q01']?.correct===true);
   await page.locator('.lesson-tabs [data-lesson-tab="review"]').click();await page.locator('[data-goto="ceta"][data-lesson="associate-cet:3"]').click();
   assert.equal(await page.locator('.content-chapter').count(),22);assert.equal(await page.locator('[data-disclosure="contents:associate-cet:3"]').getAttribute('open'),'');
   assert.equal(await page.locator('[data-disclosure="contents:associate-cet:3"] .chapter-lesson').count(),17);
@@ -38,9 +38,9 @@ try{
   await go(page,'textbooks');assert.equal(await page.locator('.source-book').count(),1);await page.locator('[data-disclosure="contents:geier:6"] > summary').click();assert.equal(await page.locator('[data-lesson="BDMM-01"]').count(),1);
   await go(page,'labs');assert.equal(await page.locator('.source-book').count(),4);assert.equal(await page.locator('.content-chapter').count(),21);
   await go(page,'reviews');assert.match(await page.locator('#main').innerText(),/still to be decided/);
-  await go(page,'account');assert.match(await page.locator('#main').innerText(),/cross-device sync/);await page.locator('.account-maintenance > summary').click();assert.equal(await page.locator('[data-goto="scan-inbox"]').isVisible(),true);
-  assert.equal(await page.evaluate(()=>window.__paid.length),0);assert.ok(await page.evaluate(()=>window.__writes.length)>0);
+  await go(page,'account');assert.match(await page.locator('#main').innerText(),/cross-device sync/);await page.locator('.account-maintenance > summary').click();assert.equal(await page.locator('[data-goto="scan-inbox"]').count(),0);
+  assert.equal(await page.evaluate(()=>window.__paid.length),0);assert.equal(await page.evaluate(()=>window.__writes.length),0);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));assert.deepEqual(errors,[]);await page.close();
  }
- console.log('PASS: real app navigation, private Chapter 3 loading, responsive chapter dropdowns, quizzes, saved IDs, source return, hidden scans and account sync with mocked services.');
+ console.log('PASS: real app navigation, preserved repository Chapter 3 loading, responsive chapter dropdowns, quizzes, saved IDs, source return, retired authoring and local practice without service writes.');
 }finally{await browser.close();}

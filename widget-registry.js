@@ -9,7 +9,7 @@ const labKinds=['tolerance','bands','rating','breadboard','meter','series','divi
 const entries=[];
 function register(id,name,category,adapter,configurationParameters={},details={}){
  entries.push({id,version:'1.0.0',displayName:name,category,capabilities:['local-interaction','reusable-view'],configurationParameters,
-  assets:category==='dmm'?['dmm-widgets.js#visualDMM']:category==='lab'?['lab-visuals.js']:category==='workshop'?['workshop-widgets.js']:['generated-simulations.js'],
+  assets:category==='dmm'?['dmm-widgets.js#visualDMM']:category==='lab'?['lab-visuals.js']:category==='workshop'?['workshop-widgets.js']:category==='math'?['math-widgets.js']:category==='exam'?['ceta-widgets.js']:['generated-simulations.js'],
   simulationDependencies:[],gradingCapabilities:[],difficultyLevels:['beginner'],inputContract:'Reviewed JSON configuration only',outputContract:'Local educational view; no progress writes',
   limitations:['Existing idealized teaching scenario; does not share a project circuit.','Educational illustration, not a hardware safety certification.'],compatibleLessonSchemas:[1],dependencies:[],
   regressionRequirements:['Existing lesson behavior and IDs unchanged','Keyboard and phone controls','No paid requests'],...details,adapter});
@@ -24,6 +24,7 @@ for(const kind of workshopMethods)register('workshop-'+kind,kind,'workshop',{kin
 for(const [id,name] of [['circuit-dc','Shared DC circuit'],['dmm-shared','Shared-state DC multimeter']])register(id,name,'shared-circuit',{type:'workspace'},{},{capabilities:['dc','shared-state','serializable'],difficultyLevels:['beginner','intermediate','advanced'],simulationDependencies:['circuit-model.js#solveDC'],assets:['dmm-widgets.js#visualDMM','lab-visuals.js#circuitSvgFrame'],limitations:['Ideal resistors and independent DC voltage sources only.','Ideal infinite-impedance voltage meter; no AC, loading, tolerances, transients or current/resistance mode.'],dependencies:id==='dmm-shared'?['circuit-dc']:[]});
 const freeze=value=>{if(value&&typeof value==='object'){for(const child of Object.values(value))freeze(child);Object.freeze(value)}return value;};
 export const widgetRegistry=freeze(entries);
+export const widgetCatalog=widgetRegistry.map(({adapter,...metadata})=>({...metadata,adapterContract:{type:adapter.type,kind:adapter.kind||null}}));
 export function widgetFor(id,version='1.0.0'){return widgetRegistry.find(w=>w.id===id&&w.version===version)||null;}
 export function searchWidgets({category,capabilities=[]}={}){return widgetRegistry.filter(w=>(!category||w.category===category)&&capabilities.every(c=>w.capabilities.includes(c)));}
 export function validateWidgetReference(reference){

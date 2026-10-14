@@ -3,7 +3,7 @@ import { readFile, readdir } from "node:fs/promises";
 import { spawnSync } from "node:child_process";
 
 const allowed = [
-  "app.js", "persistence.js", "approved-lessons.js", "published-lessons.js", "lesson-package.js", "widget-registry.js", "widget-improvements.js", "generated-library.js", "generated-simulations.js", "legacy-groups.js", "ai-chat-widget.js", "math-lessons.js", "math-widgets.js", "math-track.js", "config.js", "course-catalog.js", "learning-structure.js", "source-navigation.js", "icon.svg", "icon-192.png", "icon-512.png", "icon-180.png", "icon-maskable-512.png", "index.html",
+  "app.js", "persistence.js", "approved-lessons.js", "published-lessons.js", "lesson-package.js", "widget-registry.js", "widget-improvements.js", "data-contract.js", "circuit-model.js", "project-store.js", "tutor-contract.js", "electronics-workspace.js", "generated-library.js", "generated-simulations.js", "legacy-groups.js", "ai-chat-widget.js", "math-lessons.js", "math-widgets.js", "math-track.js", "config.js", "course-catalog.js", "learning-structure.js", "source-navigation.js", "icon.svg", "icon-192.png", "icon-512.png", "icon-180.png", "icon-maskable-512.png", "index.html",
   "lab-lessons.js", "book-lessons.js", "geier-catalog.js", "geier-workshops.js", "workshop-widgets.js", "workshop-progress.js", "ceta-lessons.js", "ceta-widgets.js", "dmm-widgets.js", "lab-widgets.js", "lab-visuals.js", "lesson-tabs.js", "lesson-view.js", "lesson-overviews.js", "lessons.js",
   "manifest.webmanifest", "styles.css", "v2-panels.js", "build-info.json"
 ];

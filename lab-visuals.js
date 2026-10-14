@@ -108,3 +108,6 @@ export function drawLabGraphic(el,kind){
   }
  }
 }
+
+// Reuse the existing visual frame for project circuit scenes without scenario calculations.
+export const circuitSvgFrame = (inner,label,viewBox) => base(inner,label,viewBox);

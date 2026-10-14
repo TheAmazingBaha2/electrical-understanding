@@ -1060,3 +1060,13 @@ button:focus-visible,summary:focus-visible,input:focus-visible,textarea:focus-vi
 .chapter-pie>span{background:#17262c}.lesson-progress-bar{background:#42595f}.ai-chat-head,.ai-chat-toolbar{background:#deffff08;border-color:#85b5be44}.ai-chat-launch{display:flex;align-items:center;gap:7px;background:linear-gradient(130deg,#e9ffff,#8eeaf4)!important;color:#11252b!important;border:1px solid #e2ffff!important;box-shadow:0 0 22px #9cf8ff35,inset 0 -2px #ffe269aa;touch-action:none;user-select:none;cursor:grab}.ai-chat-launch img{pointer-events:none;border-radius:5px}.ai-chat-launch.is-dragging{cursor:grabbing;box-shadow:0 0 26px #aaffff80,0 0 8px #ffe26980;transition:none}
 .ai-dialogue-answer{background:#d2ffff0c;border-color:#73979c}.ai-dialogue-question{background:#6edce618;border-color:#b2edf1}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important}}
+
+/* Adaptive project foundation: phone focuses one instrument, desktop compares panes. */
+.lab-workspace-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;align-items:start}
+.workspace-pane{min-width:0;overflow-wrap:anywhere}.workspace-pane[data-pane="project"]{grid-column:1/-1}
+.workspace-pane input,.workspace-pane select,.workspace-pane textarea{max-width:100%;min-height:44px;box-sizing:border-box}
+.workspace-pane button,.lab-workspace-selector button{min-height:44px;margin:4px 0}
+.workspace-check{display:flex;align-items:center;gap:12px}.workspace-check input{width:24px;height:24px;min-height:24px}
+.lab-workspace-selector{display:flex;gap:8px;flex-wrap:wrap}.shared-meter-reading{display:block;font-size:2rem;font-variant-numeric:tabular-nums;padding:18px;border:1px solid var(--border);border-radius:12px}
+.project-import-control{display:block;max-width:100%}.project-import-control input{display:block;width:100%}
+@media(max-width:700px){.lab-workspace-grid{display:block}.workspace-pane{display:none}.lab-workspace-grid[data-focused-pane="circuit"] [data-pane="circuit"],.lab-workspace-grid[data-focused-pane="meter"] [data-pane="meter"],.lab-workspace-grid[data-focused-pane="project"] [data-pane="project"]{display:block}.lab-workspace-selector button{flex:1;min-width:0}}
