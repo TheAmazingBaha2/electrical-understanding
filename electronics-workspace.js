@@ -282,7 +282,7 @@ export function attachElectronicsWorkspace(root,storage=localStorage){
   if(command==='board-tool'){boardUI.requestedBandCount=null;boardUI.selectedBand=0;boardUI.draftResistor=null;boardUI.tool=value;boardUI.sheetOpen=false;boardUI.selection=[];boardUI.selectedPart=null;boardUI.selectedWire=null;boardUI.autoPlace=true;boardUI.newValue=value==='source'?5:1000;boardView();}
   else if(command==='board-cancel'){boardUI.sheetOpen=false;boardUI.selection=[];boardUI.selectedPart=null;boardUI.selectedWire=null;boardUI.tool='inspect';boardView();graphicCircuit();}
   else if(command==='select-part'){if(boardUI.tool==='current'){project.instrumentSettings.DMM1.currentConnection=prepareCurrentConnection(project.circuit,value);readings();autosave();}else if(boardUI.tool==='fault'){const p=board().state.placements.find(p=>p.id===value);applyBoard({type:'open',id:value,open:!p.state.open});}else{boardUI.selectedPart=value;boardUI.requestedBandCount=null;boardUI.selectedBand=0;boardUI.selectedWire=null;boardView();}}
-  else if(command==='select-wire'){boardUI.selectedWire=value;boardUI.selectedPart=null;boardView();}
+  else if(command==='select-wire'){if(boardUI.tool==='fault'){const wire=board().state.wires.find(w=>w.id===value);applyBoard({type:'open',id:value,open:wire.closed});}else{boardUI.selectedWire=value;boardUI.selectedPart=null;boardView();}}
   else if(command==='board-zoom'){const viewport=at('[data-board-viewport]');boardUI.zoom=Math.max(1,Math.min(2,(boardUI.zoom||1)+Number(value)*.25));uiPreferences.zoom=boardUI.zoom;boardView();savePreferences();}
   else if(command==='board-pan')at('[data-board-viewport]')?.scrollBy({left:Number(value),behavior:'smooth'});
  }catch(e){status(e.message);}});

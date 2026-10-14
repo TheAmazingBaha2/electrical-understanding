@@ -5,11 +5,21 @@ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
 try{for(const width of [320,390,1440]){
  const page=await browser.newPage({viewport:{width,height:width<700?844:1000},hasTouch:width<700}),errors=[],external=[];
  page.on('pageerror',e=>errors.push(e.message));await page.route('**/*',r=>{if(new URL(r.request().url()).hostname==='127.0.0.1')return r.continue();external.push(r.request().url());return r.abort();});
- await page.goto('http://127.0.0.1:8080/');await go(page,'workbench');await page.locator('[data-experiment-mode="free"]').click();await page.locator('[data-lab-project]').selectOption('breadboard-project');await page.locator('[data-breadboard-root]').waitFor();
+ await page.goto('http://127.0.0.1:8080/');await go(page,'workbench');
  const pane=async name=>{if(width<700)await page.locator('[data-lab-pane="'+name+'"]').tap();};
- const command=async(name,value,root=page)=>{const node=root.locator('[data-graphic-command="'+name+'"]'+(value===undefined?'':'[data-graphic-value="'+value+'"]')).first();if(width<700)await node.tap();else await node.click();};
+ const command=async(name,value,root=page)=>{const node=root.locator('[data-graphic-command="'+name+'"]'+(value===undefined?'':'[data-graphic-value="'+value+'"]')+':visible').first();if(width<700)await node.tap();else await node.click();};
  const hole=async name=>{const node=page.locator('[data-breadboard-hole="'+name+'"]');await node.scrollIntoViewIfNeeded();if(width<700)await node.tap();else await node.click();};
- const noNumbers=async()=>{assert.equal(await page.locator('.electronics-lab input[type="number"]').evaluateAll(nodes=>nodes.filter(n=>n.getBoundingClientRect().height>0&&getComputedStyle(n).visibility!=='hidden').length),0,'Default lab exposes a numeric keyboard field');};
+ const noNumbers=async()=>{for(const input of await page.locator('.electronics-lab input[type="number"]').all())assert.equal(await input.isVisible(),false,'Default lab exposes a numeric keyboard field');};
+ // The existing reviewed guide uses these same graphical controls, without advanced forms.
+ const next=async()=>{await page.locator('[data-guide-next]').click();await noNumbers();};
+ await noNumbers();await next();await next();await next();assert.equal(await page.locator('[data-guide-next]').isDisabled(),true);await page.locator('[data-guide-prediction="1"]').click();await next();
+ const terminal=async id=>command('circuit-node',id,page.locator('.circuit-terminals'));
+ await command('probe-select','red');await terminal('source');await command('probe-select','black');await terminal('common');assert.match(await page.locator('[data-lab-live-reading]').innerText(),/5.000 V/);await next();
+ await command('probe-select','red');await terminal('output');assert.match(await page.locator('[data-lab-live-reading]').innerText(),/2.500 V/);await next();
+ await command('resistor-value','2000',page.locator('.component-sheet'));await command('board-cancel','');assert.match(await page.locator('[data-lab-live-reading]').innerText(),/3.333 V/);await next();
+ await command('part-open','true',page.locator('.component-sheet'));await command('board-cancel','');assert.match(await page.locator('[data-lab-live-reading]').innerText(),/0.000 V/);await next();
+ await command('part-open','true',page.locator('.component-sheet'));await command('board-cancel','');assert.match(await page.locator('[data-lab-live-reading]').innerText(),/UNKNOWN/);await next();await next();
+ assert.equal(await page.locator('[data-experiment-mode="free"]').getAttribute('aria-pressed'),'true');await page.locator('[data-lab-project]').selectOption('breadboard-project');await page.locator('[data-breadboard-root]').waitFor();
  await pane('circuit');await noNumbers();await page.locator('.board-template-options>summary').click();await page.locator('[data-board-blank]').click();
  await command('board-tool','source');await hole('LP1');await hole('LN1');assert.equal(await page.locator('[data-placed-component]').count(),1);
  await command('board-tool','resistor');await command('draft-resistance','1000');await hole('A1');await hole('F1');
@@ -17,6 +27,7 @@ try{for(const width of [320,390,1440]){
  await command('board-tool','wire');await hole('LP2');await hole('B1');await command('board-tool','wire');await hole('LN2');await hole('G2');
  assert.equal(await page.locator('[data-placed-component]').count(),3);assert.equal(await page.locator('[data-placed-wire]').count(),2);assert.equal(await page.locator('[data-placed-wire]').first().getAttribute('data-from-hole'),'LP2');
  await command('board-tool','red');await hole('H1');await command('board-tool','black');await hole('LN3');assert.match(await page.locator('[data-lab-live-reading]').innerText(),/2.500 V/);await noNumbers();
+ const wire=await page.locator('[data-placed-wire]').first().getAttribute('data-placed-wire');await command('board-tool','fault');await command('select-wire',wire);assert.match(await page.locator('[data-placed-wire="'+wire+'"]').getAttribute('class'),/part-open/);await command('select-wire',wire);assert.match(await page.locator('[data-lab-live-reading]').innerText(),/2.500 V/);await command('board-tool','inspect');await command('select-wire',wire);await command('wire-reroute',wire,page.locator('.component-sheet'));await hole('LP4');await hole('C1');assert.equal(await page.locator('[data-placed-wire="'+wire+'"]').getAttribute('data-to-hole'),'C1');await page.locator('[data-board-undo]').click();
  const r1=await page.locator('[data-placed-component][data-terminal-a="A1"][data-terminal-b="F1"]').getAttribute('data-placed-component'),source=await page.locator('[data-placed-component][data-terminal-a="LP1"]').getAttribute('data-placed-component');
  assert.ok((await page.locator('[data-breadboard-hole="H1"]').boundingBox()).width>=44);
  await page.screenshot({path:'test-artifacts/graphical-board-'+width+'.png',fullPage:true});const qa=await page.locator('[data-pane="circuit"]').screenshot({type:'jpeg',quality:70});console.log('GRAPHICAL_QA_IMAGE:board-'+width+':'+qa.toString('base64'));
