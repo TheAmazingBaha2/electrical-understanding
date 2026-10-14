@@ -22,6 +22,12 @@ export function sharedMeterReading(c,settings={}){
  if(!probe)throw Error('Meter probes are unavailable');
  if(!['voltage','resistance','continuity','current'].includes(mode))return {status:'unsupported',value:null,unit:'',reason:'Unsupported instrument mode'};
  if(jack!==(mode==='current'?'A':'VΩ'))return {status:'blocked',value:null,unit:'',reason:'Use '+(mode==='current'?'A':'VΩ')+' for red and COM for black. No unsafe connection was energized.'};
+ // Optional physical contact flags are additive for the desktop canvas. Legacy
+ // projects retain their logical-node attachment; no existing graded scenario changes.
+ if(mode!=='current'){
+  if(['red','black'].some(color=>probe[color+'Connected']!==undefined&&typeof probe[color+'Connected']!=='boolean'))return {mode,status:'unsupported',value:null,unit:'',reason:'Unsupported saved probe connection state; original retained.'};
+  if(probe.redConnected===false||probe.blackConnected===false)return {mode,status:'blocked',value:null,unit:'',reason:'Connect both meter probes to actual circuit terminals. An unattached probe has no measurement.'};
+ }
  if(mode==='voltage'){const result=measureVoltage(c,probe.redNode,probe.blackNode);return {...result,value:result.valueVolts,unit:'V',mode};}
  if(mode==='resistance'||mode==='continuity'){
   const result=resistanceReading(c,probe.redNode,probe.blackNode);return {...result,mode,...(mode==='continuity'?{continuity:result.status==='valid'&&result.value<=30,thresholdOhms:30}:{})};

@@ -19,10 +19,15 @@ export function canvasTerminals(circuit,layout){return circuit.components.flatMa
 export function snapCanvasTerminal(circuit,layout,point,radius=28){
  return canvasTerminals(circuit,layout).map(t=>({...t,distance:Math.hypot(t.x-point.x,t.y-point.y)})).filter(t=>t.distance<=radius).sort((a,b)=>a.distance-b.distance)[0]||null;
 }
+export function canvasProbeTerminal(circuit,layout,color){
+ const meter=circuit.instruments[0];if(!meter||meter[color+'Connected']===false)return null;
+ const terminals=canvasTerminals(circuit,layout),node=meter[color==='red'?'redNode':'blackNode'];
+ return terminals.find(t=>t.id===meter[color+'TerminalId']&&t.nodeId===node)||terminals.find(t=>t.nodeId===node)||null;
+}
 export function emptyCanvasCircuit(circuit){
  const next=clone(circuit);next.components=[];next.connections=[];next.externalTerminals=[];next.state.powered=false;
  next.nodes=next.nodes.filter(n=>n.id===next.groundNode).map(n=>({...n,used:true}));
- next.instruments=next.instruments.map(i=>({...i,redNode:next.groundNode,blackNode:next.groundNode}));validateCircuit(next);return next;
+ next.instruments=next.instruments.map(i=>{const m={...i,redNode:next.groundNode,blackNode:next.groundNode,redConnected:false,blackConnected:false};delete m.redTerminalId;delete m.blackTerminalId;return m;});validateCircuit(next);return next;
 }
 export function editCircuitCanvas(circuit,layout,action){
  validateCircuit(circuit);validateCanvasLayout(layout,circuit);assertSerializable(action);
@@ -44,11 +49,12 @@ export function editCircuitCanvas(circuit,layout,action){
  }else if(action.type==='remove-component'){
   const p=c.components.find(p=>p.id===action.id);if(!p)throw Error('Component unavailable');const ids=p.terminals.map(t=>t.id);
   c.connections=c.connections.filter(w=>!ids.includes(w.from)&&!ids.includes(w.to));c.components=c.components.filter(p=>p.id!==action.id);delete l.positions[action.id];
+  for(const meter of c.instruments)for(const color of ['red','black'])if(ids.includes(meter[color+'TerminalId'])){meter[color+'Connected']=false;delete meter[color+'TerminalId'];}
  }else if(action.type==='remove-wire'){
   if(!c.connections.some(w=>w.id===action.id))throw Error('Wire unavailable');c.connections=c.connections.filter(w=>w.id!==action.id);
  }else if(action.type==='reference')c.groundNode=terminal(action.terminal).nodeId;
  else if(action.type==='probe'){
-  if(!['red','black'].includes(action.probe))throw Error('Unsupported probe');c.instruments[0][action.probe==='red'?'redNode':'blackNode']=terminal(action.terminal).nodeId;
+  if(!['red','black'].includes(action.probe))throw Error('Unsupported probe');const t=terminal(action.terminal),meter=c.instruments[0];meter[action.probe==='red'?'redNode':'blackNode']=t.nodeId;meter[action.probe+'TerminalId']=t.id;meter[action.probe+'Connected']=true;
  }else if(action.type==='open'){
   const part=c.components.find(p=>p.id===action.id),wire=c.connections.find(w=>w.id===action.id);if(typeof action.open!=='boolean'||!part&&!wire)throw Error('Path unavailable');if(part)part.state.open=action.open;else wire.closed=!action.open;
  }else if(action.type==='properties'){const part=c.components.find(p=>p.id===action.id);if(!part)throw Error('Component unavailable');validateResistorMetadata(action.properties);if(part.type==='dc-source'&&action.properties.voltageVolts<0&&part.properties.voltageVolts>=0)throw Error('Unipolar bench supply requires 0–24 V');Object.assign(part.properties,action.properties);}

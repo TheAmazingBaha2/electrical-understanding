@@ -12,7 +12,7 @@ export async function desktopAcceptance(page,{native=false}={}){
  const drag=async(a,b)=>{await page.mouse.move(a.x,a.y);await page.mouse.down();await page.mouse.move(b.x,b.y,{steps:8});await page.mouse.up();};
  // Windows-style drag, edge/corner resize, keyboard move, docking, minimize/reopen.
  const meter=page.locator('[data-pane="meter"]'),bar=meter.locator('[data-window-drag]'),before=await meter.boundingBox(),barbox=await bar.boundingBox();
- await drag({x:barbox.x+50,y:barbox.y+20},{x:barbox.x+80,y:barbox.y+40});assert.ok((await meter.boundingBox()).x>before.x+20);
+ await drag({x:barbox.x+50,y:barbox.y+20},{x:barbox.x-20,y:barbox.y+40});assert.ok((await meter.boundingBox()).x<before.x-60);
  await meter.locator('[data-window-resize="se"]').scrollIntoViewIfNeeded();const resize=await meter.locator('[data-window-resize="se"]').boundingBox(),width=(await meter.boundingBox()).width;
  await drag({x:resize.x+5,y:resize.y+5},{x:resize.x+55,y:resize.y+35});assert.ok((await meter.boundingBox()).width>width+40,JSON.stringify({beforeWidth:width,after:await meter.boundingBox(),resize}));
  await bar.focus();await bar.press('ArrowRight');await page.locator('[data-window-dock="right"][data-window-id="meter"]').click();assert.equal(await meter.getAttribute('data-dock'),'right');

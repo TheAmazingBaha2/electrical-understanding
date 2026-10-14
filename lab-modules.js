@@ -3,7 +3,7 @@ import {assertSerializable} from './data-contract.js';
 import {validateCircuit} from './circuit-model.js';
 import {sharedMeterReading} from './shared-multimeter.js';
 export const labPlatforms=['desktop','mobile'];
-const identifier=v=>typeof v==='string'&&/^[A-Za-z0-9][A-Za-z0-9._:-]*$/.test(v);
+const identifier=v=>typeof v==='string'&&!['constructor','prototype','__proto__'].includes(v)&&/^[A-Za-z0-9][A-Za-z0-9._:-]*$/.test(v);
 const plain=v=>v&&typeof v==='object'&&!Array.isArray(v);
 function fields(value,allowed,label){if(!plain(value))throw Error('Invalid '+label);for(const k of Object.keys(value))if(!allowed.includes(k))throw Error('Unknown '+label+' field: '+k);}
 function text(value,label){if(typeof value!=='string'||!value.trim())throw Error('Missing '+label);}

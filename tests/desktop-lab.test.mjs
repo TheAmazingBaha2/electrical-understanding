@@ -1,11 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {dividerCircuit,solveDC,measureVoltage} from '../circuit-model.js';
-import {circuitCanvasLayout,editCircuitCanvas,canvasHistoryEdit,canvasHistoryRestore,canvasTerminals,snapCanvasTerminal} from '../circuit-canvas.js';
+import {circuitCanvasLayout,editCircuitCanvas,canvasHistoryEdit,canvasHistoryRestore,canvasTerminals,canvasProbeTerminal,snapCanvasTerminal} from '../circuit-canvas.js';
 import {newProject,validateProject,addSnapshot,restoreSnapshot} from '../project-store.js';
 import {defaultDesktopLayout,fitDesktopWindow,resizeDesktopWindow,dockDesktopWindow,validateDesktopLayout} from '../desktop-windows.js';
 import {detectLabPlatform,selectedLabPlatform,renderLabPlatform} from '../lab-platform.js';
 import {renderPowerSupply} from '../component-editors.js';
+import {sharedMeterReading} from '../shared-multimeter.js';
 import {renderCircuitCanvas} from '../circuit-canvas-view.js';
 test('freeform graph builds a divider from supported parts, wires and reference without a new solver',()=>{
  let c=editCircuitCanvas(dividerCircuit(),circuitCanvasLayout(dividerCircuit()),{type:'clear'}),p=(id,type,properties,x,y)=>{c=editCircuitCanvas(c.circuit,c.layout,{type:'place',id,componentType:type,properties,position:{x,y}});};
@@ -42,3 +43,12 @@ test('platform uses OS rather than viewport, override remains local, separate ph
 });
 
 test("saved desktop windows stay reachable on smaller monitors without changing electrical state",()=>{const original={...defaultDesktopLayout().windows.scope,x:1600,y:1200,width:780,height:650},fit=fitDesktopWindow(original,{width:1000,height:900});assert.equal(fit.x,220);assert.equal(fit.y,250);assert.ok(fit.x+fit.width<=1000);assert.ok(fit.y+fit.height<=900);assert.equal(original.x,1600);});
+
+test('physical probe endpoints stay on the selected terminal, and clearing/removing contacts refuses readings',()=>{
+ const circuit=dividerCircuit(),layout=circuitCanvasLayout(circuit),selected=editCircuitCanvas(circuit,layout,{type:'probe',probe:'red',terminal:'R2.a'});
+ assert.equal(canvasProbeTerminal(selected.circuit,selected.layout,'red').id,'R2.a');assert.equal(sharedMeterReading(selected.circuit).value,2.5);
+ const moved=editCircuitCanvas(selected.circuit,selected.layout,{type:'move',id:'R2',position:{x:700,y:600}});assert.equal(canvasProbeTerminal(moved.circuit,moved.layout,'red').x,620);assert.equal(sharedMeterReading(moved.circuit).value,2.5);
+ const removed=editCircuitCanvas(moved.circuit,moved.layout,{type:'remove-component',id:'R2'});assert.equal(canvasProbeTerminal(removed.circuit,removed.layout,'red'),null);assert.equal(sharedMeterReading(removed.circuit).status,'blocked');
+ const clear=canvasHistoryEdit(selected.circuit,selected.layout,null,{type:'clear'});assert.equal(sharedMeterReading(clear.circuit).value,null);assert.equal(sharedMeterReading(clear.circuit).status,'blocked');
+ const undo=canvasHistoryRestore(clear.circuit,clear.layout,clear.history,'undo');assert.equal(undo.circuit.instruments[0].redTerminalId,'R2.a');assert.equal(sharedMeterReading(undo.circuit).value,2.5);assert.equal(sharedMeterReading(circuit).value,2.5);
+});
