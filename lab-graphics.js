@@ -1,0 +1,17 @@
+// One reviewed graphic asset library. No electrical calculations or state writes.
+import {encodeResistance,colorFor,formatResistance} from './resistor-color.js';
+export const graphicAssetVersion='1.0.0';
+export const escapeGraphic=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+export function resistorBody({resistanceOhms=1000,tolerancePercent=null,bandCount=4,selectedBand=null}={}){
+ const code=encodeResistance(resistanceOhms,bandCount,tolerancePercent);
+ const bands=Array.from({length:bandCount},(_,i)=>{const x=28+i*(bandCount===4?22:17),color=code.representable?colorFor(code.colors[i]):null;
+  return '<rect data-resistor-band="'+i+'" x="'+x+'" y="13" width="9" height="34" rx="2" fill="'+(color?.hex||'#d8dbcc')+'" stroke="'+(selectedBand===i?'#ffe269':color?'#29342f':'#64746c')+'" stroke-width="'+(selectedBand===i?3:1)+'" '+(!color?'stroke-dasharray="2 2"':'')+'><title>'+escapeGraphic(color?.id||'Value or tolerance not encoded')+'</title></rect>';}).join('');
+ return '<path d="M0 30 H18 M142 30 H160" stroke="#b8cbd0" stroke-width="4"/><rect x="16" y="10" width="128" height="40" rx="15" fill="#d9bd8a" stroke="#695637" stroke-width="2"/>'+bands;
+}
+export function resistorArtwork(properties={},options={}){return '<svg viewBox="0 0 160 60" class="part-art resistor-art" role="img" aria-label="'+escapeGraphic(formatResistance(properties.resistanceOhms||1000)+' resistor')+'">'+resistorBody({...properties,bandCount:properties.bandCount||4,...options})+'</svg>';}
+export function sourceBody(){return '<rect x="14" y="8" width="130" height="44" rx="9" fill="#244c59" stroke="#9fdee3" stroke-width="2"/><rect x="29" y="16" width="48" height="20" rx="3" fill="#102c30"/><text x="35" y="31" fill="#e6ffde" font-size="14">DC</text><circle cx="100" cy="30" r="10" fill="#a2c8cb"/><circle cx="132" cy="23" r="5" fill="#ed7a6f"/><circle cx="132" cy="40" r="5" fill="#111c26"/>';}
+export function partIcon(kind,properties={}){
+ const inner=kind==='resistor'?resistorBody(properties):kind==='source'?sourceBody():kind==='wire'?'<path d="M15 43 Q75 -12 145 43" fill="none" stroke="#78e7e3" stroke-width="6"/><path d="M15 43 V54 M145 43 V54" stroke="#c3d5d8" stroke-width="5"/>':kind==='ground'?'<path d="M80 5 V32 M50 32 H110 M60 40 H100 M70 48 H90" stroke="#bdedf0" stroke-width="4"/>':kind==='fault'?'<path d="M10 30 H60 M100 30 H150 M60 30 L93 8" stroke="#f3bc65" stroke-width="5"/>':kind==='red'||kind==='black'?'<path d="M20 48 Q40 15 95 24" fill="none" stroke="'+(kind==='red'?'#ef8c82':'#a2b4c0')+'" stroke-width="5"/><path d="M95 24 H130" stroke="'+(kind==='red'?'#ef8c82':'#a2b4c0')+'" stroke-width="11"/><path d="M130 24 H150" stroke="#e1e5dd" stroke-width="4"/>':'<text x="80" y="36" text-anchor="middle" fill="#c3e9e9" font-size="24">'+escapeGraphic(kind)+'</text>';
+ return '<svg viewBox="0 0 160 60" class="part-art" aria-hidden="true" focusable="false">'+inner+'</svg>';
+}
+export const componentPalette=[{id:'resistor',name:'Resistor',terminals:2},{id:'source',name:'DC supply',terminals:2},{id:'wire',name:'Jumper wire',terminals:2},{id:'ground',name:'Reference',terminals:1},{id:'red',name:'Red probe',terminals:1},{id:'black',name:'Black probe',terminals:1},{id:'inspect',name:'Inspect / edit',terminals:0},{id:'fault',name:'Open path',terminals:0}];

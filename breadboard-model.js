@@ -42,6 +42,7 @@ export function editBreadboard(s,action){
  else if(action.type==='remove-wire'){if(!w)throw Error('Wire not found');next.wires=next.wires.filter(w=>w.id!==action.id);}
  else if(action.type==='reroute-wire'){if(!w)throw Error('Wire not found');w.fromHole=action.fromHole;w.toHole=action.toHole;}
  else if(action.type==='probe'){if(!['red','black'].includes(action.probe))throw Error('Unknown probe');next.probes[action.probe]=action.hole;}
+ else if(action.type==='reference'){holeNode(action.hole);next.groundHole=action.hole;}
  else if(action.type==='power')next.powered=action.powered;
  else if(action.type==='open'){if(p)p.state.open=action.open;else if(w)w.closed=!action.open;else throw Error('Path not found');}
  else if(action.type==='value'){if(!p)throw Error('Component not found');p.properties[p.type==='resistor'?'resistanceOhms':'voltageVolts']=action.value;}

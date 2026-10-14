@@ -1,5 +1,7 @@
 # Durable V3 checkpoint
 
+> Active graphical-first assignment: read [GRAPHICAL_LAB_CHECKPOINT.md](GRAPHICAL_LAB_CHECKPOINT.md). Earlier foundation/transaction records below remain preserved; graphical UI staging acceptance is separate.
+
 ## Current resumption point — October 13 (America/New_York)
 
 Project-transfer reliability follow-up is verified at `0d6432ce9a2de5b22f9ab97dfcd046ae2a58d65e`: primary `38507066495`/read-back `38507066525` passed all 14 browser suites and all 59 served assets. Delayed-lock desktop/phone coverage exercises saves longer than the debounce, busy/inert transfers, project duplication/deletion/recovery and navigation. Pending debounce saves cancel on explicit saves; save revisions apply only to their captured project identity; navigation cleanup awaits transfers. A preceding documentation-only repetition exposed the real race; it was fixed, not hidden by retrying the failed run. CAS conflict protection remains intact and no saved copy was deleted.
