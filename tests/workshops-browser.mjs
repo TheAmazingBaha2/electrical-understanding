@@ -13,7 +13,7 @@ try{
   page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(/api\.openai|api\.anthropic|functions\/v1/.test(r.url()))providerRequests.push(r.url());});
   await page.route('https://esm.sh/**',route=>route.abort());
   await page.addInitScript(()=>{if(!localStorage.getItem('eu_demo_v1'))localStorage.setItem('eu_demo_v1',JSON.stringify({'BDMM-01':{answers:{b101:{value:'0',correct:true,reviewDue:777,extra:'retain'}},complete:false}}));});
-  await page.goto('http://127.0.0.1:8080/');await page.locator('.dashboard-book').waitFor();
+  await page.goto('http://127.0.0.1:8080/');await page.locator('[data-dashboard-source="geier"]').waitFor();
   assert.equal(await page.locator('[data-dashboard-source="geier"] .dashboard-chapter').count(),2);
   async function open(l){
    await go(page,'textbooks');

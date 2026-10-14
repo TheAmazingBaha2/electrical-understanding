@@ -13,7 +13,8 @@ try{
  assert.equal(await page.locator('.math-topic-card').count(),0);
  assert.match(await page.locator('#main').innerText(),/Periodic refreshers/);
  await go(page,'account');await page.locator('.account-maintenance > summary').click();await page.locator('[data-goto="legacy"]').click();
- assert.equal(await page.locator('.legacy-source-row').count(),7);
+ assert.equal(await page.locator('#legacy-unreferenced .legacy-source-row').count(),7);
+ assert.equal(await page.locator('#legacy-scanned-chapter .legacy-source-row').count(),16);
  await page.locator('[data-lesson="MATH-001"][data-goto="lesson"]').click();
  assert.match(await page.locator('.lesson-header').innerText(),/Scale, Prefixes/);
  assert.match(await page.locator('.bread').innerText(),/Mathematics Companion.*LEGACY GROUP 2/);
