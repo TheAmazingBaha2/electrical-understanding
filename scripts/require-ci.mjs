@@ -6,7 +6,7 @@ export function verifiedRun(payload,sha){
  const latest=runs.sort((a,b)=>b.id-a.id)[0];
  return latest?.status==='completed'&&latest?.conclusion==='success';
 }
-export async function requireCI(sha,{fetcher=fetch,wait=ms=>new Promise(r=>setTimeout(r,ms)),tries=32,token=process.env.GITHUB_TOKEN}={}){
+export async function requireCI(sha,{fetcher=fetch,wait=ms=>new Promise(r=>setTimeout(r,ms)),tries=128,token=process.env.GITHUB_TOKEN}={}){
  if(!/^[a-f0-9]{40}$/.test(sha))throw Error('A concrete commit SHA is required for staging promotion');
  for(let i=0;i<tries;i++){
   const r=await fetcher('https://api.github.com/repos/TheAmazingBaha2/electrical-understanding/actions/runs?head_sha='+sha+'&per_page=20',{headers:{Accept:'application/vnd.github+json',...(token?{Authorization:'Bearer '+token}:{})}});

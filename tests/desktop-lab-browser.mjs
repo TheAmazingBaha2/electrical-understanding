@@ -25,7 +25,7 @@ export async function desktopAcceptance(page,{native=false}={}){
  await command('canvas-tool','inspect');const part=page.locator('[data-canvas-part="R1"]'),position=await part.getAttribute('transform');
  await drag(await transform(part),await transform(part,100,30));assert.notEqual(await part.getAttribute('transform'),position);assert.match(await page.locator('[data-lab-live-reading]').innerText(),/2\.500 V/);
  await part.click();await command('resistor-value','2000',pane);assert.match(await page.locator('[data-lab-live-reading]').innerText(),/1\.667 V/);
- await command('select-circuit-part','V1').catch(async()=>{await page.locator('[data-canvas-part="V1"]').click();});
+ await page.locator('[data-canvas-part="V1"]').click();
  assert.equal(await pane.locator('[data-graphic-range="supply-voltage"]').getAttribute('min'),'0');await command('supply-voltage','9',pane);assert.match(await page.locator('[data-lab-live-reading]').innerText(),/3\.000 V/);
  // Clear requires explicit confirmation; undo restores exact electrical state.
  await page.locator('[data-clear-lab]').click();assert.equal(await page.locator('[data-canvas-part]').count(),3);await page.locator('[data-cancel-clear-lab]').click();
@@ -37,7 +37,7 @@ export async function desktopAcceptance(page,{native=false}={}){
  await page.waitForTimeout(500);const savedLayout=await page.evaluate(()=>localStorage.getItem('eu_desktop_windows_v1'));assert.ok(savedLayout);await page.reload();await go(page,'workbench');assert.match(await page.locator('[data-lab-live-reading]').innerText(),/3\.000 V/);
  // Breadboard clearing uses its own graph/history and draggable probe contacts.
  await page.locator('[data-lab-project]').selectOption('breadboard-project');await page.locator('[data-board-probe-draggable]').first().waitFor();await page.locator('[data-clear-lab]').click();await page.locator('[data-confirm-clear-lab]').click();assert.equal(await page.locator('[data-placed-component]').count(),0);await command('board-undo');assert.equal(await page.locator('[data-placed-component]').count(),3);
- assert.deepEqual(errors,[]);await mkdir('test-artifacts',{recursive:true});await page.screenshot({path:'test-artifacts/'+(native?'electron-windows-desktop':'desktop-browser')+'.jpg',type:'jpeg',quality:68,fullPage:false});
+ assert.deepEqual(errors,[]);await mkdir('test-artifacts',{recursive:true});const name=native?'electron-windows-desktop':'desktop-browser',screenshot=await page.screenshot({path:'test-artifacts/'+name+'.jpg',type:'jpeg',quality:60,fullPage:false});console.log('DESKTOP_QA_IMAGE:'+name+':'+screenshot.toString('base64'));
  console.log('PASS: '+(native?'native Windows Electron':'desktop browser')+' canvas, probes, unipolar source, clear/undo, windows/docking/layout, project restoration.');
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){

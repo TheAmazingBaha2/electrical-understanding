@@ -7,3 +7,5 @@ node_modules/
 
 supabase/.temp/
 test-artifacts/
+native/tauri/src-tauri/target/
+native/tauri/src-tauri/gen/

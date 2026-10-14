@@ -46,7 +46,7 @@ jobs:
       - name: Run real desktop and mobile smoke tests
         run: |
           result=0
-          for suite in sidebar-browser dashboard-browser source-browser workshops-browser browser-smoke persistence-browser v3-browser lab-guidance-browser breadboard-browser shared-meter-browser scope-browser graphical-lab-browser project-manager-browser math-browser adaptive-browser; do
+          for suite in sidebar-browser dashboard-browser source-browser workshops-browser browser-smoke persistence-browser v3-browser lab-guidance-browser breadboard-browser shared-meter-browser scope-browser graphical-lab-browser project-manager-browser math-browser adaptive-browser desktop-lab-browser mobile-lab-browser; do
             node "tests/$suite.mjs" || result=1
           done
           exit "$result"
@@ -57,3 +57,63 @@ jobs:
           name: v2-visual-qa
           path: test-artifacts/
           if-no-files-found: ignore
+
+  windows-electron:
+    if: github.ref == 'refs/heads/draft/v2-dmm-companion'
+    runs-on: windows-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install bounded native evaluation dependencies
+        run: npm install --no-save playwright@1.55.0 electron@44.7.2
+      - name: Build isolated public assets
+        run: npm run build
+      - name: Exercise Windows Electron desktop UI
+        run: node tests/electron-windows.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-electron-evaluation
+          path: test-artifacts/
+
+  windows-tauri:
+    if: github.ref == 'refs/heads/draft/v2-dmm-companion'
+    runs-on: windows-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: native/tauri/src-tauri
+      - name: Install bounded native evaluation dependencies
+        run: |
+          npm install --no-save @tauri-apps/cli@2.12.2 selenium-webdriver@4.34.0
+          cargo install tauri-driver --locked
+          cargo install --git https://github.com/chippers/msedgedriver-tool
+          & "$env:USERPROFILE/.cargo/bin/msedgedriver-tool.exe"
+          $PWD.Path >> $env:GITHUB_PATH
+      - name: Build isolated public assets
+        run: npm run build
+      - name: Build debug Windows prototype without installer
+        working-directory: native/tauri
+        run: npx tauri build --debug --no-bundle
+      - name: Exercise real Windows WebView2 UI
+        run: node tests/tauri-windows.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-tauri-evaluation
+          path: |
+            test-artifacts/
+            native/tauri/src-tauri/Cargo.lock
