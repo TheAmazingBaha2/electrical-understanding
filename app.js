@@ -1,4 +1,6 @@
-import {renderElectronicsWorkspace,attachElectronicsWorkspace} from './electronics-workspace.js';
+import {recordLabActivity} from './lab-modules.js';
+import {attachLessonLabs} from './lesson-labs.js';
+import {renderLabPlatform,attachLabPlatform} from './lab-platform.js';
 import {renderSavedReinforcement} from './source-navigation.js';
 import {placementForLesson,sectionView,nextSourceLesson,lessonReferencePages,studySections,studyInventory,learningProgress} from './learning-structure.js';
 import { ProgressStore, cloudTransport } from './persistence.js';
@@ -217,7 +219,7 @@ function render(){setNav();refreshAIChatContext();const names={'generated-lesson
  const main=$('#main');
  workspaceCleanup?.();workspaceCleanup=null;
  const disclosures=new Set([...main.querySelectorAll('details[data-disclosure][open]')].map(el=>el.dataset.disclosure));
- main.innerHTML=view==='workbench'?renderElectronicsWorkspace():view==='dashboard'?renderDashboard():['lesson','generated-lesson'].includes(view)?renderLesson():view==='reviews'?'<header class="source-heading"><p class="v2-kicker">RETURN TO THE IDEAS</p><h2>Review</h2><p>Review brings ideas from your regular lessons back into practice. The broader format is still to be decided; your scheduled quiz checks remain available below.</p></header>'+renderReviews():view==='account'?renderAccount():view==='library'?renderLibrary():v2Page(view,v2Context(),activeLesson);
+ main.innerHTML=view==='workbench'?renderLabPlatform():view==='dashboard'?renderDashboard():['lesson','generated-lesson'].includes(view)?renderLesson():view==='reviews'?'<header class="source-heading"><p class="v2-kicker">RETURN TO THE IDEAS</p><h2>Review</h2><p>Review brings ideas from your regular lessons back into practice. The broader format is still to be decided; your scheduled quiz checks remain available below.</p></header>'+renderReviews():view==='account'?renderAccount():view==='library'?renderLibrary():v2Page(view,v2Context(),activeLesson);
  for(const el of main.querySelectorAll('details[data-disclosure]'))if(disclosures.has(el.dataset.disclosure))el.open=true;
  main.querySelectorAll('[data-toggle-panel]').forEach(button=>{
   const panel=document.getElementById(button.dataset.togglePanel);if(!panel)return;
@@ -248,11 +250,11 @@ function render(){setNav();refreshAIChatContext();const names={'generated-lesson
    lessonTab=tabButtons[next].dataset.lessonTab;render();main.querySelector('.lesson-tab.selected')?.focus();
  }));
  if(['lesson','generated-lesson'].includes(view)){attachQuiz();if(lessonTab==='interact'){
-  renderExperiment();attachLabWidgets();attachDmmWidgets();attachCetaWidgets();attachMathWidgets();attachGeneratedSimulations(main);
+  const practical=findLesson(activeLesson);if(practical?.labs)workspaceCleanup=attachLessonLabs(main,practical,{state:getState(practical.id),saveActivity:async(platform,id,submission)=>{const currentStore=store;const doc=await currentStore.edit(practical.id,s=>{const next=recordLabActivity(practical,s,platform,id,submission,now());Object.assign(s,next);s.complete=lessonRequirementsMet(practical,s);s.updatedAt=now();});if(store!==currentStore)return null;progress=doc.progress;if(user)void loadCloud();return getState(practical.id);},onPlatformChange:async()=>{await workspaceCleanup?.();workspaceCleanup=null;render();}});else renderExperiment();attachLabWidgets();attachDmmWidgets();attachCetaWidgets();attachMathWidgets();attachGeneratedSimulations(main);
   attachGeneratedPredictions(main,notify);
 }const workshop=findLesson(activeLesson);if(workshop?.workshop)attachWorkshopWidgets(main,workshop,getState(workshop.id),(id,value,correct)=>saveWorkshopCheck(workshop.id,id,value,correct));}
  if(view==='account')attachAuth();
- if(view==='workbench')workspaceCleanup=attachElectronicsWorkspace(main);
+ if(view==='workbench')workspaceCleanup=attachLabPlatform(main,localStorage,{onPlatformChange:async()=>{await workspaceCleanup?.();workspaceCleanup=null;render();}});
 
 }
 function cloudBanner(){

@@ -1,0 +1,5 @@
+// Desktop presentation reuses shared project/instrument behavior, not the mobile renderer.
+import {renderElectronicsWorkspace,attachElectronicsWorkspace} from './electronics-workspace.js';
+import {attachDesktopWindows} from './desktop-windows.js';
+export function renderDesktopLab(){return renderElectronicsWorkspace({desktop:true}).replace('SHARED ELECTRONICS LAB · DC FOUNDATION','DESKTOP LAB · WINDOWS PROTOTYPE').replace('One circuit, connected instruments','Your desktop electronics bench').replace('Both use the same virtual meter and electrical model.','Use the freeform circuit canvas or breadboard with shared graphical instruments. Drag window titles, resize any edge/corner, dock panels, or restore the default layout.').replace('<details class="desktop-lab-layout">','<button class="outline" data-reset-desktop-layout>Reset window layout</button><details class="desktop-lab-layout">');}
+export function attachDesktopLab(root,storage=localStorage,options={}){const cleanup=attachElectronicsWorkspace(root,storage,options),dispose=attachDesktopWindows(root,storage);return async()=>{dispose();await cleanup?.();};}

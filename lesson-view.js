@@ -1,3 +1,4 @@
+import {practicalCompletion} from './lab-modules.js';
 import {renderWorkshopReference} from './workshop-widgets.js';
 import {workshopActivityProgress} from './workshop-progress.js';
 import {sourceReturn,placementForLesson,chapterLabel} from './learning-structure.js';
@@ -30,7 +31,7 @@ function reviewPanel(ctx){
  return '<section class="lesson-summary"><span class="v2-kicker">YOUR LEARNING RECORD</span><h3>'+(passed?'Lesson mastered':'Your progress so far')+'</h3>'+
  '<div class="lesson-summary-stats"><div><strong>'+score.correct+' / '+score.total+'</strong><span>Correct checks</span></div><div><strong>'+attempted+' / '+score.total+'</strong><span>Graded checks</span></div><div><strong>'+due+'</strong><span>Due for review</span></div></div>'+
  '<p class="muted">Pass when all questions have been graded, at least '+Math.ceil(.8*score.total)+' are correct, and every safety-critical check is correct. This lesson does not certify physical measurement skills.</p>'+
- practicePanel+'<div class="lesson-review-items">'+lesson.questions.map((q,i)=>{
+ practicePanel+(lesson.labs?'<p class="lesson-practical-review">Practical requirement: '+(practicalCompletion(lesson,ctx.workshopState||{}).complete?'met':'complete either laboratory module')+'. Desktop and mobile grades remain independent; the second is extra practice.</p>':'')+'<div class="lesson-review-items">'+lesson.questions.map((q,i)=>{
   const a=answers[q.id];const valid=typeof a?.correct==="boolean";const label=a?.pending?'Self-check pending':valid?(a.correct?'Understood':'Needs another attempt'):'Not yet answered';
   return '<button type="button" class="lesson-review-item" data-quiz-jump="'+i+'"><span><b>'+e("Question "+(i+1))+'</b> '+e(q.prompt)+'</span><small>'+label+' →</small></button>';
  }).join("")+'</div><div class="actions"><button class="outline" data-lesson-tab="quiz">Return to quiz</button>'+
