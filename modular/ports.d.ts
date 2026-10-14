@@ -28,7 +28,7 @@ export interface SearchProvider {searchTopics(query:string):Entity[];}
 export interface IngestionProvider {
  // Developer/private-authoring port only; proposals never publish themselves.
  // Explicit authorized input is passed in, not fetched from ChatGPT or private files.
- prepare(input:Json,context:{topics:Entity[]; evidence:Entity[]}):Promise<{batch:Entity; proposals:Entity[]}>;
+ prepare(input:Json,context:{topics:Entity[]; evidence:Entity[];editions:Entity[];locators:Entity[];lessons:Entity[]}):Promise<{batch:Entity; proposals:Entity[];diffs:Json[];contextHash:string}>;
  validate(batch:Entity,proposals:Entity[]):{valid:boolean; issues:string[]};
 }
 export interface PrivateHostStorage {

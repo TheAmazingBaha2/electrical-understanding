@@ -1,4 +1,7 @@
 name: Verify Electrical Understanding v2
+concurrency:
+  group: electrical-checks-${{ github.ref }}
+  cancel-in-progress: true
 on:
   pull_request:
   push:
@@ -10,11 +13,17 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      actions: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Cancel obsolete V3 validation runs
+        if: github.event_name == 'push' && github.ref == 'refs/heads/draft/v2-dmm-companion'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/cancel-obsolete-v3-checks.mjs
       - name: Check module syntax
         run: npm run check
       - name: Verify Cloudflare staging build
@@ -26,6 +35,7 @@ jobs:
 
   browser-smoke:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       contents: read
     steps:
@@ -47,7 +57,7 @@ jobs:
         run: |
           result=0
           for suite in sidebar-browser dashboard-browser source-browser workshops-browser browser-smoke persistence-browser v3-browser lab-guidance-browser breadboard-browser shared-meter-browser scope-browser graphical-lab-browser project-manager-browser math-browser adaptive-browser desktop-lab-browser mobile-lab-browser dual-lab-browser modular-browser; do
-            node "tests/$suite.mjs" || result=1
+            timeout 180s node "tests/$suite.mjs" || result=1
           done
           exit "$result"
       - name: Save visual QA screenshots

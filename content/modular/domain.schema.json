@@ -2092,7 +2092,11 @@
             "CREATE_SUBTOPIC",
             "CREATE_TOPIC",
             "CONFLICT",
-            "DEFER"
+            "DEFER",
+            "DUPLICATE",
+            "CREATE_LESSON",
+            "SPLIT_LESSON",
+            "MERGE_LESSONS"
           ]
         },
         "confidence": {

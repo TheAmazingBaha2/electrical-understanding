@@ -75,6 +75,27 @@
         "Desktop layout and project restoration",
         "Original 33 approvals/336 question IDs and phone module regressions"
       ]
+    },
+    {
+      "id": "V3-PRIVATE-PRACTICAL-UX",
+      "widgetId": "dmm-shared",
+      "widgetVersion": "1.0.0",
+      "suggestion": "Evaluate the new private short phone practicals and reusable rubric adapters with the owner before any learner activation.",
+      "priority": "normal",
+      "affectedLessons": [
+        "private modular pilot candidates; no active lesson changes"
+      ],
+      "affectedProjects": [
+        "private practical experiment states"
+      ],
+      "proposedChange": "Batch contextual highlighting, hint quality, conflict-copy review and short exercise presets after owner acceptance. Reuse the shared meter, resistor artwork and project store.",
+      "compatibilityRequirements": "No physics, existing graded semantics, stable IDs or project data changes without review/version approval. Draft practice never awards mastery.",
+      "testingRequirements": [
+        "320/390 phone and Windows owner review",
+        "Practice versus grade isolation",
+        "Exact instance and circuit-state restoration",
+        "All existing lessons and both platform regressions"
+      ]
     }
   ]
 }

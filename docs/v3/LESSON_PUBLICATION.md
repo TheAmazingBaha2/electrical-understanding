@@ -2,6 +2,8 @@
 
 The next topic-centric Schema V3 is a separate domain family; read [MODULAR_LESSON_ARCHITECTURE.md](MODULAR_LESSON_ARCHITECTURE.md). Existing package schemas/importer remain compatible and unchanged. New V3 draft bundles are private authoring artifacts, not inputs to this legacy publication CLI and not live learner routes yet. Do not relabel a V3 bundle as schema 1/2 or auto-publish a draft to obtain a preview.
 
+For implemented private V3 practice, independent practical rubrics, transactional storage, deterministic ingestion proposals and reviewed local publication export, use [PRIVATE_LEARNING_WORKFLOW.md](PRIVATE_LEARNING_WORKFLOW.md) and the [active continuation](MODULAR_PILOT_CONTINUATION.md). The Resistors/DMM candidates remain private and ungraded; no export grants release approval.
+
 ChatGPT authors lessons; the workbench teaches them. Export an explicitly owner-approved JSON artifact matching `content/lesson-package.schema.json`. Repository tools never fetch ChatGPT conversations and there is no website upload/generation service. The schema defines stable lesson/question IDs, source book/edition/chapter/printed pages, evidence references, curriculum/dashboard placement, objectives, sections, worked steps, discussion/prediction checkpoints, multiple activities and versioned widget references/configuration, quiz answers/rubrics/tolerances/safety flags, prerequisites and review rules. Counts are flexible. Plain text is escaped; no package HTML, JavaScript or arbitrary code is accepted.
 
 1. Owner reviews and approves the completed artifact in ChatGPT.

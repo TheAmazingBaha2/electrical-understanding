@@ -1,0 +1,10 @@
+// Explicit local files only. No website endpoint, model call or canonical mutation.
+import {readFile,writeFile,realpath} from 'node:fs/promises';import {dirname,resolve,sep} from 'node:path';import {fileURLToPath,pathToFileURL} from 'node:url';
+import {readPrivateBundle} from './modular-file-repository.mjs';import {ContentRepository,canonicalJSON,artifactHash} from '../../modular/repositories.js';import {DeterministicIngestionProvider,ingestionContext} from '../../modular/ingestion.js';
+export async function writeIngestionProposal(bundle,input,output){
+ const repoRoot=await realpath(fileURLToPath(new URL('../../',import.meta.url))),parent=await realpath(dirname(resolve(output)));if(parent===repoRoot||parent.startsWith(repoRoot+sep))throw Error('Private proposals must remain outside repository');
+ const repo=new ContentRepository();repo.importBundle(bundle);const provider=new DeterministicIngestionProvider(),result=await provider.prepare(input,ingestionContext(repo));if(!provider.validate(result.batch,result.proposals).valid)throw Error('Proposal validation failed');
+ const document={format:'eu-ingestion-review@1',input,...result,approval:'pending',canonicalChangesApplied:false};await writeFile(output,canonicalJSON(document)+'\n',{flag:'wx',mode:0o600});
+ await writeFile(output+'.md','# PRIVATE ingestion review — no changes applied\n\n'+result.diffs.map(d=>'## '+d.decision+'\n\n'+d.reason+'\n\nBefore: '+JSON.stringify(d.before)+'\n\nProposed: '+d.proposedText+'\n\nLocator IDs: '+d.locatorIds.join(', ')+'\n\n'+d.gradeImpact+'\n').join('\n'),{flag:'wx',mode:0o600});return {hash:await artifactHash(document),proposals:result.proposals.length,gaps:result.batch.gaps.length,canonicalChangesApplied:false};
+}
+if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href){if(process.argv.length!==5)throw Error('Usage: node scripts/content/prepare-ingestion.mjs PRIVATE_BUNDLE EXPLICIT_INPUT.json NEW_PRIVATE_PROPOSAL.json');console.log(JSON.stringify(await writeIngestionProposal(await readPrivateBundle(process.argv[2]),JSON.parse(await readFile(process.argv[3],'utf8')),resolve(process.argv[4]))));}

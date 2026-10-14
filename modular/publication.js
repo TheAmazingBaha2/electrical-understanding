@@ -26,6 +26,7 @@ export async function inspectPublication(bundle,manifest,{previous=null,widgetLo
  if(publicationDiff(previous,bundle).immutableConflicts.length)issues.push('Previously identified immutable content changed');
  const text=canonicalJSON(bundle);if(/eu-private-scans|service_role|sb_secret_[A-Za-z0-9_-]+|\/storage\/v1\/object\/(?:sign|authenticated)|-----BEGIN .*PRIVATE KEY-----/i.test(text))issues.push('Private storage reference or secret-like material is not publishable');
  const repo=new ContentRepository();repo.importBundle(bundle);
+ if(bundle.entities.some(e=>['LessonRevision','TopicRevision','AssessmentTemplate','LabModuleDefinition'].includes(e.kind)&&e.status!=='published'))issues.push('Learner export must omit private draft revisions; retain them in the private authoring bundle');
  if(!candidate.lessonRevisions.length)issues.push('No published lesson revision selected');
  if(!candidate.profiles.length)issues.push('No compatible presentation profile');
  for(const edition of repo.list('SourceEdition')){
