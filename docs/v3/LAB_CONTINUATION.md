@@ -1,3 +1,5 @@
+> Final implementation is verified at `fe98a265ef146e2b3d2fea599e8f76a35f789042`: primary `38505263470`, read-back `38505263515`, 241 deterministic tests, all 14 browser suites and all 59 served assets. Earlier progress statements below are historical. Offline saving requires an already loaded app; a fully cached offline shell remains deferred.
+
 > Latest verified implementation: `83514078ed0e882a9caefa4f1e986de2ae6781d9`, primary `38504719822`/read-back `38504719805`, all 14 browser suites and 59 served assets. [CONTINUATION_REPORT.md](CONTINUATION_REPORT.md) summarizes all delivered milestones, owner tests and remaining boundaries. CHECKPOINT.md records the final identity-protection increment's separate gate.
 
 > Current laboratory milestones supersede the historical foundation limitations in COMPLETION_REPORT.md and SIMULATION_AND_PROJECT_FOUNDATION.md. Last verified personal-project deployment: `3b4e81351e0b84df58870d7751238635f8dce70b` (primary `38503196352`, read-back `38503196301`, 58 assets). See CHECKPOINT.md for the exact current refinement gate.
