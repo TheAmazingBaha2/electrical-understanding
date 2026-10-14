@@ -12,7 +12,7 @@ Desktop and mobile references retain separate module/activity identities. New co
 
 ## Storage and host boundaries
 
-The domain modules contain no DOM, Node, HTTP, Supabase, GitHub or native-shell APIs. `ContentRepository` provides immutable defensive-copy get/list/import/export operations. Scoped Evidence/Topic/Lesson/Assessment/Presentation/LabModule repository ports and deterministic SearchProvider use that repository. Progress, Sync and Ingestion ports will operate separately from published content; private events/proposals are deliberately excluded from learner bundles.
+The domain modules contain no DOM, Node, HTTP, Supabase, GitHub or native-shell APIs. `ContentRepository` provides immutable defensive-copy get/list/import/export operations. Scoped Evidence/Topic/Lesson/Assessment/Presentation/LabModule repository ports and deterministic SearchProvider use that repository. The private ProgressRepository/transport-free SyncProvider are separate from published content; see ASSESSMENT_ARCHITECTURE.md. Ingestion batch/proposal contracts exist, but the full ingestion review/retrieval provider remains to implement. Private events/proposals are deliberately excluded from learner bundles.
 
 `scripts/content/modular-file-repository.mjs` supplies a Node JSON-file read adapter and exclusive private export/read functions. Exports are canonical versioned JSON envelopes with SHA-256, created with mode 0600 and without replacing an existing file. Loaders validate the domain and hash before accepting an artifact. The adapter reads explicitly provided local paths; it never fetches ChatGPT or source scans. Mutable private progress/project persistence requires its own transactional host adapter; content files are not that database.
 

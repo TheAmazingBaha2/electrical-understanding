@@ -1,5 +1,6 @@
 import {assertSerializable} from '../data-contract.js';
 import {domainSchema,ENTITY_KINDS} from './contracts.js';
+import {assertAssessmentSemantics} from './assessment-rules.js';
 
 // Bounded Draft 2020-12 evaluator for exactly the vocabulary used by these contracts.
 // Unknown vocabulary fails closed; schemas are reviewed application code, never input.
@@ -32,13 +33,20 @@ export function validateEntity(entity,kind=entity?.kind){
  }
  if(kind==='ContentBlock'&&entity.origin!=='source-independent'&&!entity.evidence.length)throw Error('Source-derived assertion needs evidence');
  if(kind==='EvidenceClaim'&&entity.state==='disputed'&&!entity.conflictsWith.length)throw Error('Disputed evidence needs explicit conflict');
+ if(kind==='AssessmentTemplate')assertAssessmentSemantics(entity);
+ if(kind==='LabModuleReference'){
+  if(new Set(entity.activityIds).size!==entity.activityIds.length)throw Error('Duplicate practical activity ID');
+  if(!entity.adapter.startsWith(entity.platform+'-'))throw Error('Lab adapter/platform mismatch');
+ }
  if(kind==='IngestionProposal'&&entity.confidence<.7&&entity.decision!=='DEFER')throw Error('Low-confidence proposals must DEFER');
  if(kind==='LegacyMapping'&&entity.credit==='explicit-equivalent'&&(entity.disposition!=='MIGRATED_EQUIVALENT'||!entity.targets.length))throw Error('Credit needs reviewed equivalent mapping');
  if(kind==='LegacyMapping'&&!['REQUIRES_REVIEW','HISTORICAL_ONLY','INTENTIONALLY_RETIRED'].includes(entity.disposition)&&!entity.targets.length)throw Error('Migration disposition requires explicit targets');
  if(kind==='ProgressEvent'){
   if(!Number.isFinite(Date.parse(entity.timestamp)))throw Error('Invalid event timestamp');
-  const lab=entity.eventType.startsWith('lab-');if(lab&&entity.platform==='core')throw Error('Lab event needs independent platform');
+  if(new Date(entity.timestamp).toISOString()!==entity.timestamp.replace(/Z$/,entity.timestamp.includes('.')?'Z':'.000Z'))throw Error('Nonexistent calendar timestamp');
+  const lab=entity.eventType.startsWith('lab-');if(lab&&(entity.platform==='core'||!entity.module))throw Error('Lab event needs independent platform/module revision');
   if(entity.eventType.startsWith('question-')&&entity.platform!=='core')throw Error('Common quiz event must be core');
+  if(entity.eventType.startsWith('question-')&&(!entity.instanceId||entity.module))throw Error('Question event needs exact instance and no practical module');
   if(entity.eventType.endsWith('-result')&&typeof entity.correct!=='boolean')throw Error('Result needs immutable correctness');
   if(!entity.eventType.endsWith('-result')&&Object.hasOwn(entity,'correct'))throw Error('Only result events contain correctness');
   if(entity.eventType==='review-scheduled'&&(!entity.reviewDue||!Number.isFinite(Date.parse(entity.reviewDue))))throw Error('Review event needs valid due date');
@@ -47,7 +55,7 @@ export function validateEntity(entity,kind=entity?.kind){
 }
 export function validateBundle(bundle){
  assertSerializable(bundle);check(domainSchema.$defs.Bundle,bundle,'Bundle');
- const index=new Map();for(const entity of bundle.entities){validateEntity(entity);const key=revisionKey(entity);if(index.has(key))throw Error('Duplicate entity revision '+key);index.set(key,entity);}
+ const index=new Map(),identityKinds=new Map();for(const entity of bundle.entities){validateEntity(entity);const key=revisionKey(entity);if(index.has(key))throw Error('Duplicate entity revision '+key);if(identityKinds.has(entity.id)&&identityKinds.get(entity.id)!==entity.kind)throw Error('UUID reused across entity kinds');identityKinds.set(entity.id,entity.kind);index.set(key,entity);}
  const get=(kind,id,version)=>{const e=index.get(kind+':'+id+(version?'@'+version:''));if(!e)throw Error('Broken reference '+kind+':'+id+(version?'@'+version:''));return e;};
  const getRef=(kind,r)=>get(kind,r.id,r.version);
  const evidence=refs=>refs.forEach(r=>getRef('EvidenceClaim',r));
@@ -60,10 +68,11 @@ export function validateBundle(bundle){
    case 'TopicRevision':get('Topic',e.topicId);e.blockIds.forEach(id=>get('ContentBlock',id));e.objectiveIds.forEach(id=>get('LearningObjective',id));if(e.supersedes){const old=getRef('TopicRevision',e.supersedes);if(old.topicId!==e.topicId||old.id===e.id&&old.version===e.version)throw Error('Invalid topic supersession');}break;
    case 'TopicRelation':get('Topic',e.fromTopicId);get('Topic',e.toTopicId);if(e.fromTopicId===e.toTopicId)throw Error('Self topic relation');break;
    case 'LessonRevision':{
-    get('LessonDefinition',e.lessonId);if(!e.topicRevisions.length)throw Error('Lesson must compose canonical topics');e.topicRevisions.forEach(r=>getRef('TopicRevision',r));e.additionalBlockIds.forEach(id=>get('ContentBlock',id));e.objectives.forEach(id=>get('LearningObjective',id));e.assessments.forEach(r=>getRef('AssessmentTemplate',r));e.prerequisites.forEach(r=>getRef('LessonRevision',r));
+    get('LessonDefinition',e.lessonId);if(!e.topicRevisions.length)throw Error('Lesson must compose canonical topics');e.topicRevisions.forEach(r=>{const topic=getRef('TopicRevision',r);if(e.status==='published'&&topic.status!=='published')throw Error('Published lesson depends on unpublished topic');});e.additionalBlockIds.forEach(id=>get('ContentBlock',id));e.objectives.forEach(id=>get('LearningObjective',id));e.assessments.forEach(r=>{const template=getRef('AssessmentTemplate',r);if(e.status==='published'&&template.status!=='published')throw Error('Published lesson depends on unpublished assessment');});e.prerequisites.forEach(r=>getRef('LessonRevision',r));
     const desktop=e.labs.desktop?getRef('LabModuleReference',e.labs.desktop):null,mobile=e.labs.mobile?getRef('LabModuleReference',e.labs.mobile):null;
     if(desktop&&desktop.platform!=='desktop'||mobile&&mobile.platform!=='mobile')throw Error('Wrong practical platform');
     if(desktop&&mobile&&(desktop.id===mobile.id||desktop.activityIds.some(id=>mobile.activityIds.includes(id))))throw Error('Practical identities must be independent');
+    if([...(desktop?.activityIds||[]),...(mobile?.activityIds||[])].some(id=>e.assessments.some(a=>a.id===id)))throw Error('Practical activity cannot duplicate common quiz identity');
     if(e.labs.completionPolicy==='both-platforms'&&(!desktop||!mobile)||e.labs.completionPolicy==='either-platform'&&!desktop&&!mobile)throw Error('Practical completion policy missing modules');
     if(e.supersedes){const old=getRef('LessonRevision',e.supersedes);if(old.lessonId!==e.lessonId||old.id===e.id&&old.version===e.version)throw Error('Invalid lesson supersession');}break;
    }

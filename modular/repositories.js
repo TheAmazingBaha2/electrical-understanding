@@ -33,6 +33,6 @@ export class ContentRepository {
 }
 export function createDomainRepositories(content=new ContentRepository()){
  const scope=kind=>Object.freeze({get:(id,version)=>content.get(kind,id,version),list:()=>content.list(kind)});
- const SearchProvider=Object.freeze({searchTopics(query){const words=String(query).toLowerCase().trim().split(/\s+/).filter(Boolean);return content.list('Topic').filter(e=>words.every(w=>[e.title,...e.aliases].join(' ').toLowerCase().includes(w)));}});
+ const SearchProvider=Object.freeze({searchTopics(query){const words=String(query).toLowerCase().trim().split(/\s+/).filter(Boolean);return content.list('Topic').filter(e=>{const revisions=content.list('TopicRevision').filter(r=>r.topicId===e.id);return words.every(w=>[e.title,...e.aliases,...revisions.flatMap(r=>[r.title||'',...(r.aliases||[])])].join(' ').toLowerCase().includes(w));});}});
  return Object.freeze({ContentRepository:content,EvidenceRepository:scope('EvidenceClaim'),TopicRepository:scope('Topic'),LessonRepository:scope('LessonRevision'),AssessmentRepository:scope('AssessmentTemplate'),PresentationRepository:scope('PresentationProfile'),LabModuleRepository:scope('LabModuleReference'),SearchProvider});
 }
