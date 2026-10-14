@@ -34,7 +34,7 @@ try{for(const width of [320,390,1440]){
  if(width===1440){
   await page.evaluate(async()=>{const {ProjectStore}=await import('/project-store.js');const store=new ProjectStore(localStorage),d=store.read('divider-project');d.project.notes='Other tab notes';await store.save(d.project,d.revision);});
   await page.locator('[data-component-open="R1"]').check();await page.locator('[data-resolve-project]').first().waitFor();
-  await page.locator('[data-resolve-project][data-use-incoming="true"]').click();assert.equal(await page.locator('[data-project-notes]').inputValue(),'Keep these notes');
+  await page.locator('[data-resolve-project][data-use-incoming="true"]').click();await page.waitForFunction(()=>JSON.parse(localStorage.getItem('eu_projects_v1:local:divider-project')).resolvedConflicts?.length===1);assert.equal(await page.locator('[data-project-notes]').inputValue(),'Keep these notes');
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('eu_projects_v1:local:divider-project')).resolvedConflicts.length),1);
  }
  assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));assert.deepEqual(errors,[]);assert.deepEqual(external,[]);
