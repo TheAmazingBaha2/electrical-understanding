@@ -26,3 +26,9 @@ export function encodeResistance(value,bandCount=4,tolerance=5){
 }
 export const resistancePresets=[10,22,47,100,220,330,470,680,1000,2000,2200,3300,4700,6800,10000,22000,47000,100000,220000,470000,1000000];
 export function formatResistance(value){return value>=1e6?Number((value/1e6).toPrecision(5))+' MΩ':value>=1000?Number((value/1000).toPrecision(5))+' kΩ':Number(value.toPrecision(5))+' Ω';}
+
+// Validate only requested edits; do not rewrite unknown metadata on saved content.
+export function validateResistorMetadata(properties){
+ const t=properties.tolerancePercent;if(t!==undefined&&(!Number.isFinite(t)||t<=0||t>20))throw Error('Tolerance must be greater than 0% and at most 20%');
+ if(properties.bandCount!==undefined&&![4,5].includes(properties.bandCount))throw Error('Choose four or five resistor bands');return properties;
+}

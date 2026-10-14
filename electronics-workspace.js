@@ -1,7 +1,7 @@
 import {renderGraphicMeter,renderGraphicScope} from './instrument-graphics.js';
 import {partIcon} from './lab-graphics.js';
 import {renderComponentSheet,renderResistorEditor,renderPowerSupply} from './component-editors.js';
-import {encodeResistance,decodeBands} from './resistor-color.js';
+import {encodeResistance,decodeBands,validateResistorMetadata} from './resistor-color.js';
 import {boardPoint,componentPlacementGraphic} from './graphical-breadboard.js';
 import {attachGraphicControls,graphicButton} from './graphic-controls.js';
 import {duplicateProject,renderProjectManager} from './project-manager.js';
@@ -38,6 +38,7 @@ export function attachElectronicsWorkspace(root,storage=localStorage){
  let boardUI={tool:'inspect',selection:[],section:'left',autoPlace:true,zoom:uiPreferences.zoom},project,revision=0,blocked=false,timer,saveChain=Promise.resolve(),pendingDelete=null,pendingProjectDelete=null;
  let transitionDone=Promise.resolve(),finishTransition=null;
  const at=selector=>scope.querySelector(selector),status=message=>{at('[data-project-status]').textContent=message;};
+ function reportError(message){status(message);const feedback=at('[data-component-editor-feedback]');if(feedback){feedback.textContent=message;feedback.hidden=false;}}
  function beginTransition(){if(finishTransition)throw Error('A project operation is already in progress');scope.inert=true;scope.setAttribute('aria-busy','true');transitionDone=new Promise(resolve=>{finishTransition=resolve;});status('Saving and updating projects…');}
  function endTransition(){scope.inert=false;scope.removeAttribute('aria-busy');const finish=finishTransition;finishTransition=null;finish?.();}
  try{const saved=store.read(projectId);project=saved?.project||makeProject();revision=saved?.revision||0;if(saved?.conflicts.length){blocked=true;status('Saved copies disagree. Export saved copies for review; autosave is paused.');}}catch(error){project=makeProject();blocked=true;status(error.message+' Autosave is paused; original storage is preserved.');}
@@ -60,7 +61,7 @@ export function attachElectronicsWorkspace(root,storage=localStorage){
  function applyPreferences(){scope.dataset.advanced=String(Boolean(uiPreferences.advanced));at('[data-toggle-lab-advanced]').setAttribute('aria-pressed',String(Boolean(uiPreferences.advanced)));for(const d of scope.querySelectorAll('[data-lab-advanced]'))d.open=Boolean(uiPreferences.advanced);scope.style.setProperty('--lab-circuit-width',uiPreferences.split+'%');}
  function savePreferences(){try{storage.setItem(deviceKey,JSON.stringify(uiPreferences));}catch{}applyPreferences();}
  function editorPart(){if(!board())return null;return board().state.placements.find(p=>p.id===boardUI.selectedPart)||(['resistor','source'].includes(boardUI.tool)?{id:'new',type:boardUI.tool==='resistor'?'resistor':'dc-source',properties:boardUI.tool==='resistor'?(boardUI.draftResistor||{resistanceOhms:Number(boardUI.newValue)||1000,tolerancePercent:5,bandCount:4}):{voltageVolts:Number(boardUI.newValue??5)},state:{open:false}}:null);}
- function updatePart(id,properties){if(properties.resistanceOhms!==undefined&&(!Number.isFinite(properties.resistanceOhms)||properties.resistanceOhms<.001||properties.resistanceOhms>1e9))throw Error('Resistance must be .001 Ω to 1 GΩ');if(properties.voltageVolts!==undefined&&(!Number.isFinite(properties.voltageVolts)||Math.abs(properties.voltageVolts)>24))throw Error('Supply must be within ±24 V');if(id==='new'){if(boardUI.tool==='resistor'){boardUI.draftResistor={...(boardUI.draftResistor||{resistanceOhms:1000,tolerancePercent:5,bandCount:4}),...properties};boardUI.newValue=boardUI.draftResistor.resistanceOhms;}else boardUI.newValue=properties.voltageVolts;boardView();return;}if(board())applyBoard({type:'properties',id,properties});else{const before=structuredClone(project),p=project.circuit.components.find(p=>p.id===id);Object.assign(p.properties,properties);try{validateProject(project);}catch(e){project=before;throw e;}controls();autosave();}}
+ function updatePart(id,properties){validateResistorMetadata(properties);if(properties.resistanceOhms!==undefined&&(!Number.isFinite(properties.resistanceOhms)||properties.resistanceOhms<.001||properties.resistanceOhms>1e9))throw Error('Resistance must be .001 Ω to 1 GΩ');if(properties.voltageVolts!==undefined&&(!Number.isFinite(properties.voltageVolts)||Math.abs(properties.voltageVolts)>24))throw Error('Supply must be within ±24 V');if(id==='new'){if(boardUI.tool==='resistor'){boardUI.draftResistor={...(boardUI.draftResistor||{resistanceOhms:1000,tolerancePercent:5,bandCount:4}),...properties};boardUI.newValue=boardUI.draftResistor.resistanceOhms;}else boardUI.newValue=properties.voltageVolts;boardView();return;}if(board())applyBoard({type:'properties',id,properties});else{const before=structuredClone(project),p=project.circuit.components.find(p=>p.id===id);Object.assign(p.properties,properties);try{validateProject(project);}catch(e){project=before;throw e;}controls();autosave();}}
  function graphicCircuit(){const selected=project.circuit.components.find(p=>p.id===boardUI.selectedPart),nodes=project.circuit.nodes;
   at('[data-graphic-circuit-controls]').innerHTML=board()?graphicButton('circuit-power',!project.circuit.state.powered,'Supply power '+(project.circuit.state.powered?'ON':'OFF'),project.circuit.state.powered):'<div class="circuit-terminals" role="group" aria-label="Circuit measurement terminals">'+nodes.map(n=>graphicButton('circuit-node',n.id,n.id==='source'?'＋ Supply':n.id==='output'?'● Junction':n.id===project.circuit.groundNode?'− Common':n.label||n.id)).join('')+'</div><div class="component-palette">'+project.circuit.components.map(p=>graphicButton('select-circuit-part',p.id,p.label||p.id,p.id===boardUI.selectedPart,partIcon(p.type==='resistor'?'resistor':'source',p.properties))).join('')+'</div><div class="probe-controls">'+graphicButton('probe-select','red','Red probe',boardUI.activeProbe==='red',partIcon('red'))+graphicButton('probe-select','black','Black probe',boardUI.activeProbe==='black',partIcon('black'))+'</div>'+(selected?renderComponentSheet(selected,{powered:project.circuit.state.powered,requestedBandCount:boardUI.requestedBandCount,selectedBand:boardUI.selectedBand||0}):graphicButton('circuit-power',!project.circuit.state.powered,'Supply power '+(project.circuit.state.powered?'ON':'OFF'),project.circuit.state.powered));
  }
@@ -168,7 +169,7 @@ export function attachElectronicsWorkspace(root,storage=localStorage){
    else return;
    for(const part of project.circuit.components){const badge=scope.querySelector('[data-component-open="'+part.id+'"]')?.closest('label').querySelector('.connection-badge');if(badge)badge.textContent=part.state.open?'Disconnected':'Connected';}
    readings();autosave();
-  }catch(e){status(e.message);}finally{if(transitioning)endTransition();}
+  }catch(e){reportError(e.message);}finally{if(transitioning)endTransition();}
  });
  at('[data-project-search]').addEventListener('input',manager);
  for(const key of ['title','description'])at('[data-project-'+key+']').addEventListener('input',event=>{const value=event.target.value;if(key==='title'&&!value.trim()){status('Project title cannot be blank.');return;}project.metadata[key]=value;autosave();});
@@ -236,7 +237,7 @@ export function attachElectronicsWorkspace(root,storage=localStorage){
   else if(button.dataset.restoreSnapshot){if(blocked)throw Error('Resolve saved copy conflicts first');project=restoreSnapshot(project,button.dataset.restoreSnapshot);project.experimentState.guidance=guidanceState(dividerActivity,project.experimentState.guidance||{mode:'free'});controls();save();}
   else if(button.hasAttribute('data-project-export'))download('electronics-project.json',project);
   else if(button.hasAttribute('data-export-project-recovery'))download('electronics-project-saved-copies.json',{raw:store.export(projectId),unsavedProject:project});
- }catch(e){status(e.message);}finally{if(transitioning)endTransition();}});
+ }catch(e){reportError(e.message);}finally{if(transitioning)endTransition();}});
  at('[data-project-import]').addEventListener('change',async event=>{if(finishTransition)return;let transitioning=false;try{
   beginTransition();transitioning=true;
   const file=event.target.files[0];if(!file)return;if(file.size>2e6)throw Error('Project import exceeds 2 MB local limit');const imported=JSON.parse(await file.text());validateProject(imported);
@@ -252,7 +253,7 @@ export function attachElectronicsWorkspace(root,storage=localStorage){
  try{const layout=storage.getItem('eu_workspace_layout_v1:'+(innerWidth<700?'mobile':'desktop'));if(['circuit','meter','scope','project'].includes(layout))at('.lab-workspace-grid').dataset.focusedPane=layout;}catch{}
  const disposeGraphics=attachGraphicControls(scope,(command,value,element)=>{try{if(finishTransition||blocked)return;const id=element.closest('[data-component-target]')?.dataset.componentTarget||boardUI.selectedPart;const p=id==='new'?editorPart():project.circuit.components.find(p=>p.id===id);
   if(command==='workspace-width'){uiPreferences.split=Math.min(70,Math.max(35,Number(value)));savePreferences();return;}
-  if(command==='resistor-select-band'){boardUI.selectedBand=Number(value);if(board())boardView();else graphicCircuit();return;}
+  if(command==='resistor-select-band'){boardUI.selectedBand=Number(value);if(board())boardView();else graphicCircuit();at('.component-sheet .color-palette')?.scrollIntoView({block:'nearest'});return;}
   if(command==='select-circuit-part'){boardUI.selectedPart=value;boardUI.requestedBandCount=null;boardUI.selectedBand=0;graphicCircuit();return;}
   if(command==='board-hide-sheet'){boardUI.sheetOpen=false;boardView();return;}
   if(command==='board-edit-draft'){boardUI.sheetOpen=true;boardView();return;}
@@ -285,7 +286,7 @@ export function attachElectronicsWorkspace(root,storage=localStorage){
   else if(command==='select-wire'){if(boardUI.tool==='fault'){const wire=board().state.wires.find(w=>w.id===value);applyBoard({type:'open',id:value,open:wire.closed});}else{boardUI.selectedWire=value;boardUI.selectedPart=null;boardView();}}
   else if(command==='board-zoom'){const viewport=at('[data-board-viewport]');boardUI.zoom=Math.max(1,Math.min(2,(boardUI.zoom||1)+Number(value)*.25));uiPreferences.zoom=boardUI.zoom;boardView();savePreferences();}
   else if(command==='board-pan')at('[data-board-viewport]')?.scrollBy({left:Number(value),behavior:'smooth'});
- }catch(e){status(e.message);}});
+ }catch(e){reportError(e.message);}});
  scope.addEventListener('pointerover',event=>{const target=event.target.closest('[data-breadboard-hole]');if(!target||boardUI.selection.length!==1)return;const a=boardPoint(boardUI.selection[0]),b=boardPoint(target.dataset.breadboardHole);at('[data-placement-preview]')?.setAttribute('d','M'+a.x+' '+a.y+' L'+b.x+' '+b.y);const ghost=at('[data-placement-ghost]');if(ghost&&['resistor','source'].includes(boardUI.tool)&&boardUI.selection[0]!==target.dataset.breadboardHole){ghost.innerHTML=componentPlacementGraphic({id:'preview',type:boardUI.tool==='resistor'?'resistor':'dc-source',holes:[boardUI.selection[0],target.dataset.breadboardHole],properties:editorPart().properties,state:{open:false}}).replaceAll('data-placed-component=','data-preview-component=').replace('tabindex="0"','tabindex="-1"').replace('data-graphic-command=','data-preview-command=');}});
  controls();
  // app.render invokes cleanup before replacing this DOM. The queued locked save

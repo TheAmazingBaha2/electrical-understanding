@@ -1105,3 +1105,5 @@ button:focus-visible,summary:focus-visible,input:focus-visible,textarea:focus-vi
 .electronics-lab .component-palette .part-art{width:48px;height:28px;min-width:0;max-width:100%}.electronics-lab .component-palette .graphic-choice{padding:6px 3px;font-size:.7rem;min-width:0}.electronics-lab .component-palette .graphic-choice span{overflow-wrap:normal;word-break:normal}.electronics-lab .lab-advanced select,.electronics-lab .lab-advanced input{min-width:0;max-width:100%}.electronics-lab .breadboard-editor{margin-inline:0}
 
 button.dial-face{display:grid;place-items:center;padding:0;min-width:44px;min-height:44px;align-self:center;border:0;background:transparent;cursor:pointer;border-radius:50%}button.dial-face:focus-visible{outline:3px solid #ffe269;outline-offset:3px}
+
+[data-component-editor-feedback]:not([hidden]){padding:8px 10px;border-left:3px solid #ffe269;background:#39402f;font-size:.85rem}

@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {encodeResistance,decodeBands,resistancePresets,resistorColors} from '../resistor-color.js';
+import {encodeResistance,decodeBands,resistancePresets,resistorColors,validateResistorMetadata} from '../resistor-color.js';
 import {resistorArtwork,componentPalette} from '../lab-graphics.js';
 import {dividerBreadboard,editBreadboard,compileBreadboard} from '../breadboard-model.js';
 import {componentPlacementGraphic,boardPoint,renderGraphicalBreadboard} from '../graphical-breadboard.js';
@@ -18,3 +18,5 @@ test('graphic endpoints use actual board contacts; tolerance metadata never chan
  const changed=editBreadboard(updated,{type:'properties',id:'R1',properties:{resistanceOhms:2000}}),d=compileBreadboard(changed);assert.ok(Math.abs(measureVoltage(d,d.instruments[0].redNode,d.instruments[0].blackNode).valueVolts-5/3)<1e-12);
  assert.throws(()=>editBreadboard(s,{type:'properties',id:'R1',properties:{tolerancePercent:30}}));assert.throws(()=>editBreadboard(s,{type:'properties',id:'R1',properties:{bandCount:7}}));
 });
+
+test('metadata edits validate consistently for draft parts, diagram and board without rewriting unknown saved fields',()=>{for(const t of [0,-1,30,NaN])assert.throws(()=>validateResistorMetadata({tolerancePercent:t}));assert.throws(()=>validateResistorMetadata({bandCount:7}));const changes={tolerancePercent:1,bandCount:5,existingUnknown:{preserved:true}};assert.equal(validateResistorMetadata(changes),changes);assert.deepEqual(validateResistorMetadata({resistanceOhms:1000}),{resistanceOhms:1000});});
