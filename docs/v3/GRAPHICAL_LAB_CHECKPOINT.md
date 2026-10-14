@@ -1,5 +1,21 @@
 # Graphical-first laboratory continuation — 2026-10-14 UTC
 
+## Current resumption status
+
+- Branch: `draft/v2-dmm-companion`.
+- Last verified graphical implementation: `410db791e1732f3089cc56bc27fbd732e01ebb37`; preceding code refinement `34e963537917f979ea7929a00fd501aae16a04dc`.
+- Completed: all seven graphical milestones, common controls/assets, direct breadboard parts/wires/probes, four/five-band/tolerance editor, variable supply, shared DMM/scope graphics, graphical guide, progressive disclosure/device preferences and responsive layout. Foundation/graded models were reused.
+- Tests: 246 deterministic tests, syntax/build/65-asset validation and all 15 real Chromium suites pass in primary `38570418305`; graphical guided/free flows pass at 320/390/1440 px. Local sockets are restricted; browser checks ran in CI, not claimed locally.
+- Staging: read-back `38570418254` attempt 2/job `115878017526` verified exact build-info/all 65 hashes at 13:25:21 UTC. The first attempt detected mixed delivery; only the completed retry is accepted. Earlier accepted c4 release also had a verified complete retry after a transient 404.
+- Preserved: 33 approved lessons/336 questions, original graded assets/progress/reviews, core solver/meters/scope/project transactions and all original registry entries. Registry now 67. No database/backend/paid service/production change; main remains `741aa7cd690761d6e088b04fa656d4ad42e25e67`.
+- Current milestone: owner graphical acceptance. No pending source edit or known regression in the verified commit. Metadata/count validation and contextual precision errors are included. Full report: [GRAPHICAL_LAB_REPORT.md](GRAPHICAL_LAB_REPORT.md); library contract: [GRAPHICAL_CONTROLS.md](GRAPHICAL_CONTROLS.md).
+- Evidence: primary visual QA artifact `11897287450`; full board/editor/scope PNG pages at all widths. Reviewed original JPEGs at `/workspace/electrical-workbench-v3-graphical-review`, synthetic data only.
+- Limits: ideal DC only, compact board with intentional pan, illustrative packing/routes, internally scrolling sheets; owner real-device ergonomics still pending. No actual AC/transient engine, manufacturing variation, unrestricted tutor or cloud transport.
+- Authorization gates: owner testing before official production release; explicit approval for production, paid/isolated backend provisioning, destructive operations or graded/physics compatibility changes. Existing database/security decisions remain in preserved earlier records; do not reopen completed scan audits for this UI task.
+- Exact next steps: inspect current Git/Actions (a following documentation-only commit repeats the pipeline), check changes since this verified implementation, collect owner phone/desktop feedback using the report checklist, batch ergonomic refinements through the existing queue, then plan any separately authorized next milestone. Do not regenerate content, reset a DB or repeat completed audits/tests without a new change or failure.
+
+## Preserved implementation and verification history
+
 Base: c07d869422bf0e4810d1a71ebedd94a8ff845085, draft/v2-dmm-companion. Owner requested graphical interaction before further physics/synchronization. Production/V1/grades/approved content remain unchanged; no backend or paid AI is involved. Read current CHECKPOINT/CONTINUATION_REPORT and the teaching contract; the completed foundations were not rebuilt.
 
 Shared presentation foundation implemented locally: lab-graphics.js asset/palette contract, graphic-controls.js native dial/slider/switch/button delegation, resistor-color.js pure four/five-band model and graphical-breadboard.js exact endpoint geometry/44px contacts. Existing board adapter and shared calculations remain in place. Optional advanced forms/device preferences replace default field lists; graphical canvas has pan/zoom controls and selection cancellation. New nominal/tolerance graphics metadata never changes ideal electrical calculations. Source/ref/quiz/grades/progress assets are unchanged.

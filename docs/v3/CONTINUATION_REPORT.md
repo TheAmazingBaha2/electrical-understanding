@@ -1,3 +1,5 @@
+> Latest graphical-first continuation: [GRAPHICAL_LAB_REPORT.md](GRAPHICAL_LAB_REPORT.md) and [GRAPHICAL_LAB_CHECKPOINT.md](GRAPHICAL_LAB_CHECKPOINT.md). The foundation/transaction report below is preserved history.
+
 > Current acceptance: project-transfer reliability commit `0d6432ce9a2de5b22f9ab97dfcd046ae2a58d65e` passed primary `38507066495` and read-back `38507066525`: 241 deterministic tests, all 14 browser suites (including delayed project locks), and all 59 served assets. The intermittent save/switch/delete race found during the documentation-only rerun is fixed; original CAS conflict preservation remains intact.
 
 # V3 laboratory continuation — October 13, America/New_York
