@@ -505,6 +505,29 @@
           "type": "string",
           "minLength": 1,
           "pattern": "\\S"
+        },
+        "hint": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "debrief": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "choices": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S"
+          },
+          "minItems": 0
+        },
+        "correctIndex": {
+          "type": "integer",
+          "minimum": 0
         }
       },
       "required": [
@@ -943,6 +966,34 @@
           "type": "string",
           "minLength": 1,
           "pattern": "\\S"
+        },
+        "reviewPolicy": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "const": "common-review@1"
+            },
+            "passFraction": {
+              "const": 0.8
+            },
+            "missedDays": {
+              "const": 1
+            },
+            "initialSuccessDays": {
+              "const": 7
+            },
+            "retrySuccessDays": {
+              "const": 21
+            }
+          },
+          "required": [
+            "id",
+            "passFraction",
+            "missedDays",
+            "initialSuccessDays",
+            "retrySuccessDays"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [
@@ -1069,7 +1120,8 @@
         "renderer": {
           "enum": [
             "selectable-choice@1",
-            "numeric-unit@1"
+            "numeric-unit@1",
+            "resistor-bands@1"
           ]
         },
         "evaluator": {
@@ -1083,7 +1135,11 @@
                 "voltage-difference",
                 "voltage-divider",
                 "series-resistance",
-                "parallel-resistance"
+                "parallel-resistance",
+                "tolerance-lower",
+                "tolerance-upper",
+                "four-band-value",
+                "five-band-value"
               ]
             },
             "inputs": {
@@ -1155,6 +1211,14 @@
               "version"
             ],
             "additionalProperties": false
+          },
+          "minItems": 0
+        },
+        "objectiveIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[457][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
           },
           "minItems": 0
         }
@@ -1352,6 +1416,24 @@
             "additionalProperties": false
           },
           "minItems": 0
+        },
+        "definition": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[457][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+            },
+            "version": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+            }
+          },
+          "required": [
+            "id",
+            "version"
+          ],
+          "additionalProperties": false
         }
       },
       "required": [
@@ -1364,6 +1446,264 @@
         "activityIds",
         "capabilities",
         "evidence"
+      ],
+      "additionalProperties": false
+    },
+    "LabModuleDefinition": {
+      "type": "object",
+      "properties": {
+        "schemaVersion": {
+          "const": 3
+        },
+        "kind": {
+          "const": "LabModuleDefinition"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[457][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+        },
+        "platform": {
+          "enum": [
+            "desktop",
+            "mobile"
+          ]
+        },
+        "status": {
+          "enum": [
+            "draft",
+            "reviewed",
+            "published"
+          ]
+        },
+        "activities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[457][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+              },
+              "title": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "prompt": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "hint": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "explanation": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "\\S"
+              },
+              "required": {
+                "type": "boolean"
+              },
+              "objectiveIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[457][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+                },
+                "minItems": 0
+              },
+              "evidence": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[457][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+                    },
+                    "version": {
+                      "type": "string",
+                      "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"
+                    }
+                  },
+                  "required": [
+                    "id",
+                    "version"
+                  ],
+                  "additionalProperties": false
+                },
+                "minItems": 0
+              },
+              "rubric": {
+                "anyOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "const": "divider-voltage@1"
+                      },
+                      "sourceVolts": {
+                        "type": "number",
+                        "minimum": 1e-9
+                      },
+                      "upperOhms": {
+                        "type": "number",
+                        "minimum": 1e-9
+                      },
+                      "lowerOhms": {
+                        "type": "number",
+                        "minimum": 1e-9
+                      },
+                      "fault": {
+                        "enum": [
+                          "none",
+                          "upper-open",
+                          "lower-open",
+                          "source-open"
+                        ]
+                      },
+                      "expectedVolts": {
+                        "type": "number"
+                      },
+                      "tolerance": {
+                        "type": "number",
+                        "minimum": 0
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "sourceVolts",
+                      "upperOhms",
+                      "lowerOhms",
+                      "fault",
+                      "expectedVolts",
+                      "tolerance"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "const": "meter-state@1"
+                      },
+                      "mode": {
+                        "enum": [
+                          "voltage",
+                          "resistance",
+                          "continuity",
+                          "current"
+                        ]
+                      },
+                      "powered": {
+                        "type": "boolean"
+                      },
+                      "redRole": {
+                        "enum": [
+                          "source",
+                          "output",
+                          "common"
+                        ]
+                      },
+                      "blackRole": {
+                        "enum": [
+                          "source",
+                          "output",
+                          "common"
+                        ]
+                      },
+                      "expectedValue": {
+                        "type": "number"
+                      },
+                      "tolerance": {
+                        "type": "number",
+                        "minimum": 0
+                      },
+                      "branchRole": {
+                        "enum": [
+                          "upper",
+                          "lower"
+                        ]
+                      },
+                      "magnitude": {
+                        "type": "boolean"
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "mode",
+                      "powered",
+                      "redRole",
+                      "blackRole",
+                      "expectedValue",
+                      "tolerance"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "kind": {
+                        "const": "resistor-bands@1"
+                      },
+                      "nominalOhms": {
+                        "type": "number",
+                        "minimum": 1e-9
+                      },
+                      "tolerancePercent": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 20
+                      },
+                      "bandCount": {
+                        "enum": [
+                          4,
+                          5
+                        ]
+                      }
+                    },
+                    "required": [
+                      "kind",
+                      "nominalOhms",
+                      "tolerancePercent",
+                      "bandCount"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "prompt",
+              "hint",
+              "explanation",
+              "required",
+              "objectiveIds",
+              "evidence",
+              "rubric"
+            ],
+            "additionalProperties": false
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "schemaVersion",
+        "kind",
+        "id",
+        "version",
+        "platform",
+        "status",
+        "activities"
       ],
       "additionalProperties": false
     },
@@ -1882,6 +2222,9 @@
               },
               {
                 "$ref": "#/$defs/LabModuleReference"
+              },
+              {
+                "$ref": "#/$defs/LabModuleDefinition"
               },
               {
                 "$ref": "#/$defs/PresentationProfile"

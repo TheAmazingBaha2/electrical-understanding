@@ -1,6 +1,7 @@
 import {assertSerializable} from '../data-contract.js';
 import {domainSchema,ENTITY_KINDS} from './contracts.js';
 import {assertAssessmentSemantics} from './assessment-rules.js';
+import {assertPracticalDefinition} from './practical-rules.js';
 
 // Bounded Draft 2020-12 evaluator for exactly the vocabulary used by these contracts.
 // Unknown vocabulary fails closed; schemas are reviewed application code, never input.
@@ -34,6 +35,8 @@ export function validateEntity(entity,kind=entity?.kind){
  if(kind==='ContentBlock'&&entity.origin!=='source-independent'&&!entity.evidence.length)throw Error('Source-derived assertion needs evidence');
  if(kind==='EvidenceClaim'&&entity.state==='disputed'&&!entity.conflictsWith.length)throw Error('Disputed evidence needs explicit conflict');
  if(kind==='AssessmentTemplate')assertAssessmentSemantics(entity);
+ if(kind==='LabModuleDefinition')assertPracticalDefinition(entity);
+ if(kind==='ContentBlock'&&entity.choices){if(entity.choices.length<2||!Number.isInteger(entity.correctIndex)||entity.correctIndex>=entity.choices.length||!entity.debrief)throw Error('Prediction choices need explicit reviewed feedback');}
  if(kind==='LabModuleReference'){
   if(new Set(entity.activityIds).size!==entity.activityIds.length)throw Error('Duplicate practical activity ID');
   if(!entity.adapter.startsWith(entity.platform+'-'))throw Error('Lab adapter/platform mismatch');
@@ -67,6 +70,9 @@ export function validateBundle(bundle){
    case 'EvidenceClaim':e.locatorIds.forEach(id=>get('SourceLocator',id));e.conflictsWith.forEach(r=>{getRef('EvidenceClaim',r);if(r.id===e.id&&r.version===e.version)throw Error('Self-conflicting evidence');});break;
    case 'TopicRevision':get('Topic',e.topicId);e.blockIds.forEach(id=>get('ContentBlock',id));e.objectiveIds.forEach(id=>get('LearningObjective',id));if(e.supersedes){const old=getRef('TopicRevision',e.supersedes);if(old.topicId!==e.topicId||old.id===e.id&&old.version===e.version)throw Error('Invalid topic supersession');}break;
    case 'TopicRelation':get('Topic',e.fromTopicId);get('Topic',e.toTopicId);if(e.fromTopicId===e.toTopicId)throw Error('Self topic relation');break;
+   case 'LabModuleDefinition':e.activities.forEach(a=>{a.objectiveIds.forEach(id=>get('LearningObjective',id));evidence(a.evidence);});break;
+   case 'LabModuleReference':if(e.definition){const d=getRef('LabModuleDefinition',e.definition);if(d.platform!==e.platform||d.activities.length!==e.activityIds.length||d.activities.some(a=>!e.activityIds.includes(a.id)))throw Error('Practical definition/reference mismatch');}break;
+   case 'AssessmentTemplate':(e.objectiveIds||[]).forEach(id=>get('LearningObjective',id));break;
    case 'LessonRevision':{
     get('LessonDefinition',e.lessonId);if(!e.topicRevisions.length)throw Error('Lesson must compose canonical topics');e.topicRevisions.forEach(r=>{const topic=getRef('TopicRevision',r);if(e.status==='published'&&topic.status!=='published')throw Error('Published lesson depends on unpublished topic');});e.additionalBlockIds.forEach(id=>get('ContentBlock',id));e.objectives.forEach(id=>get('LearningObjective',id));e.assessments.forEach(r=>{const template=getRef('AssessmentTemplate',r);if(e.status==='published'&&template.status!=='published')throw Error('Published lesson depends on unpublished assessment');});e.prerequisites.forEach(r=>getRef('LessonRevision',r));
     const desktop=e.labs.desktop?getRef('LabModuleReference',e.labs.desktop):null,mobile=e.labs.mobile?getRef('LabModuleReference',e.labs.mobile):null;
@@ -83,5 +89,6 @@ export function validateBundle(bundle){
  acyclic(topics.filter(e=>e.relation==='prerequisite').map(e=>[e.fromTopicId,e.toTopicId]),'Prerequisite');
  acyclic(topics.filter(e=>['broader','narrower'].includes(e.relation)).map(e=>e.relation==='broader'?[e.fromTopicId,e.toTopicId]:[e.toTopicId,e.fromTopicId]),'Topic hierarchy');
  acyclic(bundle.entities.filter(e=>e.kind==='LessonRevision').flatMap(e=>e.prerequisites.map(r=>[revisionKey(e),'LessonRevision:'+r.id+'@'+r.version])),'Lesson prerequisite');
+ for(const kind of ['TopicRevision','LessonRevision'])acyclic(bundle.entities.filter(e=>e.kind===kind&&e.supersedes).map(e=>[revisionKey(e),kind+':'+e.supersedes.id+'@'+e.supersedes.version]),kind+' supersession');
  return bundle;
 }

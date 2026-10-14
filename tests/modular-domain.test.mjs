@@ -11,7 +11,7 @@ import {modularFixture,uid,entity,ref} from './modular-fixture.mjs';
 
 test('Schema V3 family is independent, reproducible and strictly rejects malformed contracts',async()=>{
  assert.deepEqual(JSON.parse(await readFile(new URL('../content/modular/domain.schema.json',import.meta.url))),domainSchema);
- assert.equal(ENTITY_KINDS.length,19);validateBundle(modularFixture());
+ assert.equal(ENTITY_KINDS.length,20);validateBundle(modularFixture());
  for(const mutate of [b=>b.secret='no',b=>b.schemaVersion=2,b=>b.id='resistors',b=>b.version='01.0.0',b=>b.entities[0].code='return 1',b=>b.entities[0].id='__proto__',b=>b.entities[1].status='guessed']){const b=modularFixture();mutate(b);assert.throws(()=>validateBundle(b));}
  const input=modularFixture();input.entities[0].title='<script>text only</script>';validateBundle(input);
  assert.throws(()=>validateEntity(JSON.parse('{"kind":"Topic","__proto__":{}}')),/Unsafe/);
