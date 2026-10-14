@@ -16,3 +16,5 @@ test('optional CI token is passed only to the GitHub quality gate and never weak
  let headers,url;await requireCI(sha,{token:'fixture-read-only-token',fetcher:async(u,options)=>{url=u;headers=options.headers;return {ok:true,json:async()=>({workflow_runs:[run]})};},tries:1});assert.match(url,/api\.github\.com/);assert.equal(headers.Authorization,'Bearer fixture-read-only-token');
  await assert.rejects(requireCI(sha,{token:'fixture-read-only-token',fetcher:async()=>({ok:true,json:async()=>({workflow_runs:[{...run,head_sha:'b'.repeat(40)}]})}),tries:1}),/has not passed/);
 });
+
+test("failed exact-head gates stop polling and preserve the prior staging release",async()=>{let waits=0;await assert.rejects(requireCI(sha,{fetcher:async()=>({ok:true,json:async()=>({workflow_runs:[{...run,conclusion:"failure"}]})}),wait:async()=>waits++,tries:5}),/Required CI failed/);assert.equal(waits,0);});

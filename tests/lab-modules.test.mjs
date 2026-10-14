@@ -6,9 +6,10 @@ import {recordLabActivity,labModuleProgress,practicalCompletion} from '../lab-mo
 import {lessonRequirementsMet} from '../workshop-progress.js';
 import {dividerCircuit} from '../circuit-model.js';
 import {migrate} from '../persistence.js';
+import {renderActivitySelector} from '../lesson-tabs.js';
 export function dualFixture(){const p=packageFixture();p.schemaVersion=2;p.labs={completionPolicy:'either'};for(const platform of ['desktop','mobile'])p.labs[platform]={id:'TEST-'+platform,version:'1.0.0',title:platform+' lab',activities:[{id:'TEST-'+platform+'-measure',title:'Measure output',prompt:'Connect red to output and black to common.',required:true,source_ids:['REF1'],assessment:{type:'dc-voltage',redNode:'output',blackNode:'common',valueVolts:2.5,toleranceVolts:.001,explanation:'Equal resistors divide 5 V in half.'}}]};return p;}
 test('dual packages preserve core IDs and reject unsupported or cross-platform ID collisions',()=>{
- const p=dualFixture(),old=packageFixture();validateLessonPackage(p);assert.deepEqual(lessonFromPackage(p).questions,old.questions);assert.deepEqual(lessonFromPackage(old).questions,old.questions);
+ const p=dualFixture(),old=packageFixture();validateLessonPackage(p);assert.match(renderActivitySelector(lessonFromPackage(p)),/Shared practice and predictions/);assert.match(renderActivitySelector(lessonFromPackage(p)),/data-generated-simulator="ohm"/);assert.deepEqual(lessonFromPackage(p).questions,old.questions);assert.deepEqual(lessonFromPackage(old).questions,old.questions);
  for(const mutate of [p=>p.labs.desktop.activities[0].id=p.questions[0].id,p=>p.labs.mobile.activities[0].id=p.labs.desktop.activities[0].id,p=>p.labs.completionPolicy='both',p=>p.labs.mobile.activities[0].assessment.type='script',p=>p.labs.desktop.activities[0].source_ids=['missing'],p=>p.labs.desktop.activities[0].assessment.code='evil()']){const v=dualFixture();mutate(v);assert.throws(()=>validateLessonPackage(v));}
 });
 test('either lab satisfies only new practical requirement; independent results and versions survive',()=>{

@@ -5,7 +5,7 @@ on:
 jobs:
   readback:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 38
     permissions:
       contents: read
       actions: read

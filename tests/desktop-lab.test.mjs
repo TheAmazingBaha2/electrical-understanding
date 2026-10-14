@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {dividerCircuit,solveDC,measureVoltage} from '../circuit-model.js';
 import {circuitCanvasLayout,editCircuitCanvas,canvasHistoryEdit,canvasHistoryRestore,canvasTerminals,snapCanvasTerminal} from '../circuit-canvas.js';
 import {newProject,validateProject,addSnapshot,restoreSnapshot} from '../project-store.js';
-import {defaultDesktopLayout,resizeDesktopWindow,dockDesktopWindow,validateDesktopLayout} from '../desktop-windows.js';
+import {defaultDesktopLayout,fitDesktopWindow,resizeDesktopWindow,dockDesktopWindow,validateDesktopLayout} from '../desktop-windows.js';
 import {detectLabPlatform,selectedLabPlatform,renderLabPlatform} from '../lab-platform.js';
 import {renderPowerSupply} from '../component-editors.js';
 import {renderCircuitCanvas} from '../circuit-canvas-view.js';
@@ -40,3 +40,5 @@ test('platform uses OS rather than viewport, override remains local, separate ph
  const storage={getItem:()=> 'mobile'};assert.equal(selectedLabPlatform({storage,navigator:{platform:'Win32'},search:''}),'mobile');assert.equal(selectedLabPlatform({storage,navigator:{},search:'?lab=desktop'}),'desktop');
  const mobile=renderLabPlatform({platform:'mobile'});assert.match(mobile,/mobile-lab/);assert.doesNotMatch(mobile,/data-canvas-world|data-meter-mode|input type="number"/);assert.match(renderLabPlatform({platform:'desktop'}),/data-lab-platform="desktop"/);
 });
+
+test("saved desktop windows stay reachable on smaller monitors without changing electrical state",()=>{const original={...defaultDesktopLayout().windows.scope,x:1600,y:1200,width:780,height:650},fit=fitDesktopWindow(original,{width:1000,height:900});assert.equal(fit.x,220);assert.equal(fit.y,250);assert.ok(fit.x+fit.width<=1000);assert.ok(fit.y+fit.height<=900);assert.equal(original.x,1600);});

@@ -11,7 +11,7 @@ function register(id,name,category,adapter,configurationParameters={},details={}
  entries.push({id,version:'1.0.0',displayName:name,category,capabilities:['local-interaction','reusable-view'],configurationParameters,
   assets:category==='dmm'?['dmm-widgets.js#visualDMM']:category==='lab'?['lab-visuals.js']:category==='workshop'?['workshop-widgets.js']:category==='math'?['math-widgets.js']:category==='exam'?['ceta-widgets.js']:['generated-simulations.js'],
   simulationDependencies:[],gradingCapabilities:[],difficultyLevels:['beginner'],inputContract:'Reviewed JSON configuration only',outputContract:'Local educational view; no progress writes',
-  limitations:['Existing idealized teaching scenario; does not share a project circuit.','Educational illustration, not a hardware safety certification.'],compatibleLessonSchemas:[1],dependencies:[],
+  limitations:['Existing idealized teaching scenario; does not share a project circuit.','Educational illustration, not a hardware safety certification.'],compatibleLessonSchemas:[1,2],dependencies:[],
   regressionRequirements:['Existing lesson behavior and IDs unchanged','Keyboard and phone controls','No paid requests'],...details,adapter});
 }
 for(const kind of dmmWidgetKinds)register(kind,kind.replaceAll('-',' '),'dmm',{kind,type:'lab',attach:attachDmmWidgets});

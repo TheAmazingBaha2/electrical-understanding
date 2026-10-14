@@ -1,9 +1,12 @@
 // Workers Builds must wait for this exact development commit's complete CI run.
 // Public reads work without credentials; CI may supply its ephemeral read-only token.
 // Authentication stays server-side; API/rate-limit errors still fail closed.
-export function verifiedRun(payload,sha){
+function latestRun(payload,sha){
  const runs=(payload?.workflow_runs||[]).filter(r=>r.head_sha===sha&&r.head_branch==='draft/v2-dmm-companion'&&r.path==='.github/workflows/v2-checks.yml'&&r.event==='push');
- const latest=runs.sort((a,b)=>b.id-a.id)[0];
+ return runs.sort((a,b)=>b.id-a.id)[0];
+}
+export function verifiedRun(payload,sha){
+ const latest=latestRun(payload,sha);
  return latest?.status==='completed'&&latest?.conclusion==='success';
 }
 export async function requireCI(sha,{fetcher=fetch,wait=ms=>new Promise(r=>setTimeout(r,ms)),tries=128,token=process.env.GITHUB_TOKEN}={}){
@@ -13,6 +16,8 @@ export async function requireCI(sha,{fetcher=fetch,wait=ms=>new Promise(r=>setTi
   if(!r.ok)throw Error('Cannot verify staging quality gate: GitHub HTTP '+r.status);
   const payload=await r.json();
   if(verifiedRun(payload,sha))return;
+  const latest=latestRun(payload,sha);
+  if(latest?.status==='completed'&&latest.conclusion!=='success')throw Error('Required CI failed for '+sha+': '+latest.conclusion+'. Keep the currently deployed staging release.');
   if(i<tries-1)await wait(15000);
  }
  throw Error('Required CI has not passed for '+sha+'. Keep the currently deployed staging release.');

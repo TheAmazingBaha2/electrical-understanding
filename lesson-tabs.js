@@ -103,7 +103,7 @@ export function renderLessonTabs(active,answersCount,questionCount) {
   ).join('')+'</nav>';
 }
 export function renderActivitySelector(lesson,selected=0,state={}) {
-  if(lesson.labs)return renderLessonLabs(lesson,state);
+  if(lesson.labs)return (lessonActivities(lesson).length?'<details class="panel"><summary>Shared practice and predictions</summary>'+renderActivitySelector({...lesson,labs:undefined},selected,state)+'</details>':'')+renderLessonLabs(lesson,state);
   if(lesson.chapterSummary)return '<section class="panel"><h3>A quick chapter check</h3><p>Use the key takeaways, then test the important ideas in the quiz. Revisit the earlier lessons for interactive practice.</p><button class="primary" data-lesson-tab="quiz">Start the summary quiz →</button></section>';
   const activities=lessonActivities(lesson);
   if(!activities.length)return '<section class="panel"><p>This lesson has no interactive activities. Continue with Learn or Quiz.</p></section>';
