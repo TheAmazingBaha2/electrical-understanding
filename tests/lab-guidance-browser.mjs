@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {mkdir} from 'node:fs/promises';
-import {go} from './navigation-helper.mjs';
+import {go,enableLabAdvanced} from './navigation-helper.mjs';
 await mkdir('test-artifacts',{recursive:true});
 const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH||undefined,args:process.env.CHROMIUM_PATH?['--no-sandbox']:[]});
 try{for(const width of [320,390,1440]){
  const page=await browser.newPage({viewport:{width,height:1000},hasTouch:width<700}),errors=[],external=[];
  page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/*',r=>{if(new URL(r.request().url()).hostname==='127.0.0.1')return r.continue();external.push(r.request().url());return r.abort();});
- await page.goto('http://127.0.0.1:8080/');await go(page,'workbench');await page.locator('[data-guide-next]').waitFor();
+ await page.goto('http://127.0.0.1:8080/');await go(page,'workbench');await enableLabAdvanced(page);await page.locator('[data-guide-next]').waitFor();
  assert.match(await page.locator('[data-lab-guide]').innerText(),/STEP 1 OF 10/);
  const pane=async name=>{if(width<700)await page.locator('[data-lab-pane="'+name+'"]').tap();};
  const next=async()=>page.locator('[data-guide-next]').click();

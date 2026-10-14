@@ -8,3 +8,6 @@ export async function go(page,view){
  // not evidence that the route finished; a second click can race menu closing.
  await page.waitForFunction(target=>document.querySelector('.sidebar [data-view="'+target+'"]')?.classList.contains('active')&&!document.querySelector('.sidebar').classList.contains('open'),view);
 }
+// Historical workspace suites intentionally exercise the retained precision UI.
+// New graphical acceptance does not call this helper and checks default disclosure.
+export async function enableLabAdvanced(page){const toggle=page.locator('[data-toggle-lab-advanced]');if(await toggle.getAttribute('aria-pressed')!=='true')await toggle.click();}

@@ -46,6 +46,13 @@ export function editBreadboard(s,action){
  else if(action.type==='power')next.powered=action.powered;
  else if(action.type==='open'){if(p)p.state.open=action.open;else if(w)w.closed=!action.open;else throw Error('Path not found');}
  else if(action.type==='value'){if(!p)throw Error('Component not found');p.properties[p.type==='resistor'?'resistanceOhms':'voltageVolts']=action.value;}
+ else if(action.type==='properties'){
+  if(!p)throw Error('Component not found');const allowed=p.type==='resistor'?['resistanceOhms','tolerancePercent','bandCount']:['voltageVolts'];
+  if(Object.keys(action.properties||{}).some(k=>!allowed.includes(k)))throw Error('Unsupported component configuration');
+  if(action.properties.tolerancePercent!==undefined&&(!Number.isFinite(action.properties.tolerancePercent)||action.properties.tolerancePercent<=0||action.properties.tolerancePercent>20))throw Error('Tolerance must be greater than 0 and at most 20 percent');
+  if(action.properties.bandCount!==undefined&&![4,5].includes(action.properties.bandCount))throw Error('Use four or five band positions');
+  Object.assign(p.properties,action.properties);
+ }
  else throw Error('Unsupported board edit');
  compileBreadboard(next);return next;
 }

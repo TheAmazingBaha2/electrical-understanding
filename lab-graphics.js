@@ -3,7 +3,7 @@ import {encodeResistance,colorFor,formatResistance} from './resistor-color.js';
 export const graphicAssetVersion='1.0.0';
 export const escapeGraphic=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export function resistorBody({resistanceOhms=1000,tolerancePercent=null,bandCount=4,selectedBand=null}={}){
- const code=encodeResistance(resistanceOhms,bandCount,tolerancePercent);
+ bandCount=[4,5].includes(bandCount)?bandCount:4;const code=encodeResistance(resistanceOhms,bandCount,tolerancePercent);
  const bands=Array.from({length:bandCount},(_,i)=>{const x=28+i*(bandCount===4?22:17),color=code.representable?colorFor(code.colors[i]):null;
   return '<rect data-resistor-band="'+i+'" x="'+x+'" y="13" width="9" height="34" rx="2" fill="'+(color?.hex||'#d8dbcc')+'" stroke="'+(selectedBand===i?'#ffe269':color?'#29342f':'#64746c')+'" stroke-width="'+(selectedBand===i?3:1)+'" '+(!color?'stroke-dasharray="2 2"':'')+'><title>'+escapeGraphic(color?.id||'Value or tolerance not encoded')+'</title></rect>';}).join('');
  return '<path d="M0 30 H18 M142 30 H160" stroke="#b8cbd0" stroke-width="4"/><rect x="16" y="10" width="128" height="40" rx="15" fill="#d9bd8a" stroke="#695637" stroke-width="2"/>'+bands;

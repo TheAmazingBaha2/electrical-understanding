@@ -1,20 +1,20 @@
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
-import {go} from './navigation-helper.mjs';
+import {go,enableLabAdvanced} from './navigation-helper.mjs';
 import {mkdir} from 'node:fs/promises';
 await mkdir('test-artifacts',{recursive:true});
 const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH||undefined,args:process.env.CHROMIUM_PATH?['--no-sandbox']:[]});
 try{for(const width of [320,390,1440]){
  const page=await browser.newPage({viewport:{width,height:1000},hasTouch:width<700}),errors=[],external=[];
  page.on('pageerror',e=>errors.push(e.message));await page.route('**/*',r=>{if(new URL(r.request().url()).hostname==='127.0.0.1')return r.continue();external.push(r.request().url());return r.abort();});
- await page.goto('http://127.0.0.1:8080/');await go(page,'workbench');await page.locator('[data-experiment-mode="free"]').click();await page.locator('[data-lab-project]').selectOption('breadboard-project');await page.locator('[data-breadboard-root]').waitFor();
+ await page.goto('http://127.0.0.1:8080/');await go(page,'workbench');await enableLabAdvanced(page);await page.locator('[data-experiment-mode="free"]').click();await page.locator('[data-lab-project]').selectOption('breadboard-project');await page.locator('[data-breadboard-root]').waitFor();
  const pane=async name=>{if(width<700)await page.locator('[data-lab-pane="'+name+'"]').tap();};
  const section=async name=>{if(width<700)await page.locator('button[data-board-section="'+name+'"]').click();};
  const hole=async name=>{await section(name.startsWith('LP')||name.startsWith('LN')||name.startsWith('RP')||name.startsWith('RN')?'rails':name[0]<'F'?'left':'right');const node=page.locator('[data-breadboard-hole="'+name+'"]');if(width<700)await node.tap();else await node.click();};
  await pane('meter');assert.match(await page.locator('[data-meter-scene]').innerText(),/2.500 V/);await pane('circuit');
  assert.ok((await page.locator('[data-breadboard-hole="A1"]').boundingBox()).width>=44);
- assert.equal(await page.locator('[data-preview-wire]').count(),2);assert.equal(await page.locator('[data-preview-component]').count(),3);
- await hole('A1');assert.match(await page.locator('[data-board-net-summary]').innerText(),/LP6/);await page.locator('[data-board-wire-open="W1"]').check();assert.doesNotMatch(await page.locator('[data-board-net-summary]').innerText(),/LP6/);assert.equal(await page.locator('[data-preview-wire="W1"]').getAttribute('class'),'board-preview-wire board-preview-open');await page.locator('[data-board-wire-open="W1"]').uncheck();await hole('A1');
+ assert.equal(await page.locator('[data-placed-wire]').count(),2);assert.equal(await page.locator('[data-placed-component]').count(),3);
+ await page.locator('[data-board-tool]').selectOption('wire');await hole('A1');assert.match(await page.locator('[data-board-net-summary]').innerText(),/LP6/);await page.locator('[data-board-wire-open="W1"]').check();assert.doesNotMatch(await page.locator('[data-board-net-summary]').innerText(),/LP6/);assert.match(await page.locator('[data-placed-wire="W1"]').getAttribute('class'),/part-open/);await page.locator('[data-board-wire-open="W1"]').uncheck();await hole('A1');
  await page.locator('[data-component-value="R2"]').fill('2000');await page.locator('[data-component-value="R2"]').press('Tab');await pane('meter');assert.match(await page.locator('[data-meter-scene]').innerText(),/3.333 V/);await pane('circuit');
  await page.locator('[data-board-tool]').selectOption('move');await page.locator('[data-board-move-id]').selectOption('R2');await hole('H1');await hole('H3');await page.locator('[data-board-apply]').click();
  await page.locator('[data-board-undo]').click();await pane('meter');assert.match(await page.locator('[data-meter-scene]').innerText(),/3.333 V/);await pane('circuit');await page.locator('[data-board-redo]').click();await page.locator('[data-board-undo]').click();

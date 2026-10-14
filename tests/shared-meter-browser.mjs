@@ -1,11 +1,11 @@
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
-import {go} from './navigation-helper.mjs';
+import {go,enableLabAdvanced} from './navigation-helper.mjs';
 const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH||undefined,args:process.env.CHROMIUM_PATH?['--no-sandbox']:[]});
 try{for(const width of [390,1440]){
  const page=await browser.newPage({viewport:{width,height:1000},hasTouch:width<700}),errors=[],external=[];page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/*',r=>{if(new URL(r.request().url()).hostname==='127.0.0.1')return r.continue();external.push(r.request().url());return r.abort();});
- await page.goto('http://127.0.0.1:8080/');await go(page,'workbench');await page.locator('[data-experiment-mode="free"]').click();
+ await page.goto('http://127.0.0.1:8080/');await go(page,'workbench');await enableLabAdvanced(page);await page.locator('[data-experiment-mode="free"]').click();
  const pane=async name=>{if(width<700)await page.locator('[data-lab-pane="'+name+'"]').tap();};await pane('meter');
  await page.locator('[data-meter-jack]').selectOption('A');assert.match(await page.locator('[data-meter-scene]').innerText(),/TEST BLOCKED/);
  await page.locator('[data-meter-jack]').selectOption('VΩ');await page.locator('[data-meter-mode]').selectOption('resistance');assert.match(await page.locator('[data-meter-explanation]').innerText(),/Disconnect modeled sources/);

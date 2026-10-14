@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import {chromium} from 'playwright';
 import {mkdir} from 'node:fs/promises';
-import {go} from './navigation-helper.mjs';
+import {go,enableLabAdvanced} from './navigation-helper.mjs';
 await mkdir('test-artifacts',{recursive:true});
 const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH||undefined,args:process.env.CHROMIUM_PATH?['--no-sandbox']:[]});
 try{for(const width of [320,390,1440]){
@@ -11,7 +11,7 @@ try{for(const width of [320,390,1440]){
  await page.route('**/*',route=>{const u=new URL(route.request().url());if(u.hostname==='127.0.0.1')return route.continue();external.push(u.hostname);return route.abort();});
  await page.goto('http://127.0.0.1:8080/');await page.locator('.dashboard-welcome').waitFor();
  await go(page,'account');assert.equal(await page.locator('[data-goto="scan-inbox"],[data-goto="ai-lab"],#scan-upload-form').count(),0);
- await go(page,'workbench');await page.locator('.electronics-lab').waitFor();await page.locator('[data-experiment-mode="free"]').click();
+ await go(page,'workbench');await enableLabAdvanced(page);await page.locator('.electronics-lab').waitFor();await page.locator('[data-experiment-mode="free"]').click();
  assert.match(await page.locator('[data-circuit-values]').innerText(),/output: 2.5 V/);
  if(width<700)await page.locator('[data-lab-pane="meter"]').tap();
  assert.match(await page.locator('[data-meter-scene]').innerText(),/2.500 V/);
