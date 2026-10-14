@@ -19,12 +19,12 @@ export async function desktopAcceptance(page,{native=false}={}){
  await page.locator('[data-window-hide="meter"]').click();assert.equal(await meter.isVisible(),false);await page.locator('[data-lab-pane="meter"]').click();assert.equal(await meter.isVisible(),true);
  await page.locator('[data-reset-desktop-layout]').click();
  // Signed meter polarity is independent of unipolar configured supply.
- const probe=page.locator('[data-canvas-probe="red"]'),source=page.locator('[data-canvas-terminal="V1.p"]');
- await drag(await transform(probe,30,-35),await transform(source,30,-35));assert.match(await page.locator('[data-lab-live-reading]').innerText(),/5\.000 V/);
- await drag(await transform(probe,30,-35),await transform(page.locator('[data-canvas-terminal="R2.a"]'),30,-35));assert.match(await page.locator('[data-lab-live-reading]').innerText(),/2\.500 V/);
+ // Read both endpoints after a single scroll, so native viewport positions cannot go stale.
+ const dragProbe=async terminal=>{await world.scrollIntoViewIfNeeded();const points=await page.evaluate(selector=>{const get=s=>{const el=document.querySelector(s),p=new DOMPoint(30,-35).matrixTransform(el.getScreenCTM());return {x:p.x,y:p.y};};const a=get('[data-canvas-probe="red"]'),b=get(selector);return {a,b,hit:document.elementFromPoint(a.x,a.y)?.closest('[data-canvas-probe]')?.dataset.canvasProbe};},terminal);assert.equal(points.hit,'red',JSON.stringify(points));await drag(points.a,points.b);};await dragProbe('[data-canvas-terminal="V1.p"]');assert.match(await page.locator('[data-lab-live-reading]').innerText(),/5\.000 V/);
+ await dragProbe('[data-canvas-terminal="R2.a"]');assert.match(await page.locator('[data-lab-live-reading]').innerText(),/2\.500 V/);
  await command('canvas-tool','inspect');const part=page.locator('[data-canvas-part="R1"]'),position=await part.getAttribute('transform');
  await drag(await transform(part),await transform(part,100,30));assert.notEqual(await part.getAttribute('transform'),position);assert.match(await page.locator('[data-lab-live-reading]').innerText(),/2\.500 V/);
- await part.click();await command('resistor-value','2000',pane);assert.match(await page.locator('[data-lab-live-reading]').innerText(),/1\.667 V/);
+ const body=await transform(part);await page.mouse.click(body.x,body.y);assert.equal(await pane.locator('.component-sheet').count(),1,await page.locator('[data-project-status]').innerText());await command('resistor-value','2000',pane);assert.match(await page.locator('[data-lab-live-reading]').innerText(),/1\.667 V/);
  await page.locator('[data-canvas-part="V1"]').click();
  assert.equal(await pane.locator('[data-graphic-range="supply-voltage"]').getAttribute('min'),'0');await command('supply-voltage','9',pane);assert.match(await page.locator('[data-lab-live-reading]').innerText(),/3\.000 V/);
  // Clear requires explicit confirmation; undo restores exact electrical state.

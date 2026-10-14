@@ -96,6 +96,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: native/tauri/src-tauri
+          cache-on-failure: true
       - name: Install bounded native evaluation dependencies
         run: |
           npm install --no-save @tauri-apps/cli@2.12.2 selenium-webdriver@4.34.0
@@ -111,7 +112,15 @@ jobs:
           npx tauri icon ../../icon.svg --output src-tauri/icons
           npx tauri build --debug --no-bundle
       - name: Exercise real Windows WebView2 UI
-        run: node tests/tauri-windows.mjs
+        # Current WebView2 ignores automation flags in an elevated runner.
+        # Match the upstream Tauri CI fix: run the test as the normal user.
+        run: |
+          winget install gerardog.gsudo --accept-source-agreements --accept-package-agreements
+          icacls "$env:GITHUB_WORKSPACE" /grant "${env:USERNAME}:(OI)(CI)M"
+          $gsudo = (Get-Command gsudo -ErrorAction SilentlyContinue).Source
+          if (!$gsudo) { $gsudo = "C:\Program Files\gsudo\Current\gsudo.exe" }
+          & $gsudo --integrity Medium node tests/tauri-windows.mjs
+          exit $LASTEXITCODE
       - uses: actions/upload-artifact@v4
         if: always()
         with:
