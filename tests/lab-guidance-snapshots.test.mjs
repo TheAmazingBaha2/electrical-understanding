@@ -55,3 +55,8 @@ test('snapshots restore exact inventory and legacy snapshots reconstruct only sa
  const legacy=structuredClone(restored);delete legacy.snapshots[0].experiment.componentInventory;legacy.componentInventory.push({componentId:'OTHER',quantity:9});
  const old=restoreSnapshot(legacy,'full');assert.equal(old.componentInventory.length,3);assert.equal(old.componentInventory[1].supplierNote,'Owner inventory detail');assert.ok(!Object.hasOwn(legacy.snapshots[0].experiment,'componentInventory'));
 });
+test('snapshot extensions cannot replace project identity or its snapshot collection',()=>{
+ const p=addSnapshot(newProject('owner-project'),'Safe snapshot','safe');p.metadata.description='Project metadata';
+ Object.assign(p.snapshots[0].experiment,{id:'other-project',metadata:{title:'Overwrite'},snapshots:[],snapshotTombstones:[{id:'safe'}],unknownAnnotation:{keep:true}});
+ const restored=restoreSnapshot(p,'safe');assert.equal(restored.id,p.id);assert.deepEqual(restored.metadata,p.metadata);assert.deepEqual(restored.snapshots,p.snapshots);assert.equal(restored.snapshotTombstones,undefined);assert.deepEqual(restored.snapshots[0].experiment.unknownAnnotation,{keep:true});
+});

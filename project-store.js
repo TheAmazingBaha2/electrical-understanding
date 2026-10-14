@@ -12,7 +12,7 @@ export function validateProject(p){
  if(p.experimentState.recordedMeasurements!==undefined){if(!Array.isArray(p.experimentState.recordedMeasurements))throw Error('Invalid measurement history');for(const r of p.experimentState.recordedMeasurements){if(typeof r.id!=='string'||typeof r.recordedAt!=='string'||!Array.isArray(r.measurements)||!r.instrumentSettings)throw Error('Invalid recorded measurement');validateCircuit(r.circuit);}}
  for(const w of p.widgetInstances)if(!widgetFor(w.widgetId,w.version)||typeof w.instanceId!=='string')throw Error('Unknown project widget/version');
  if(new Set(p.widgetInstances.map(w=>w.instanceId)).size!==p.widgetInstances.length)throw Error('Duplicate widget instance');
- const snapshotIds=new Set();for(const s of p.snapshots){if(!s.id||snapshotIds.has(s.id)||typeof s.name!=='string'||!s.experiment)throw Error('Invalid snapshot');snapshotIds.add(s.id);validateCircuit(s.experiment.circuit);}
+ const snapshotIds=new Set();for(const s of p.snapshots){if(typeof s.id!=='string'||!s.id||snapshotIds.has(s.id)||typeof s.name!=='string'||!s.experiment)throw Error('Invalid snapshot');snapshotIds.add(s.id);validateCircuit(s.experiment.circuit);}
  return p;
 }
 export function newProject(id='divider-project'){return {
@@ -25,7 +25,11 @@ export function addSnapshot(p,name,id){validateProject(p);if(typeof name!=='stri
  const {circuit,componentInventory,widgetInstances,instrumentSettings,measurementResults,notes,experimentState}=structuredClone(p);
  return {...structuredClone(p),snapshots:[...structuredClone(p.snapshots),{id,name:name.trim(),createdAt:new Date().toISOString(),experiment:{circuit,componentInventory,widgetInstances,instrumentSettings,measurementResults,notes,experimentState}}]};
 }
-export function restoreSnapshot(p,id){validateProject(p);const s=p.snapshots.find(s=>s.id===id);if(!s)throw Error('Snapshot not found');const result={...structuredClone(p),...structuredClone(s.experiment)};
+export function restoreSnapshot(p,id){validateProject(p);const s=p.snapshots.find(s=>s.id===id);if(!s)throw Error('Snapshot not found');const result=structuredClone(p);
+ // A snapshot owns experiment slots, never project identity, metadata, the
+ // snapshot collection or future sync/deletion fields. Unknown annotations
+ // remain preserved in the original snapshot instead of becoming active keys.
+ for(const key of ['circuit','componentInventory','widgetInstances','instrumentSettings','measurementResults','notes','experimentState'])if(Object.hasOwn(s.experiment,key))result[key]=structuredClone(s.experiment[key]);
  // Early v1 snapshots omitted inventory. Restore known component entries without
  // changing the stored historical snapshot or retaining unrelated current parts.
  if(!Object.hasOwn(s.experiment,'componentInventory'))result.componentInventory=result.circuit.components.map(c=>structuredClone(p.componentInventory.find(i=>i.componentId===c.id)||{componentId:c.id,quantity:1}));
@@ -42,7 +46,7 @@ export function deleteSnapshot(p,id){
 }
 export class ProjectStore{
  constructor(storage,namespace='local',locks=globalThis.navigator?.locks){this.locks=locks;this.storage=storage;this.prefix='eu_projects_v1:'+encodeURIComponent(namespace)+':';}
- readDocument(id){const raw=this.storage.getItem(this.prefix+encodeURIComponent(id));if(!raw)return null;let d;try{d=JSON.parse(raw)}catch{throw Error('Project storage is unreadable; export original before recovery');}if(d.schemaVersion!==1||!Number.isInteger(d.revision)||d.revision<0||!Array.isArray(d.conflicts))throw Error('Unsupported project storage; preserve original');validateProject(d.project);return d;}
+ readDocument(id){const raw=this.storage.getItem(this.prefix+encodeURIComponent(id));if(!raw)return null;let d;try{d=JSON.parse(raw)}catch{throw Error('Project storage is unreadable; export original before recovery');}if(d.schemaVersion!==1||!Number.isInteger(d.revision)||d.revision<0||!Array.isArray(d.conflicts))throw Error('Unsupported project storage; preserve original');validateProject(d.project);if(d.project.id!==id)throw Error('Project storage identity disagrees; preserve original for recovery');return d;}
  read(id){const d=this.readDocument(id);return d?.deleted?null:d;}
  list({includeDeleted=false}={}){
   const records=[];for(let i=0;i<this.storage.length;i++){const key=this.storage.key(i);if(!key?.startsWith(this.prefix))continue;const id=decodeURIComponent(key.slice(this.prefix.length));try{const d=this.readDocument(id);if(d&&(includeDeleted||!d.deleted))records.push({id,revision:d.revision,title:d.project.metadata.title,description:typeof d.project.metadata.description==='string'?d.project.metadata.description:'',updatedAt:typeof d.project.metadata.updatedAt==='string'?d.project.metadata.updatedAt:null,deleted:Boolean(d.deleted),deletedAt:d.deletedAt||null});}catch{records.push({id,title:'Unreadable project · original preserved',unreadable:true});}}

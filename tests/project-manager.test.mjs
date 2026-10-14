@@ -9,3 +9,8 @@ test('independent projects duplicate state and delete to recovery without touchi
  await store.restoreProject('A',2);assert.equal(store.read('A').project.notes,'Notes');assert.equal(store.read('A').revision,3);assert.equal(data.get('eu_progress:fixture'),'untouched');
  assert.match(renderProjectManager(store.list(),{search:'Beta'}),/Beta/);assert.doesNotMatch(renderProjectManager(store.list(),{search:'Beta'}),/Alpha/);
 });
+test('mismatched storage identities fail closed without replacing either saved document',async()=>{
+ const data=new Map(),storage={get length(){return data.size},key:i=>[...data.keys()][i]||null,getItem:k=>data.get(k)||null,setItem:(k,v)=>data.set(k,v)},locks={request:async(_k,fn)=>fn()},store=new ProjectStore(storage,'local',locks);
+ await store.save(newProject('A'),0);const raw=store.export('A'),key=store.prefix+'A';const bad=JSON.parse(raw);bad.project.id='B';storage.setItem(key,JSON.stringify(bad));
+ assert.throws(()=>store.read('A'),/identity disagrees/);await assert.rejects(store.save(newProject('A'),1),/identity disagrees/);assert.equal(store.export('A'),JSON.stringify(bad));assert.equal(store.export('B'),null);assert.equal(store.list()[0].unreadable,true);
+});
