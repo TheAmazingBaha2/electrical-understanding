@@ -38,7 +38,7 @@ try{
   await go(page,'textbooks');assert.equal(await page.locator('.source-book').count(),1);await page.locator('[data-disclosure="contents:geier:6"] > summary').click();assert.equal(await page.locator('[data-lesson="BDMM-01"]').count(),1);
   await go(page,'labs');assert.equal(await page.locator('.source-book').count(),4);assert.equal(await page.locator('.content-chapter').count(),21);
   await go(page,'reviews');assert.match(await page.locator('#main').innerText(),/still to be decided/);
-  await go(page,'account');assert.match(await page.locator('#main').innerText(),/cross-device sync/);await page.locator('.account-maintenance > summary').click();assert.equal(await page.locator('[data-goto="scan-inbox"]').isVisible(),true);
+  await go(page,'account');assert.match(await page.locator('#main').innerText(),/cross-device sync/);await page.locator('.account-maintenance > summary').click();assert.equal(await page.locator('[data-goto="scan-inbox"],[data-goto="ai-lab"]').count(),0);
   assert.equal(await page.evaluate(()=>window.__paid.length),0);assert.ok(await page.evaluate(()=>window.__writes.length)>0);
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));assert.deepEqual(errors,[]);await page.close();
  }
