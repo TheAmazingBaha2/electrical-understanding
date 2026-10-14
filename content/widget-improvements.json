@@ -56,6 +56,25 @@
         "Snapshot/import backward compatibility",
         "Desktop/phone presentation"
       ]
+    },
+    {
+      "id": "V3-DESKTOP-GRAPHIC-POLISH",
+      "widgetId": "circuit-dc",
+      "widgetVersion": "1.0.0",
+      "suggestion": "Accepted Windows screenshots show close-contact labels can overlap; owner must assess the new independent desktop layout.",
+      "priority": "normal",
+      "affectedLessons": [],
+      "affectedProjects": [
+        "desktop laboratory projects"
+      ],
+      "proposedChange": "After owner feedback, batch label collision avoidance, optional wire route controls, keyboard placement and lesson-specific experiment presets.",
+      "compatibilityRequirements": "Preserve electrical model, terminal IDs, old graded results, project/snapshot data and independent phone presentation. No automatic feature update.",
+      "testingRequirements": [
+        "Exact physical probe/node bindings",
+        "Windows/HiDPI and keyboard owner review",
+        "Desktop layout and project restoration",
+        "Original 33 approvals/336 question IDs and phone module regressions"
+      ]
     }
   ]
 }

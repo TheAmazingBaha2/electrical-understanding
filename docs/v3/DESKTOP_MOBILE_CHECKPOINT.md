@@ -1,3 +1,25 @@
+# Latest resumption status — October 14, 2026
+
+Branch: `draft/v2-dmm-companion`. Tested implementation: `1684e516a81a46b17cdd128bec748dc721e6ec49`. Current milestone: desktop-first prototype, dual practical contracts and separate phone exercise implemented; owner usability acceptance pending.
+
+Primary CI **38607660349** passed: **259/259 deterministic tests**, syntax/build/73-asset allowlist, all **18 Chromium browser suites**, real Windows Electron and real Windows Tauri/WebView2. Compact desktop contacts are visible on entry; contextual editors are beside the circuit. Original 33 approved lessons/336 question IDs, original graded widgets and learning storage remain intact. Registry: 67 entries; original 62 retained. Shared solver, topology and resistor-color calculations were reused.
+
+**Deployment distinction:** the Cloudflare build for this tested commit failed. Read-back **38607660760** / job **116002579480** failed because staging did not serve this SHA. Connected tools cannot read the private Cloudflare build log; the cause is unverified. Last verified served staging remains **3275a255f6ee674f69b66acb1df0e840af3b2d05**, primary 38599368956/read-back 38599368840, all 73 assets verified at 16:40:14 UTC / 12:40:14 America/New_York. This documentation increment triggers the existing authorized staging pipeline again; inspect its exact SHA/checks/read-back before claiming the compact layout delivered.
+
+Actual native/browser screenshots from 1684e51 are in the primary run artifacts and `/workspace/electrical-workbench-v3-desktop-review/`; they show tested CI builds, not proof of served deployment. The observed Tauri dependency graph is committed as Cargo.lock. The workspace restart preserved the repository and artifacts; no incomplete operation is assumed successful.
+
+Next steps:
+1. Inspect local/remote HEAD and the following documentation commit's exact primary/Cloudflare/read-back runs. Do not repeat the original audits or phases 1–4.
+2. If the staging retry succeeds, verify exact build-info/all 73 hashes and append the results. If it fails again, obtain the Cloudflare build error text/access; keep the quality gate and old verified staging intact. Do not request or expose keys in chat.
+3. Owner tests Windows browser/native layout, direct placement/wiring/probe snapping, Clear/Undo, source polarity, snapshots and phone mode. Use the checklist in DESKTOP_MOBILE_REPORT.md. Existing approved lessons remain unchanged; schema-2 grading was tested with synthetic content only.
+4. Batch the recorded graphical polish after feedback. Then develop per-lesson experiment presets, more purpose-built phone activities and native packaging selection with owner review. Do not build advanced simulation physics ahead of usability.
+
+Known limits: bounded ideal DC canvas; illustrative lead routes inside the canvas; some close-contact labels can overlap; no full keyboard-only placement, HiDPI/multi-monitor acceptance, mobile activity catalog, cloud project transport or authorized V3 backend. Either new lab satisfies practical completion; grades stay independent and core quizzes remain required. No approved lesson was retrofitted. Production main was read back unchanged at `741aa7cd690761d6e088b04fa656d4ad42e25e67`. No V1/production database change, raw-source upload, paid AI/service or installer release occurred.
+
+Owner authorization still required: production release/maintenance merge, official installer, paid services/backend provisioning, destructive database/Storage changes and old graded-semantic changes. Permanent Electron/Tauri choice and full redesign acceptance remain pending owner review.
+
+---
+
 # Desktop/mobile continuation checkpoint
 
 Branch: `draft/v2-dmm-companion`. Starting verified commit: `36fe6430ec69a1804a8ebe8c46a8446adc8f2910` (graphical source `410db791e1732f3089cc56bc27fbd732e01ebb37`). This record supersedes the responsive-lab direction; prior reports remain historical evidence.

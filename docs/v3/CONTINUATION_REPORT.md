@@ -1,3 +1,5 @@
+> Current desktop/mobile implementation and verification: [DESKTOP_MOBILE_REPORT.md](DESKTOP_MOBILE_REPORT.md). The authoritative current delivery status is in [DESKTOP_MOBILE_CHECKPOINT.md](DESKTOP_MOBILE_CHECKPOINT.md).
+
 > Current direction: [DESKTOP_MOBILE_CHECKPOINT.md](DESKTOP_MOBILE_CHECKPOINT.md) and [DESKTOP_MOBILE_ARCHITECTURE.md](DESKTOP_MOBILE_ARCHITECTURE.md). Separate desktop/mobile presentation supersedes the single responsive lab. Historical verification below remains preserved.
 
 > Latest graphical-first continuation: [GRAPHICAL_LAB_REPORT.md](GRAPHICAL_LAB_REPORT.md) and [GRAPHICAL_LAB_CHECKPOINT.md](GRAPHICAL_LAB_CHECKPOINT.md). The foundation/transaction report below is preserved history.
