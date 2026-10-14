@@ -46,7 +46,7 @@ jobs:
       - name: Run real desktop and mobile smoke tests
         run: |
           result=0
-          for suite in sidebar-browser dashboard-browser source-browser workshops-browser browser-smoke persistence-browser v3-browser lab-guidance-browser breadboard-browser shared-meter-browser math-browser adaptive-browser; do
+          for suite in sidebar-browser dashboard-browser source-browser workshops-browser browser-smoke persistence-browser v3-browser lab-guidance-browser breadboard-browser shared-meter-browser scope-browser math-browser adaptive-browser; do
             node "tests/$suite.mjs" || result=1
           done
           exit "$result"

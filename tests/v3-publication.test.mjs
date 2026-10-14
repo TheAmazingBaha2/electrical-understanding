@@ -9,7 +9,7 @@ test('registry IDs are unique, versioned, reusable and expose limitations/contra
  assert.equal(new Set(widgetRegistry.map(w=>w.id)).size,widgetRegistry.length);
  assert.ok(widgetFor('lab-breadboard'));assert.ok(widgetFor('dmm-probes'));assert.ok(widgetFor('workshop-simulation'));
  assert.equal(widgetFor('dmm-probes','2.0.0'),null);
- assert.deepEqual(searchWidgets({capabilities:['shared-state']}).map(w=>w.id),['circuit-dc','dmm-shared','breadboard-shared']);
+ assert.deepEqual(searchWidgets({capabilities:['shared-state']}).map(w=>w.id),['circuit-dc','dmm-shared','breadboard-shared','scope-foundation']);
  for(const w of widgetRegistry)for(const k of ['inputContract','outputContract','limitations','assets','regressionRequirements','compatibleLessonSchemas'])assert.ok(w[k]);
  assert.match(renderRegisteredWidget({id:'simulation-ohm',version:'1.0.0',config:{}}),/data-generated-simulator="ohm"/);
 });

@@ -1,3 +1,5 @@
+import {scopeCapture} from './scope-signals.js';
+import {renderScopeControls,renderScopeCapture} from './scope-view.js';
 import {sharedMeterReading,formatMeterReading,prepareCurrentConnection} from './shared-multimeter.js';
 import {newBreadboardProject} from './breadboard-project.js';
 import {compileBreadboard,boardHistoryEdit,boardUndo,boardRedo,holeNode,breadboardHoles,emptyBreadboard,dividerBreadboard} from './breadboard-model.js';
@@ -13,10 +15,11 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 
 export function renderElectronicsWorkspace(){return `<section class="electronics-lab"><header><p class="v2-kicker">SHARED ELECTRONICS LAB · DC FOUNDATION</p><h2>One circuit, connected instruments</h2><p>Choose the Divider for an introduction, or build your own DC circuit on the editable breadboard. Both use the same virtual meter and electrical model.</p></header>
  <label class="lab-control">Lab project<select data-lab-project><option value="divider-project">Voltage-divider experiment</option><option value="breadboard-project">Editable breadboard</option></select></label><div class="experiment-mode" role="group" aria-label="Experiment mode"><button class="outline" data-experiment-mode="guided">Guided Experiment</button><button class="outline" data-experiment-mode="free">Free Experiment</button></div><div data-lab-guide></div>
- <div class="lab-workspace-selector" role="group" aria-label="Focused workspace"><button data-lab-pane="circuit" class="outline">Circuit</button><button data-lab-pane="meter" class="outline">Meter</button><button data-lab-pane="project" class="outline">Project</button></div>
+ <div class="lab-workspace-selector" role="group" aria-label="Focused workspace"><button data-lab-pane="circuit" class="outline">Circuit</button><button data-lab-pane="meter" class="outline">Meter</button><button data-lab-pane="scope" class="outline">Scope</button><button data-lab-pane="project" class="outline">Project</button></div>
  <div class="lab-workspace-grid" data-focused-pane="circuit">
  <section class="panel workspace-pane" data-pane="circuit"><h3>Circuit</h3><div data-breadboard-editor></div><div data-circuit-scene></div><label class="lab-control workspace-check"><input type="checkbox" data-circuit-power checked> Circuit power enabled</label><div data-circuit-controls></div><div data-circuit-values></div></section>
  <section class="panel workspace-pane" data-pane="meter"><h3>Digital multimeter</h3><label class="lab-control">Meter function<select data-meter-mode><option value="voltage">DC voltage · across two nodes</option><option value="resistance">Resistance · sources disconnected</option><option value="continuity">Continuity · sources disconnected</option><option value="current">DC current · prepared series branch</option></select></label><label class="lab-control">Red input jack<select data-meter-jack><option value="VΩ">VΩ</option><option value="A">A</option></select></label><p class="muted sm">Black lead: COM. This instrument is ideal; accuracy, current fuses and burden voltage are not modeled.</p><div data-meter-controls></div><div data-current-connection></div><div data-meter-scene></div><p data-meter-explanation></p><label class="lab-control">Difficulty<select data-lab-difficulty><option value="beginner">Beginner · guided</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced · model limits apply</option></select></label><label class="lab-control">Instrument view<select data-meter-view><option value="realistic">Instrument</option><option value="educational">Measurement explanation</option></select></label></section>
+ <section class="panel workspace-pane" data-pane="scope"><h3>Oscilloscope foundation</h3><p>Choose an actual steady DC observation or an independent demonstration generator. Demonstrations are not calculated AC circuit behavior.</p><div data-scope-controls></div><div data-scope-display></div></section>
  <section class="panel workspace-pane" data-pane="project"><h3>Personal project</h3><p class="muted sm">Experiments save locally, separately from lesson grades. Cloud synchronization is not enabled.</p><label class="lab-control">Notes<textarea data-project-notes rows="4"></textarea></label><label class="lab-control">Snapshot name<input data-snapshot-name placeholder="Before opening R1"></label><button class="outline" data-save-snapshot>Save snapshot</button><details data-snapshot-manager class="snapshot-manager"><summary>Manage snapshots <span data-snapshot-count></span></summary><div data-snapshots></div></details><div data-project-conflicts></div><div class="actions"><button class="outline" data-project-export>Export project</button><label class="project-import-control">Import project JSON<input type="file" data-project-import accept="application/json,.json"></label></div><button class="outline" data-export-project-recovery>Export saved copies</button></section>
  </div><p data-project-status role="status" aria-live="polite"></p><details class="panel"><summary>Model limitations and safety</summary><ul>${circuitLimitations.map(l=>'<li>'+esc(l)+'</li>').join('')}</ul><p>Use this trainer for simulated low-voltage experiments only. Advanced presentation uses the same ideal DC solver; it does not enable unsupported realism.</p></details></section>`;}
 export function attachElectronicsWorkspace(root,storage=localStorage){
@@ -60,9 +63,16 @@ export function attachElectronicsWorkspace(root,storage=localStorage){
   at('[data-current-connection]').hidden=settings.mode!=='current';
   at('[data-meter-scene]').innerHTML=settings.presentation==='educational'?'<output class="shared-meter-reading">'+esc(display)+'</output>':visualDMM(display,'', 'Shared circuit · '+(settings.mode||'voltage'));
   at('[data-meter-explanation]').textContent=hidden?'Make a prediction in the guide before checking the reading.':reading.mode==='voltage'&&reading.status!=='blocked'?voltageExplanation(project.circuit,reading,result):reading.reason||((reading.mode==='continuity'?'Continuity threshold: ≤30 Ω in this example. '+(reading.continuity?'Connected path detected. ':'No continuity indication. '):'Equivalent resistance of the connected resistor network. ')+'Ideal 1 V test with modeled power sources disconnected; actual hardware requires power/stored-energy verification.');
-  guidance();
+  guidance();scopeReading(hidden);
  }catch(error){project.measurementResults=[];at('[data-circuit-values]').textContent='Electrical results unavailable: '+error.message;at('[data-meter-scene]').textContent='Unsupported circuit state: '+error.message;at('[data-meter-explanation]').textContent='No reading is available for this configuration. Review the connections and solver message before continuing.';status(error.message);guidance();}}
+ function scopeReading(hidden=false){
+  if(hidden){at('[data-scope-display]').textContent='Make a prediction in the guide before checking the shared measurement.';return;}
+  try{const capture=scopeCapture(project.circuit,project.instrumentSettings.SCOPE1);at('[data-scope-display]').innerHTML=renderScopeCapture(capture);const {points,...summary}=capture;project.measurementResults=project.measurementResults.filter(r=>r.instrumentId!=='SCOPE1');project.measurementResults.push({instrumentId:'SCOPE1',...summary});}catch(e){at('[data-scope-display]').textContent='Scope capture unavailable: '+e.message;}
+ }
  function controls(){
+  const probe=project.circuit.instruments[0];project.instrumentSettings.SCOPE1??={source:'dc',redNode:probe?.redNode,blackNode:probe?.blackNode,timeDiv:.001,voltsDiv:1,triggerLevel:0,signal:{schemaVersion:1,waveform:'sine',amplitude:2,offset:0,frequency:1000}};
+  if(!project.widgetInstances.some(w=>w.instanceId==='scope-view'))project.widgetInstances.push({instanceId:'scope-view',widgetId:'scope-foundation',version:'1.0.0'});
+  at('[data-scope-controls]').innerHTML=renderScopeControls(project.circuit,project.instrumentSettings.SCOPE1);
   at('[data-lab-project]').value=projectId;boardView();
   at('[data-circuit-power]').checked=project.circuit.state.powered;
   at('[data-circuit-controls]').innerHTML=project.circuit.components.map(p=>'<fieldset class="component-control"><legend>'+esc(p.label||p.id)+(p.type==='dc-source'?' · DC source':' · resistor')+'</legend><label class="lab-control">'+esc(p.id)+(p.type==='dc-source'?' source voltage (V)':' resistance (Ω)')+'<input type="number" data-component-value="'+esc(p.id)+'" min="'+(p.type==='dc-source'?'-24':'.001')+'" max="'+(p.type==='dc-source'?'24':'1000000000')+'" step="any" value="'+(p.type==='dc-source'?p.properties.voltageVolts:p.properties.resistanceOhms)+'"></label><label class="lab-control workspace-check"><input type="checkbox" data-component-open="'+esc(p.id)+'" '+(p.state.open?'checked':'')+'> Disconnect '+esc(p.id)+' path <span class="connection-badge">'+(p.state.open?'Disconnected':'Connected')+'</span></label></fieldset>').join('');
@@ -84,7 +94,14 @@ export function attachElectronicsWorkspace(root,storage=localStorage){
  }
  scope.addEventListener('change',async event=>{
   const input=event.target;try{
-   if(input.matches('[data-lab-project]')){
+   if(input.dataset.scopeSetting||input.dataset.scopeSignal){
+    const previous=structuredClone(project.instrumentSettings.SCOPE1),settings=project.instrumentSettings.SCOPE1;
+    if(input.dataset.scopeSetting)settings[input.dataset.scopeSetting]=['source','redNode','blackNode'].includes(input.dataset.scopeSetting)?input.value:Number(input.value);
+    if(input.dataset.scopeSignal)settings.signal[input.dataset.scopeSignal]=input.dataset.scopeSignal==='waveform'?input.value:Number(input.value);
+    try{scopeCapture(project.circuit,settings)}catch(e){project.instrumentSettings.SCOPE1=previous;at('[data-scope-controls]').innerHTML=renderScopeControls(project.circuit,previous);throw e;}
+    scopeReading(hideGuidedMeasurements(dividerActivity,currentGuide()));autosave();return;
+   }
+   if(input.matches('[data-lab-project]')){ 
     clearTimeout(timer);if(!await save()){input.value=projectId;throw Error('Export or resolve unsaved changes before switching projects');}
     projectId=input.value;const saved=store.read(projectId);project=saved?.project||makeProject();revision=saved?.revision||0;blocked=Boolean(saved?.conflicts.length);project.experimentState.guidance=guidanceState(dividerActivity,project.experimentState.guidance||{mode:board()?'free':'guided'});boardUI={tool:'wire',selection:[],section:'left'};storage.setItem('eu_lab_active_project_v1',projectId);controls();return;
    }
@@ -162,7 +179,7 @@ export function attachElectronicsWorkspace(root,storage=localStorage){
   else if(button.hasAttribute('data-export-project-recovery'))download('electronics-project-saved-copies.json',{raw:store.export(projectId),unsavedProject:project});
  }catch(e){status(e.message);}});
  at('[data-project-import]').addEventListener('change',async event=>{try{const file=event.target.files[0];if(!file)return;if(file.size>2e6)throw Error('Project import exceeds 2 MB local limit');const imported=JSON.parse(await file.text());validateProject(imported);if(imported.id!==projectId)throw Error('Select the matching lab project before importing; original file is untouched');if(blocked)throw Error('Resolve/export saved conflicts before importing');project=imported;project.experimentState.guidance=guidanceState(dividerActivity,project.experimentState.guidance||{mode:'free'});controls();save();}catch(e){status('Import rejected: '+e.message);}finally{event.target.value='';}});
- try{const layout=storage.getItem('eu_workspace_layout_v1:'+(innerWidth<700?'mobile':'desktop'));if(['circuit','meter','project'].includes(layout))at('.lab-workspace-grid').dataset.focusedPane=layout;}catch{}
+ try{const layout=storage.getItem('eu_workspace_layout_v1:'+(innerWidth<700?'mobile':'desktop'));if(['circuit','meter','scope','project'].includes(layout))at('.lab-workspace-grid').dataset.focusedPane=layout;}catch{}
  controls();
  // A disconnected workspace must not lose its last edit when navigation replaces the DOM.
  root.addEventListener('click',event=>{if(event.target.closest('[data-goto],[data-view]')&&timer){clearTimeout(timer);save();}},true);

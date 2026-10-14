@@ -4,7 +4,7 @@ export function validateGuidedActivity(activity){
  assertSerializable(activity);
  if(!activity.id||!Number.isInteger(activity.version)||!activity.objective||!Array.isArray(activity.steps)||!activity.steps.length)throw Error('Incomplete guided activity');
  const ids=new Set();for(const s of activity.steps){
-  if(!s.id||ids.has(s.id)||!s.title||!s.instructions||!['circuit','meter','project'].includes(s.pane))throw Error('Invalid activity step');ids.add(s.id);
+  if(!s.id||ids.has(s.id)||!s.title||!s.instructions||!['circuit','meter','scope','project'].includes(s.pane))throw Error('Invalid activity step');ids.add(s.id);
   for(const rule of s.requirements||[])if(!knownRules.has(rule.kind))throw Error('Unknown activity requirement');
   if(s.prediction&&(!Array.isArray(s.prediction.choices)||!Number.isInteger(s.prediction.correct)||s.prediction.correct<0||s.prediction.correct>=s.prediction.choices.length))throw Error('Invalid prediction');
  }return activity;

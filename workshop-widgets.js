@@ -7,7 +7,7 @@ function controls(a,value={}){
  return '<div class="workshop-controls">'+(a.fields||[]).map(f=>'<label class="lab-control">'+e(f.label)+'<select data-workshop-field="'+e(f.id)+'"><option value="">Choose…</option>'+f.options.map(([id,label])=>'<option value="'+e(id)+'"'+selected(value.fields?.[f.id],id)+'>'+e(label)+'</option>').join('')+'</select></label>').join('')+'</div>';
 }
 function readingSVG(body,label){return '<svg class="workshop-visual" viewBox="0 0 640 260" role="img" aria-label="'+e(label)+'"><rect x="1" y="1" width="638" height="258" rx="18" fill="#12384f" stroke="#49728a"/>'+body+'</svg>';}
-function plotWave(fn,xMax,voltsDiv=1,timeDiv=xMax/10,samples=null){
+export function plotWave(fn,xMax,voltsDiv=1,timeDiv=xMax/10,samples=null,{timeLabel}={}){
  const x=v=>40+v/xMax*560,y=v=>125-v/voltsDiv*38;
  const grid=Array.from({length:11},(_,i)=>'<path d="M'+(40+i*56)+' 25 V225" stroke="#34586c"/>').join('')+Array.from({length:5},(_,i)=>'<path d="M40 '+(49+i*38)+' H600" stroke="#34586c"/>').join('');
  const count=samples||300,points=Array.from({length:count+1},(_,i)=>{const t=xMax*i/count;return x(t).toFixed(2)+','+y(fn(t)).toFixed(2);}).join(' ');
