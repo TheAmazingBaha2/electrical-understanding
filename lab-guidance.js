@@ -33,9 +33,9 @@ export function stepFeedback(activity,state,circuit,instrumentSettings={}){
  if(step.prediction){const choice=state.predictions[step.id];if(!Number.isInteger(choice))return {ready:false,message:'Choose a prediction before revealing the expected observation.'};return {ready:true,correct:choice===step.prediction.correct,message:(choice===step.prediction.correct?'Your prediction matches. ':'Compare your prediction with the explanation. ')+step.prediction.explanation};}
  return {ready:true,message:step.requirements?.length?'Your circuit and probe settings match this step. Observe the current meter reading, then continue.':'Continue when you are ready.'};
 }
-export function advanceGuidance(activity,state,circuit,direction){
+export function advanceGuidance(activity,state,circuit,direction,instrumentSettings={}){
  const index=activity.steps.findIndex(s=>s.id===state.stepId),next=structuredClone(state);
- if(direction>0){const feedback=stepFeedback(activity,state,circuit);if(!feedback.ready)throw Error(feedback.message);if(!next.completedStepIds.includes(state.stepId))next.completedStepIds.push(state.stepId);}
+ if(direction>0){const feedback=stepFeedback(activity,state,circuit,instrumentSettings);if(!feedback.ready)throw Error(feedback.message);if(!next.completedStepIds.includes(state.stepId))next.completedStepIds.push(state.stepId);}
  next.stepId=activity.steps[Math.max(0,Math.min(activity.steps.length-1,index+direction))].id;return next;
 }
 export function hideGuidedMeasurements(activity,state){const predictionIndex=activity.steps.findIndex(s=>s.prediction);return predictionIndex>=0&&state.mode==='guided'&&activity.steps.findIndex(s=>s.id===state.stepId)<=predictionIndex&&!Object.hasOwn(state.predictions,activity.steps[predictionIndex].id);}

@@ -2,9 +2,17 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {holeNode,dividerBreadboard,compileBreadboard,editBreadboard,newBoardHistory,boardHistoryEdit,boardUndo,boardRedo} from '../breadboard-model.js';
 import {solveDC,measureVoltage} from '../circuit-model.js';
+import {breadboardNet,renderBreadboardOverview} from '../breadboard-overview.js';
 test('breadboard five-hole rows, center gap and split rails map correctly',()=>{
  assert.equal(holeNode('A1'),holeNode('E1'));assert.equal(holeNode('F1'),holeNode('J1'));assert.notEqual(holeNode('E1'),holeNode('F1'));assert.notEqual(holeNode('A1'),holeNode('A2'));
  assert.equal(holeNode('LP1'),holeNode('LP6'));assert.notEqual(holeNode('LP6'),holeNode('LP7'));assert.notEqual(holeNode('LP1'),holeNode('RP1'));assert.notEqual(holeNode('LP1'),holeNode('LN1'));assert.throws(()=>holeNode('A13'));
+});
+test('breadboard overview follows actual copper/wire nodes, open states and parked probes',()=>{
+ const s=dividerBreadboard();assert.ok(breadboardNet(s,'A1').includes('LP6'));assert.ok(!breadboardNet(s,'A1').includes('LP7'));assert.ok(!breadboardNet(s,'A1').includes('H1'));
+ const opened=editBreadboard(s,{type:'open',id:'W1',open:true});assert.deepEqual(breadboardNet(opened,'A1'),['A1','B1','C1','D1','E1']);
+ const closedView=renderBreadboardOverview(s,{selection:['A1']});assert.match(closedView,/data-preview-wire="W1" class="board-preview-wire"/);assert.match(closedView,/shares direct copper\/wire connectivity/);
+ assert.match(renderBreadboardOverview(opened),/data-preview-wire="W1" class="board-preview-wire board-preview-open"/);
+ assert.match(closedView,/data-preview-probe="red"/);assert.doesNotMatch(renderBreadboardOverview(s,{instrumentSettings:{mode:'current'}}),/data-preview-probe/);
 });
 test('breadboard wires and component changes feed the shared solver without canned readings',()=>{
  const s=dividerBreadboard(),c=compileBreadboard(s);assert.equal(c.nodes.length,32);assert.equal(c.connections[0].id,'W1');

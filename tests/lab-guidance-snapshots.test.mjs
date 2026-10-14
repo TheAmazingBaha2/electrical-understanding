@@ -13,6 +13,7 @@ test('guided data supports prediction gating, resume, hints and explicit free mo
  state.predictions.predict=0;assert.match(stepFeedback(dividerActivity,state,c).message,/Compare/);assert.equal(hideGuidedMeasurements(dividerActivity,state),false);
  state=advanceGuidance(dividerActivity,state,c,1);assert.equal(state.stepId,'source-measurement');assert.equal(stepFeedback(dividerActivity,state,c).ready,false);
  c.instruments[0].redNode='source';assert.equal(stepFeedback(dividerActivity,state,c).ready,true);
+ assert.throws(()=>advanceGuidance(dividerActivity,state,c,1,{mode:'current',jack:'A'}),/DC voltage/);
  assert.deepEqual(guidanceState(dividerActivity,JSON.parse(JSON.stringify(state))),state);
  state.mode='free';assert.equal(hideGuidedMeasurements(dividerActivity,state),false);
  const other={id:'another',version:1,objective:'Another lab',steps:[{id:'estimate',title:'Estimate',pane:'meter',instructions:'Predict',prediction:{choices:['A','B'],correct:0}}]};
@@ -47,4 +48,10 @@ test('stale snapshot deletion is preserved and conflict selection archives both 
  const resolved=await store.resolveConflict(p.id,conflict.conflicts[0].id,true,conflict.revision);assert.equal(resolved.project.snapshots.length,0);assert.equal(resolved.conflicts.length,0);
  assert.equal(resolved.resolvedConflicts[0].current.snapshots[0].name,'Renamed by other tab');assert.equal(resolved.resolvedConflicts[0].incoming.snapshots.length,0);
  assert.equal(store.read(p.id).project.snapshots.length,0);await store.save(resolved.project,resolved.revision);assert.equal(store.read(p.id).resolvedConflicts.length,1);
+});
+test('snapshots restore exact inventory and legacy snapshots reconstruct only saved components',()=>{
+ let p=newProject();p.componentInventory[1].supplierNote='Owner inventory detail';p=addSnapshot(p,'Full inventory','full');
+ p.componentInventory=[];const restored=restoreSnapshot(p,'full');assert.equal(restored.componentInventory.length,3);assert.equal(restored.componentInventory[1].supplierNote,'Owner inventory detail');
+ const legacy=structuredClone(restored);delete legacy.snapshots[0].experiment.componentInventory;legacy.componentInventory.push({componentId:'OTHER',quantity:9});
+ const old=restoreSnapshot(legacy,'full');assert.equal(old.componentInventory.length,3);assert.equal(old.componentInventory[1].supplierNote,'Owner inventory detail');assert.ok(!Object.hasOwn(legacy.snapshots[0].experiment,'componentInventory'));
 });

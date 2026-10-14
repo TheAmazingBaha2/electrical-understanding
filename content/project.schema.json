@@ -144,6 +144,12 @@
               },
               "experimentState": {
                 "type": "object"
+              },
+              "componentInventory": {
+                "type": "array",
+                "items": {
+                  "type": "object"
+                }
               }
             },
             "required": [

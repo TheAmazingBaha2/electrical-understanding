@@ -1,3 +1,5 @@
+> This document records the original foundation. For current lab features, verified staging status and owner testing, read [LAB_CONTINUATION.md](LAB_CONTINUATION.md) and [CHECKPOINT.md](CHECKPOINT.md). Historical pending cleanup/deployment and deferred-feature statements below are superseded by those continuation records.
+
 # Shared electronics foundation v1
 
 `circuit-model.js` separates electrical state from views: stable nodes, components, explicit terminals, wire IDs/closed state, source/resistor properties, power/open state and instrument probe connections. `solveDC` uses modified nodal analysis; `measureVoltage` derives red-minus-black from that solved state. The model is JSON serializable and versioned by `content/circuit.schema.json`. Proof of concept is 5 V and two 1 kΩ resistors: source 5 V, output 2.5 V, current 2.5 mA. Open R1: output 0 V via R2. Open R2: output 5 V through R1 and the ideal unloaded meter. Both open: floating output, unknown reading. Reversed probes reverse the sign.

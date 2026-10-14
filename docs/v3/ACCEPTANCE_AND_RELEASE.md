@@ -1,3 +1,5 @@
+> This document records the original foundation. For current lab features, verified staging status and owner testing, read [LAB_CONTINUATION.md](LAB_CONTINUATION.md) and [CHECKPOINT.md](CHECKPOINT.md). Historical pending cleanup/deployment and deferred-feature statements below are superseded by those continuation records.
+
 # V3 owner acceptance and release boundaries
 
 Implemented foundation: authoring retirement in V3, approved lesson preservation, external structured-package publication, reusable widget catalog/queue, shared DC simulation, adaptive circuit/meter/project panes, local saving/snapshots/recovery, constrained future tutor proposals. Existing lessons, workshop logic, grading, stable IDs, local/cloud progress contract and review schedules remain compatible.

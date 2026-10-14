@@ -22,10 +22,14 @@ export function newProject(id='divider-project'){return {
  instrumentSettings:{DMM1:{presentation:'realistic',difficulty:'beginner'}},measurementResults:[],notes:'',experimentState:{},snapshots:[],lessonReferences:[]
 };}
 export function addSnapshot(p,name,id){validateProject(p);if(typeof name!=='string'||!name.trim()||p.snapshots.some(s=>s.id===id))throw Error('Snapshot needs a unique ID and name');
- const {circuit,widgetInstances,instrumentSettings,measurementResults,notes,experimentState}=structuredClone(p);
- return {...structuredClone(p),snapshots:[...structuredClone(p.snapshots),{id,name:name.trim(),createdAt:new Date().toISOString(),experiment:{circuit,widgetInstances,instrumentSettings,measurementResults,notes,experimentState}}]};
+ const {circuit,componentInventory,widgetInstances,instrumentSettings,measurementResults,notes,experimentState}=structuredClone(p);
+ return {...structuredClone(p),snapshots:[...structuredClone(p.snapshots),{id,name:name.trim(),createdAt:new Date().toISOString(),experiment:{circuit,componentInventory,widgetInstances,instrumentSettings,measurementResults,notes,experimentState}}]};
 }
-export function restoreSnapshot(p,id){validateProject(p);const s=p.snapshots.find(s=>s.id===id);if(!s)throw Error('Snapshot not found');const result={...structuredClone(p),...structuredClone(s.experiment)};validateProject(result);return result;}
+export function restoreSnapshot(p,id){validateProject(p);const s=p.snapshots.find(s=>s.id===id);if(!s)throw Error('Snapshot not found');const result={...structuredClone(p),...structuredClone(s.experiment)};
+ // Early v1 snapshots omitted inventory. Restore known component entries without
+ // changing the stored historical snapshot or retaining unrelated current parts.
+ if(!Object.hasOwn(s.experiment,'componentInventory'))result.componentInventory=result.circuit.components.map(c=>structuredClone(p.componentInventory.find(i=>i.componentId===c.id)||{componentId:c.id,quantity:1}));
+ validateProject(result);return result;}
 export function renameSnapshot(p,id,name){
  validateProject(p);if(typeof name!=='string'||!name.trim())throw Error('Snapshot name cannot be blank');
  const result=structuredClone(p),s=result.snapshots.find(s=>s.id===id);if(!s)throw Error('Snapshot not found');

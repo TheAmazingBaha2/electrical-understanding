@@ -1,5 +1,14 @@
 # Durable V3 checkpoint
 
+## Current resumption point — October 13 (America/New_York)
+
+Last fully verified commit: `3b4e81351e0b84df58870d7751238635f8dce70b` on `draft/v2-dmm-companion`. Primary run `38503196352` and read-back `38503196301` succeeded: all 14 desktop/phone suites and every one of 58 public assets matched staging. Milestones now include guide/snapshots, editable breadboard, shared DMM modes, scope foundation, multiple personal projects and pure future sync contracts. Existing foundation/content/progress remain preserved. Older sections below are chronological historical evidence, not current pending status.
+
+Current tested increment: breadboard wiring overview/direct-node highlighting and wire-open controls; parked-probe display; clearing stale shared scope traces on solver error; snapshot inventory restoration (compatible fallback for early snapshots); a locked final save that survives navigation DOM replacement; guide navigation checks actual meter mode/jack. Local 238 deterministic tests, 32 test files, syntax/build/allowlist (59 assets) pass. Exact-commit browser/read-back acceptance remains pending until its own new run succeeds. A missing new overview entry in the independent deployment-test allowlist was detected locally and fixed before publication.
+
+Next: inspect exact-head CI and served-asset read-back for this refinement, fix actual regressions if any, then record verified SHAs/runs in this top section and the continuation report. Owner test Guided/Free modes, snapshot duplicate-name rename/delete, board construction/open-wire/net highlighting and probe measurements, scope origin labels, multiple-project recovery and offline reload. Subsequent refinements are queued, not automatically enabled. No production release, PR #4 merge, bucket retirement, paid AI or isolated backend is authorized. PR #4's test fix remains green and unmerged; prior raw PDF absence is read-only verified, with one zero-byte placeholder retained.
+
+
 Branch: draft/v2-dmm-companion. Verified upstream base: 9c63daf8585f110c5714e0315c70659e1e75f97d. Local checkout reconstructed with exact upstream tree ac878d3ec33f2f0aed3a206d5fc7c9a890dc8bcd; upstream Git history is available through the connector, shell proxy unavailable.
 
 Phase 1 implemented locally: preserved 33 lessons/336 question IDs; removed active authoring navigation/imports/bundles; disabled tutor calls; prepared backend tombstones; recorded current production storage/DB/security audit and exact pending cleanup manifest. Tests: 23 test files pass with EU_SYNTHETIC_SERIES=/tmp/eu-synthetic-series.json (generated from existing author-chapter3.py); check/build/allowlist pass. Browser/server sockets blocked locally. No production/V1 changes, paid calls, deployment, raw deletion or schema mutation.

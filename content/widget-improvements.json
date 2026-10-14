@@ -1,5 +1,61 @@
 {
   "schemaVersion": 1,
   "policy": "Reuse, evaluate, refine. Batch ordinary improvements; owner approval before changing behavior, grading or project compatibility.",
-  "items": []
+  "items": [
+    {
+      "id": "V3-BOARD-GUIDES",
+      "widgetId": "breadboard-shared",
+      "widgetVersion": "1.0.0",
+      "suggestion": "Owner requested thorough instructions and independent circuit construction. Add reviewed breadboard-specific activities using the existing guide.",
+      "priority": "normal",
+      "affectedLessons": [],
+      "affectedProjects": [
+        "breadboard templates"
+      ],
+      "proposedChange": "Add opt-in rail bridging, component placement and fault diagnosis activities, with flexible reviewed rules.",
+      "compatibilityRequirements": "Do not change current Free Experiment projects, schema or graded lesson outcomes.",
+      "testingRequirements": [
+        "Desktop/phone guided editing",
+        "Exact saved-state restoration",
+        "Existing divider guide regressions"
+      ]
+    },
+    {
+      "id": "V3-DMM-REALISM",
+      "widgetId": "dmm-shared",
+      "widgetVersion": "1.0.0",
+      "suggestion": "Owner requested progressively realistic reusable instruments. The current instrument is ideal.",
+      "priority": "high",
+      "affectedLessons": [],
+      "affectedProjects": [
+        "shared DC laboratory projects"
+      ],
+      "proposedChange": "Review versioned finite input resistance and current burden/fuse models before adding optional realism.",
+      "compatibilityRequirements": "Keep the existing ideal-model interpretation available; owner approval and a version decision before behavior changes. Never reinterpret grades.",
+      "testingRequirements": [
+        "Analytic loading/series insertion fixtures",
+        "Wrong-jack/fuse/safety scenarios",
+        "Backward project settings and original graded DMM tests"
+      ]
+    },
+    {
+      "id": "V3-SCOPE-CHANNELS",
+      "widgetId": "scope-foundation",
+      "widgetVersion": "1.0.0",
+      "suggestion": "Owner requested waveform comparison and later actual time-dependent circuit observation.",
+      "priority": "normal",
+      "affectedLessons": [],
+      "affectedProjects": [
+        "scope laboratory projects"
+      ],
+      "proposedChange": "Add a second validated capture channel and shared timebase before a separately reviewed transient-engine adapter.",
+      "compatibilityRequirements": "Keep demonstration origins distinct from actual circuit solutions; preserve one-channel settings and DC limitations.",
+      "testingRequirements": [
+        "Independent probe/floating handling",
+        "Shared-timebase comparisons and alias disclosures",
+        "Snapshot/import backward compatibility",
+        "Desktop/phone presentation"
+      ]
+    }
+  ]
 }

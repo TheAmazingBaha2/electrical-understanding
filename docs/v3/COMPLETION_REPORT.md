@@ -1,3 +1,5 @@
+> This document records the original foundation. For current lab features, verified staging status and owner testing, read [LAB_CONTINUATION.md](LAB_CONTINUATION.md) and [CHECKPOINT.md](CHECKPOINT.md). Historical pending cleanup/deployment and deferred-feature statements below are superseded by those continuation records.
+
 # Electrical Workbench V3 foundation — 2026-10-14
 
 Implemented authorized Phases 1–4 and completed automated Phase 5 acceptance. Owner acceptance, live staging read-back and production cleanup remain pending. No production/V1 mutations, paid AI calls, destructive operations, backend creation or production deployment occurred.
