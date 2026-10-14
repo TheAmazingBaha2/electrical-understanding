@@ -1,3 +1,5 @@
+> Latest verified reliability increment: `0d6432ce9a2de5b22f9ab97dfcd046ae2a58d65e`, primary `38507066495`/read-back `38507066525`. All 241 tests, 14 browser suites with delayed-lock desktop/phone transactions, and 59 served assets pass. Earlier pending statements below are historical. Use CHECKPOINT.md and CONTINUATION_REPORT.md for resumption/owner checks.
+
 > Final implementation is verified at `fe98a265ef146e2b3d2fea599e8f76a35f789042`: primary `38505263470`, read-back `38505263515`, 241 deterministic tests, all 14 browser suites and all 59 served assets. Earlier progress statements below are historical. Offline saving requires an already loaded app; a fully cached offline shell remains deferred.
 
 > Latest verified implementation: `83514078ed0e882a9caefa4f1e986de2ae6781d9`, primary `38504719822`/read-back `38504719805`, all 14 browser suites and 59 served assets. [CONTINUATION_REPORT.md](CONTINUATION_REPORT.md) summarizes all delivered milestones, owner tests and remaining boundaries. CHECKPOINT.md records the final identity-protection increment's separate gate.
