@@ -1,3 +1,13 @@
+# Delivery verified — current authoritative status
+
+The compact desktop implementation is now delivered. **b37fd99ae2a1bb017b7ae0dbf5083164281f96fb** passed primary **38611270515** (259 tests, 18 browser suites and real Windows Electron/Tauri jobs). Cloudflare build and read-back **38611270357** / job **116014952513** succeeded; exact build-info and all **73** served asset hashes match that SHA. This closes the earlier 1684e51 deployment failure without bypassing CI or changing infrastructure. The private build failure cause remains unverified; the authorized pipeline retry succeeded.
+
+Runtime implementation remains **1684e516a81a46b17cdd128bec748dc721e6ec49**; b37fd99 is its verified documentation/queue handoff. Both shells and independent phone module are working prototypes. Owner usability/HiDPI acceptance, additional phone activities, per-lesson presets and permanent executable packaging remain pending. No production/V1/data/paid-service boundary was crossed.
+
+This following documentation-only commit records the successful delivery; inspect actual HEAD and its exact checks/read-back on resumption rather than assuming a later operation completed. Do not repeat passed audits/implementation. See DESKTOP_MOBILE_REPORT.md and the four-item improvement queue. Owner testing is the next meaningful gate; proposed polish should be batched after that feedback. If another delivery fails, keep the last verified release and obtain the Cloudflare error text without exposing credentials.
+
+---
+
 # Latest resumption status — October 14, 2026
 
 Branch: `draft/v2-dmm-companion`. Tested implementation: `1684e516a81a46b17cdd128bec748dc721e6ec49`. Current milestone: desktop-first prototype, dual practical contracts and separate phone exercise implemented; owner usability acceptance pending.

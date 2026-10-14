@@ -1,3 +1,5 @@
+> **Delivery closed:** staging serves b37fd99ae2a1bb017b7ae0dbf5083164281f96fb, with primary 38611270515 and read-back 38611270357 passing. All 73 served hashes match. Its runtime is the compact layout from 1684e51. The earlier Cloudflare failure described below is retained history; the authorized retry succeeded. Owner acceptance and permanent Windows packaging remain pending.
+
 # Desktop/mobile laboratory continuation report
 
 Development branch: `draft/v2-dmm-companion`. Tested source: **1684e516a81a46b17cdd128bec748dc721e6ec49**. This implements the requested desktop-first prototype and additive dual-lab architecture. It does not declare the complete redesign or a permanent Windows shell accepted.
@@ -34,7 +36,7 @@ Screenshot artifacts: `v2-visual-qa`, `windows-electron-evaluation`, `windows-ta
 
 ## Owner acceptance checklist
 
-After matching staging delivery is verified, open [V3 staging](https://eu-v2-staging.vanguardcorbett.workers.dev/):
+With matching staging delivery verified, open [V3 staging](https://eu-v2-staging.vanguardcorbett.workers.dev/):
 1. On Windows select Desktop/Automatic. Confirm circuit and meter are visible; drag titles, resize edges/corners, dock/minimize/reopen and reload saved layout.
 2. Click a resistor/source for its contextual editor. Change presets/bands/source voltage. Drag probes to source/output/reference and reverse polarity. Confirm unavailable measurements are explained.
 3. Clear Circuit with confirmation, place source/resistors, connect terminal wires, choose source − as Reference, connect both probes and enable power. Undo/redo, save/reload and restore a named snapshot.
