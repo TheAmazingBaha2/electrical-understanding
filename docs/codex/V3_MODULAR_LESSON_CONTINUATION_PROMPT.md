@@ -92,3 +92,98 @@ Expand extraction to account for all legacy educational explanations, examples, 
 Earlier private files under /workspace/electrical-workbench-private-authoring/ are **ephemeral**. Verify hashes and provide an owner-authorized, durable private export/backup and recovery procedure. Do not place private bundles in public GitHub just for persistence.
 
 Complete the private/developer IngestionProvider using **explicit supplied artifacts**. Validate source and page data, compare against canonical topics, identify additions/duplication/conflicts/coverage gaps, propose blocks/questions/labs and lesson augment/split/merge/new decisions, generate human-readable content diffs, and require approval before publishing. Create eight deterministic fixtures: duplicate fact, new evidence, contradiction, subtopic, new lesson, split, merge, and missing/ambiguous citation. No runtime AI calls or website upload endpoints.
+
+---
+
+# PART B — Practice, grading and learning records
+
+### 5. Expand deterministic parameterized question banks
+
+Extend modular/assessments.js and assessment-rules.js, preserving the existing finite-product@1 generator and exact instance/revision/hash/seed contracts.
+
+Support reviewed static questions and repeatable changing-value exercises. Example: "For an ideal resistor of {resistance} ohms with {voltage} volts across it, calculate current." Use bounded approved value sets and deterministic selection. Store exact parameter values, generator version, question template version/hash, expected result, unit, tolerance, explanation, attempt identity and seed. Historical attempts must reproduce exactly or fail safely; never regrade them under newer rules.
+
+Validate every allowed combination: finite values, divide-by-zero, units and prefixes, meaningful electrical bounds, plausible distractors, supported formula families, safety and answer tolerances. Do not execute arbitrary expressions or accept unreviewed runtime-generated grading rules. Add generator families only as justified by the pilots: color-band decoding, tolerance interval, Ohm's law, series/parallel, divider, polarity, instrument preparation.
+
+**Practice versus grading:** Practice may repeat with new values, hints and explanations without automatically increasing mastery. Graded assessment uses reviewed templates, immutable attempts, existing pass thresholds and safety requirements. A new revision may add requirements without altering old recorded results.
+
+### 6. Implement actual separate desktop/mobile lab rubrics
+
+The existing schema-2 and Schema V3 contracts already separate platform labs and scores. Preserve:
+- Common core theory, quizzes and progress identity.
+- Desktop module ID/version/activities/results/grade counter.
+- Mobile module ID/version/activities/results/grade counter.
+- Default either-platform practical completion, with the other optional.
+- No double counting shared quiz grades.
+
+Implement **lesson-specific** Resistors and DMM activities, not merely generic free-lab references.
+
+Desktop: construct a resistor network in the existing circuit canvas, adjust values/supply, connect probes, measure and diagnose. Mobile: identify resistor bands/tolerance, choose safe DMM modes/jacks, predict and interpret readings using purpose-built touch widgets. Use the same electrical model and registry; do not duplicate solvers or shrink desktop widgets into phone panels.
+
+A rubric must verify meaningful electrical state or conceptual outcomes, **not merely clicks**. Use stable activity IDs, validated inputs, versioned rubrics, clear hints and review feedback. Do not imply ideal DC measurements are certified physical hardware behavior.
+
+### 7. Durable private assessment progress and sync boundaries
+
+The existing modular/ProgressRepository is currently in-memory. Implement a durable **private host storage adapter** behind modular/ports.d.ts and existing PrivateHostStorage contracts. Provide atomic revision-aware saving, compare-and-swap, conflict preservation, export/import, backup/recovery and identity checks. Do not use production Supabase, enable a paid service or move learner data into public GitHub.
+
+Store immutable results with private learner stream, lesson revision, question instance/template version/hash, seed/parameters, attempt/time, answer/result, safety state and independent platform/module version. No timestamp-only conflict winner. Preserve all variants on conflict, and do not award disputed credit until resolved.
+
+Preserve existing project storage separately from graded learning records. Device window layouts stay local; learner grades can later sync across devices through a separately approved transport. Support offline access to locally installed approved lessons and saved attempts. No claim of cross-device sync until an authorized backend and tested transport actually exist.
+
+**Historical progress:** New lesson IDs must not erase or silently reinterpret old quiz results. Only map old credit when explicit reviewed objective/rubric equivalence is demonstrated. Otherwise keep old credit readable as historical and require a new assessment for the new objective. Keep the existing common 80% quiz rule and safety-critical rules unless separately approved. New lesson content does not retroactively lower a historical grade.
+
+### 8. Mastery, review and scheduling contracts
+
+Keep existing review and reinforcement schedules functioning. Extend modular projections to stable learning objectives/skills and versioned assessment rules, not UI position. Distinguish previously completed objectives, newly introduced requirements and optional reinforcement. Store review-schedule updates as private validated events or an explicitly versioned projection contract. Do not replace existing spaced-repetition behavior without a reviewed migration.
+
+---
+
+# PART C — Replaceable visual presentation and portable hosts
+
+### 9. Keep the familiar interface, but make it a replaceable profile
+
+Preserve initially:
+- Overview, Learn, Interact, Quiz, Review.
+- Progress pie charts and completion counters.
+- Source citations and printed-page references.
+- Shared quiz status and distinct desktop/mobile lab grades.
+- Current typography, navigation and graphical widget styling where reusable.
+
+**Never hard-code tab names or their order into canonical content, grading, source evidence or progress.**
+
+Extend PresentationProfile with identity/version, supported hosts, semantic block-to-region mappings, navigation, widget slots, source citation rules, assessment presentation and progress visualization adapters. All progress pies must consume authoritative **progress projections**, not inspect the DOM for grades.
+
+Demonstrate two fully functional profiles using the exact same lesson IDs, questions, evidence and scores:
+1. Classic five tabs with progress pies.
+2. Linear reading or another clearly different navigation layout.
+
+Switching profiles must not modify lesson content or historical progress. A profile must fail or use a reviewed fallback when it cannot render required blocks; never silently omit content. Keep accessible keyboard focus, labels and practical touch targets even when desktop and mobile use different layouts.
+
+### 10. Portable Windows, Android and offline curriculum
+
+The desktop and phone applications share approved curriculum bundles, source records, assessment rules, simulation calculations and stable IDs, but use independent presentation/lab adapters. Desktop windows/panels and mobile touch flows remain separate.
+
+Keep the domain **free of DOM, Node, HTTP, Supabase, GitHub, Electron/Tauri and Android-specific APIs**. Implement host adapters at explicit ports. Approved content must be loadable locally after installation; GitHub is development/publication infrastructure, not a runtime identity, content or sync provider. A private app must not require live ChatGPT access to display previously approved lessons.
+
+Existing Electron and Tauri shells are evaluation prototypes only. Do not choose a permanent shell, ship an official installer/APK, request code-signing services, or modify production account/cloud infrastructure without approval. When adding native persistence, use scoped local storage and explicit export/backup/import with transactional round trips. Never silently copy production browser-origin storage into native profiles.
+
+### 11. Developer-controlled Schema V3 publication
+
+Build a deterministic publication pipeline from private reviewed authoring bundles to allowlisted approved learner content:
+
+1. Explicit private input and schema validation.
+2. Evidence/locator/edition verification status and source-rights review.
+3. Topic graph, prerequisite and composition validation.
+4. Assessment generator/evaluator and safety tests.
+5. Lab capability, widget registry and rubric compatibility checks.
+6. Presentation compatibility checks for desktop/mobile/classic/alternative profiles.
+7. Human-readable content and grade-impact diff.
+8. Recorded technical/educational/owner approval.
+9. Immutable revision/hash and reproducible approved bundle build.
+10. Private preview and staging acceptance.
+11. Exact-commit CI and served-asset read-back.
+12. Previous revision retained for rollback.
+
+An imported artifact is **not** approved by default. Do not route Schema V3 through legacy schema-1/2 importers or allow unreviewed drafts to grade learners. Public bundles exclude private proposals, source scans, internal storage IDs, secrets and personal progress. No website source-upload endpoint is needed.
+
+Deliver at least two validated private pilots with a real graded-capable adapter tested on **synthetic** learner data, then obtain owner acceptance before enabling those pilots for actual learners.
