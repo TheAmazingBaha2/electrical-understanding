@@ -9,7 +9,7 @@ try{for(const width of [320,390,1440]){
  page.on('pageerror',e=>errors.push(e.message));await page.route('**/*',r=>{if(new URL(r.request().url()).hostname==='127.0.0.1')return r.continue();external.push(r.request().url());return r.abort();});
  await page.goto('http://127.0.0.1:8080/');await go(page,'workbench');await page.locator('[data-experiment-mode="free"]').click();await page.locator('[data-lab-project]').selectOption('breadboard-project');await page.locator('[data-breadboard-root]').waitFor();
  const pane=async name=>{if(width<700)await page.locator('[data-lab-pane="'+name+'"]').tap();};
- const section=async name=>{if(width<700)await page.locator('[data-board-section="'+name+'"]').click();};
+ const section=async name=>{if(width<700)await page.locator('button[data-board-section="'+name+'"]').click();};
  const hole=async name=>{await section(name.startsWith('LP')||name.startsWith('LN')||name.startsWith('RP')||name.startsWith('RN')?'rails':name[0]<'F'?'left':'right');const node=page.locator('[data-breadboard-hole="'+name+'"]');if(width<700)await node.tap();else await node.click();};
  await pane('meter');assert.match(await page.locator('[data-meter-scene]').innerText(),/2.500 V/);await pane('circuit');
  assert.ok((await page.locator('[data-breadboard-hole="A1"]').boundingBox()).width>=44);
