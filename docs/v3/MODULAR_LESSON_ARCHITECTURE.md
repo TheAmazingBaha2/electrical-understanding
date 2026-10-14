@@ -20,6 +20,8 @@ The intended private Windows and Android apps can package the same approved curr
 
 Existing browser/native storage has not moved. A later private-app migration must explicitly import an owner-supplied backup, retain original bytes, validate the exact account/project identity, preview conflicts, write transactionally and verify a round trip before switching. Cross-device synchronization is optional and transport-free until separately authorized. Device window layouts stay local; graded events merge append-only with conflicts preserved, never timestamp-only last-write-wins.
 
+`modular/ports.d.ts` records every requested repository/service interface, including the not-yet-implemented ingestion provider and asynchronous private host storage/CAS/recovery contract. Content lookups use an immutable snapshot loaded asynchronously by the host; rendering has no hidden filesystem/network calls. These declarations are interface documentation, not proof of durable native storage or cloud transport.
+
 Electron and Tauri remain evaluated Windows prototypes; neither has been selected as permanent packaging. Android packaging, signing, app-private persistence and owner-device testing remain future work. No official installer/APK, public release, paid service or repository-visibility change is implied.
 
 ## Publication boundary

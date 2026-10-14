@@ -55,7 +55,7 @@ export function validateEntity(entity,kind=entity?.kind){
 }
 export function validateBundle(bundle){
  assertSerializable(bundle);check(domainSchema.$defs.Bundle,bundle,'Bundle');
- const index=new Map(),identityKinds=new Map();for(const entity of bundle.entities){validateEntity(entity);const key=revisionKey(entity);if(index.has(key))throw Error('Duplicate entity revision '+key);if(identityKinds.has(entity.id)&&identityKinds.get(entity.id)!==entity.kind)throw Error('UUID reused across entity kinds');identityKinds.set(entity.id,entity.kind);index.set(key,entity);}
+ const index=new Map(),identityKinds=new Map(),ownerRevisions=new Set();for(const entity of bundle.entities){validateEntity(entity);const key=revisionKey(entity);if(index.has(key))throw Error('Duplicate entity revision '+key);if(identityKinds.has(entity.id)&&identityKinds.get(entity.id)!==entity.kind)throw Error('UUID reused across entity kinds');identityKinds.set(entity.id,entity.kind);const owner=entity.kind==='LessonRevision'?entity.lessonId:entity.kind==='TopicRevision'?entity.topicId:null;if(owner){const ownerKey=entity.kind+':'+owner+'@'+entity.version;if(ownerRevisions.has(ownerKey))throw Error('Ambiguous owner revision '+ownerKey);ownerRevisions.add(ownerKey);}index.set(key,entity);}
  const get=(kind,id,version)=>{const e=index.get(kind+':'+id+(version?'@'+version:''));if(!e)throw Error('Broken reference '+kind+':'+id+(version?'@'+version:''));return e;};
  const getRef=(kind,r)=>get(kind,r.id,r.version);
  const evidence=refs=>refs.forEach(r=>getRef('EvidenceClaim',r));

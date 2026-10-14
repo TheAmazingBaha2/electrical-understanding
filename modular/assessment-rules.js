@@ -3,6 +3,7 @@ const operators={
  choice:{unit:'',arity:0,calculate:(_,t)=>t.evaluator.correctIndex},
  'ohm-current':{unit:'A',arity:2,calculate:([v,r])=>{if(r<=0)throw Error('Resistance must be positive');return v/r;}},
  'ohm-voltage':{unit:'V',arity:2,calculate:([i,r])=>{if(r<=0)throw Error('Resistance must be positive');return i*r;}},
+ 'voltage-difference':{unit:'V',arity:2,calculate:([red,black])=>red-black},
  'voltage-divider':{unit:'V',arity:3,calculate:([v,a,b])=>{if(a<=0||b<=0)throw Error('Divider resistances must be positive');return v*b/(a+b);}},
  'series-resistance':{unit:'Ω',calculate:rs=>{if(!rs.length||rs.some(r=>r<0))throw Error('Invalid series resistance');return rs.reduce((a,b)=>a+b,0);}},
  'parallel-resistance':{unit:'Ω',calculate:rs=>{if(!rs.length||rs.some(r=>r<=0))throw Error('Invalid parallel resistance');return 1/rs.reduce((a,b)=>a+1/b,0);}}

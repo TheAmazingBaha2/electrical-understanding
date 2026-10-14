@@ -1,5 +1,5 @@
 import {validateEntity} from './validation.js';
-import {canonicalJSON} from './repositories.js';
+import {canonicalJSON,artifactHash} from './repositories.js';
 
 import {assertAssessmentSemantics,parameterSets,answerFor} from './assessment-rules.js';
 
@@ -14,7 +14,7 @@ export async function generateAssessment(template,seed){
  validateAssessmentTemplate(template);if(!['reviewed','published'].includes(template.status))throw Error('Unreviewed assessment cannot grade');
  if(typeof seed!=='string'||!seed.trim()||seed.length>256)throw Error('A reproducible seed of 1–256 characters is required');
  const material=template.id+'@'+template.version+':'+seed,sets=parameterSets(template),parameters=sets[seedIndex(material)%sets.length];
- const instance={schemaVersion:3,kind:'AssessmentInstance',id:await instanceId(material),template:{id:template.id,version:template.version},seed,generator:'finite-product@1',parameters:structuredClone(parameters),expected:answerFor(template,parameters),unit:template.unit};
+ const instance={schemaVersion:3,kind:'AssessmentInstance',id:await instanceId(material),template:{id:template.id,version:template.version},templateHash:await artifactHash(template),seed,generator:'finite-product@1',parameters:structuredClone(parameters),expected:answerFor(template,parameters),unit:template.unit};
  validateEntity(instance);return instance;
 }
 export async function evaluateAssessment(template,instance,answer){

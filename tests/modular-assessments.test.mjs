@@ -13,6 +13,7 @@ test('same reviewed template, version and seed reproduce exact question identity
  assert.equal((await evaluateAssessment(t,a,{value:a.expected+.1,unit:'A'})).correct,false);
  const differentVersion={...t,version:'2.0.0'};await assert.rejects(evaluateAssessment(differentVersion,a,{value:a.expected,unit:'A'}),/revision mismatch/);
  await assert.rejects(evaluateAssessment(t,{...a,expected:1},{value:1,unit:'A'}),/mismatch/);
+ await assert.rejects(evaluateAssessment({...t,explanation:'Changed same-version meaning'},a,{value:a.expected,unit:'A'}),/mismatch/);
  const values=new Set();for(let seed=0;seed<24;seed++){const q=await generateAssessment(t,String(seed));values.add(q.parameters.map(p=>p.value).join(':'));assert.ok(t.parameters.every((p,i)=>p.values.includes(q.parameters[i].value)));}assert.equal(values.size,4);
 });
 test('reviewed arithmetic operators calculate divider, series, parallel, voltage and static choice correctly',async()=>{

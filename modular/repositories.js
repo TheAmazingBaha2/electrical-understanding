@@ -23,7 +23,11 @@ export class ContentRepository {
  importBundle(input){
   const bundle=orderedBundle(input),key=bundle.id+'@'+bundle.version;
   const prior=this.#bundles.get(key);if(prior&&canonicalJSON(prior)!==canonicalJSON(bundle))throw Error('Immutable bundle revision conflict; retain both inputs for review');
-  for(const e of bundle.entities){const old=this.#entities.get(revisionKey(e));if(old&&canonicalJSON(old)!==canonicalJSON(e))throw Error('Immutable entity revision conflict: '+revisionKey(e));}
+  for(const e of bundle.entities){const old=this.#entities.get(revisionKey(e));if(old&&canonicalJSON(old)!==canonicalJSON(e))throw Error('Immutable entity revision conflict: '+revisionKey(e));for(const prior of this.#entities.values()){
+   if(prior.id===e.id&&prior.kind!==e.kind)throw Error('UUID reused across repository entity kinds');
+   const owner=e.kind==='LessonRevision'?'lessonId':e.kind==='TopicRevision'?'topicId':null;
+   if(owner&&prior.kind===e.kind&&prior[owner]===e[owner]&&prior.version===e.version&&prior.id!==e.id)throw Error('Ambiguous immutable owner revision');
+  }}
   for(const e of bundle.entities)this.#entities.set(revisionKey(e),e);
   this.#bundles.set(key,bundle);return structuredClone(bundle);
  }

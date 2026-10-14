@@ -24,6 +24,8 @@ test('provenance and topic composition enforce references, page evidence and pre
 test('immutable repositories preserve versions and defensive copies across private-file export',async()=>{
  const b=modularFixture(),repo=new ContentRepository();repo.importBundle(b);b.entities[0].title='Mutated input';assert.equal(repo.get('SourceWork',uid(1)).title,'Synthetic Electronics');
  const changed=modularFixture();changed.entities[6].text='Changed published content';assert.throws(()=>repo.importBundle(changed),/Immutable/);
+ const ambiguous=modularFixture();ambiguous.entities.push({...ambiguous.entities[12],id:uid(100)});assert.throws(()=>validateBundle(ambiguous),/Ambiguous/);
+ const other=modularFixture();other.version='3.0.0';other.entities[12].id=uid(100);assert.throws(()=>repo.importBundle(other),/Ambiguous/);
  const next=modularFixture();next.version='2.0.0';const tr=next.entities[7];next.entities.push({...tr,version:'2.0.0',supersedes:ref(8)});repo.importBundle(next);assert.ok(repo.get('TopicRevision',uid(8),'1.0.0'));assert.ok(repo.get('TopicRevision',uid(8),'2.0.0'));
  const ports=createDomainRepositories(repo);assert.equal(ports.SearchProvider.searchTopics('resistor tolerance').length,1);assert.equal(ports.EvidenceRepository.get(uid(4),'1.0.0').locatorIds[0],uid(3));
  const folder=await mkdtemp(join(tmpdir(),'eu-private-bundle-'));try{const path=join(folder,'bundle.json');const hash=await exportPrivateBundle(modularFixture(),path);assert.equal(hash,await artifactHash(JSON.parse(repo.exportBundle(uid(99),'1.0.0'))));assert.deepEqual(await readPrivateBundle(path),JSON.parse(repo.exportBundle(uid(99),'1.0.0')));await assert.rejects(exportPrivateBundle(modularFixture(),path),/EEXIST/);

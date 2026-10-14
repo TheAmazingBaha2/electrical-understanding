@@ -8,9 +8,21 @@ All **967** lesson/question/activity/reference mapping entries currently have `R
 
 Zero lessons and zero evidence claims are migrated at this initial inventory milestone. Titles are topic candidates, not a reviewed taxonomy. Existing source analysis remains durable in its original repository artifact, excluded from public build assets. Raw PDFs are unavailable; source-derived meaning not represented by those artifacts cannot be reconstructed or certified. Preserve that limitation throughout extraction.
 
+Current follow-up: the private source-analysis extractor preserves 36 under-review claims and 18 locators, including all original gaps. Private Resistors/DMM semantic drafts add seven candidate canonical topics, nine under-review claims, ten blocks and five draft assessment templates supported by two source works/five locators. Shared DMM preparation content is referenced by both lesson compositions rather than copied. These are real structured draft entities, not wrapped legacy HTML. **Zero lessons are fully migrated, zero old credit mappings are granted, and the drafts are not yet owner-usable pilots.** The ledger deliberately remains unchanged until actual equivalence/review/completeness gates are met.
+
+`node scripts/content/draft-modular-pilots.mjs /absolute/private/output-directory` creates the deterministic private bundle and coverage record without publishing. Local artifact: `/workspace/electrical-workbench-private-authoring/modular-pilots.bundle.json`, SHA-256 `509fe23f7fa2c7344435e5be403d456003b1e523d5ad178544655219143f185a`. Only the reviewed extraction/composition code is committed; these generated authoring bundles are outside the repository and public build. Raw binaries remain unavailable, EIM edition is unknown, and practical exercise definitions/browser rendering/source/taxonomy review remain explicit gaps.
+
 Next migrate evidence/source locators and reviewed canonical topics, then semantic blocks/objectives and independent assessments for Resistors and DMM. Create explicit equivalent-credit mappings only when meaning and rubric are unchanged. Changed assessments preserve history without unearned credit. Historical progress read tests retain every old answer key, review timestamp and unknown field through the unchanged existing progress migrator.
 
-## Demolition remains blocked
+## Private review preview
+
+After `npm run build`, run `node scripts/content/private-lesson-preview.mjs /private/modular-pilots.bundle.json /private/new-preview-folder`. Both paths are explicit; output must be outside this repository and not already exist. The prepared review is `/workspace/electrical-workbench-private-authoring/lesson-preview`; its README gives loopback-only serving instructions. It consumes local JSON/assets with no GitHub/cloud/backend calls. This is not an installer/APK or a website lesson-upload service.
+
+Select either draft and inspect Overview/Learn/Interact/Quiz/Review. The current five-tab buttons, current progress pie, styling and platform labs are reused. Quiz templates are read-only, grading disabled; Interact offers existing free experiments without practical grades. A separately identified linear profile renders the same educational identities. This supports owner content/layout review; practical assessment, private persistent progress and full migration acceptance remain pending.
+
+The new browser suite uses synthetic curriculum only and captures 320/390/1440 screenshots. Private source-derived bundles stay outside staging, CI artifacts and the public allowlist. The transitional adapter imports common helpers from lesson-tabs.js/source-navigation.js; isolate those shared helpers before future legacy-specific demolition instead of deleting a required module.
+
+## Demolition gate
 
 The owner conditionally authorizes deletion of obsolete lesson content/code on the development branch after full mapping/source coverage, readable historical progress, usable pilots, schema/provenance/assessment/desktop/mobile tests, no dependent old routes, a pre-demolition tag, tested rollback and verified staging. This milestone satisfies none of the remaining content/pilot/route-deletion gates. `demolitionAllowed` is false. Never treat an inventory disposition or schema contract as completed migration.
 
