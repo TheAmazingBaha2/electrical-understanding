@@ -27,6 +27,13 @@ test('connection IDs alter shared electrical nets and invalid/singular models fa
  invalid.components[1].type='capacitor';assert.throws(()=>validateCircuit(invalid),/Unsupported/);
  const redundant=dividerCircuit();redundant.components.push({...structuredClone(redundant.components[0]),id:'V2',terminals:[{id:'V2.p',nodeId:'source'},{id:'V2.n',nodeId:'common'}]});assert.throws(()=>solveDC(redundant),/Singular/);
 });
+test('active source shorts are rejected outside the reference-connected circuit',()=>{
+ const c=dividerCircuit();c.nodes.push({id:'isolated-a'},{id:'isolated-b'});c.components.push({id:'V2',type:'dc-source',terminals:[{id:'V2.p',nodeId:'isolated-a'},{id:'V2.n',nodeId:'isolated-b'}],properties:{voltageVolts:5},state:{open:false}});
+ assert.equal(solveDC(c).nodeVoltages['isolated-a'],null);
+ c.connections.push({id:'isolated-short',from:'V2.p',to:'V2.n',closed:true});assert.throws(()=>solveDC(c),/shorted.*V2/);
+ c.components.at(-1).state.open=true;near(solveDC(c).nodeVoltages.output,2.5);
+ c.components.at(-1).state.open=false;c.state.powered=false;assert.doesNotThrow(()=>solveDC(c));
+});
 test('project restoration, snapshots and local conflicts preserve both independent versions',async()=>{
  const data=new Map(),storage={getItem:k=>data.get(k)??null,setItem:(k,v)=>data.set(k,v)};
  let chain=Promise.resolve();const locks={request:(_key,fn)=>{const task=chain.then(fn);chain=task.catch(()=>{});return task;}};

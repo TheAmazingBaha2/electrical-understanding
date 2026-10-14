@@ -45,12 +45,14 @@ export function circuitNodeMap(c){
 export function solveDC(c){
  const netsByNode=circuitNodeMap(c),root=id=>netsByNode[id];
  const ground=root(c.groundNode),parts=c.components.filter(p=>!p.state.open&&(c.state.powered||p.type!=='dc-source')).map(p=>({...p,a:root(p.terminals[0].nodeId),b:root(p.terminals[1].nodeId)}));
+ // A wire-short across an active ideal source is invalid even in a subcircuit
+ // outside the chosen reference. Floating analysis must not hide this fault.
+ for(const p of parts)if(p.type==='dc-source'&&p.a===p.b)throw Error('Ideal voltage source shorted by a connection: '+p.id);
  const adjacent=new Map(c.nodes.map(n=>[root(n.id),new Set()]));
  for(const p of parts){adjacent.get(p.a).add(p.b);adjacent.get(p.b).add(p.a);}
  const grounded=new Set([ground]),todo=[ground];while(todo.length){for(const next of adjacent.get(todo.pop()))if(!grounded.has(next)){grounded.add(next);todo.push(next);}}
  const nets=[...grounded].filter(id=>id!==ground),indices=new Map(nets.map((id,i)=>[id,i]));
  const sources=parts.filter(p=>p.type==='dc-source'&&grounded.has(p.a));
- for(const p of sources)if(p.a===p.b)throw Error('Ideal voltage source shorted by a connection');
  const size=nets.length+sources.length,matrix=Array.from({length:size},()=>Array(size).fill(0)),rhs=Array(size).fill(0);
  const stamp=(a,b,value)=>{if(indices.has(a)&&indices.has(b))matrix[indices.get(a)][indices.get(b)]+=value;};
  for(const p of parts.filter(p=>p.type==='resistor'&&grounded.has(p.a))){const g=1/p.properties.resistanceOhms;stamp(p.a,p.a,g);stamp(p.b,p.b,g);stamp(p.a,p.b,-g);stamp(p.b,p.a,-g);}

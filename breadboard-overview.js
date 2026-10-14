@@ -20,7 +20,7 @@ export function renderBreadboardOverview(state,{selection=[],instrumentSettings=
  for(const col of 'ABCDEFGHIJ')inner+=text(columns[col]-4,30,col);
  for(let row=1;row<=12;row++)inner+=text(238,point('A'+row)[1]+4,row);
  for(const hole of breadboardHoles){const [x,y]=point(hole);inner+='<circle cx="'+x+'" cy="'+y+'" r="4" class="lab-hole'+(connected.has(hole)?' board-net-highlight':'')+'"><title>'+hole+'</title></circle>';}
- for(const wire of state.wires){const [x,y]=point(wire.fromHole),[a,b]=point(wire.toHole);inner+='<path data-preview-wire="'+esc(wire.id)+'" class="board-preview-wire'+(wire.closed?'':' board-preview-open')+'" d="M'+x+' '+y+' Q'+((x+a)/2)+' '+(Math.min(y,b)-24)+' '+a+' '+b+'"><title>'+esc(wire.id)+' '+wire.fromHole+' ↔ '+wire.toHole+' · '+(wire.closed?'connected':'OPEN')+'</title></path>';}
+ for(const wire of state.wires){const [x,y]=point(wire.fromHole),[a,b]=point(wire.toHole);inner+='<path data-preview-wire="'+esc(wire.id)+'" class="board-preview-wire'+(wire.closed?'':' board-preview-open')+'" d="M'+x+' '+y+' Q'+((x+a)/2)+' '+(Math.min(y,b)-24)+' '+a+' '+b+'"><title>'+esc(wire.label||wire.id)+' '+wire.fromHole+' ↔ '+wire.toHole+' · '+(wire.closed?'connected':'OPEN')+'</title></path>';}
  for(const part of state.placements){
   const [x,y]=point(part.holes[0]),[a,b]=point(part.holes[1]),mx=(x+a)/2,my=(y+b)/2,angle=Math.atan2(b-y,a-x)*180/Math.PI;
   const open=part.state.open||part.type==='dc-source'&&!state.powered;

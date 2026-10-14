@@ -47,7 +47,7 @@ export function attachElectronicsWorkspace(root,storage=localStorage){
  function board(){return project.experimentState.breadboard;}
  function boardView(){at('[data-breadboard-editor]').innerHTML=board()?renderBreadboardEditor(board(),{...boardUI,instrumentSettings:project.instrumentSettings.DMM1}):'';at('[data-circuit-scene]').hidden=Boolean(board());}
  function syncBoard(){if(!board())return;project.circuit=compileBreadboard(board().state);project.componentInventory=project.circuit.components.map(c=>({componentId:c.id,quantity:1}));}
- function nextPartLabel(prefix){const used=new Set(board().state.placements.map(p=>p.label||p.id));let i=1;while(used.has(prefix+i))i++;return prefix+i;}
+ function nextPartLabel(prefix,items=board().state.placements){const used=new Set(items.map(p=>p.label||p.id));let i=1;while(used.has(prefix+i))i++;return prefix+i;}
  function applyBoard(action){if(blocked)throw Error('Resolve saved copies before editing');project.experimentState.breadboard=boardHistoryEdit(board(),action);syncBoard();boardView();controls();autosave();}
  function manager(){at('[data-project-list]').innerHTML=renderProjectManager(store.list({includeDeleted:at('[data-project-show-recovery]').checked}),{search:at('[data-project-search]').value,pendingDelete:pendingProjectDelete});}
  function activateDocument(doc){project=doc.project;projectId=project.id;revision=doc.revision;blocked=Boolean(doc.conflicts.length);project.experimentState.guidance=guidanceState(dividerActivity,project.experimentState.guidance||{mode:'free'});boardUI={tool:'wire',selection:[],section:'left'};storage.setItem('eu_lab_active_project_v1',projectId);controls();}
@@ -177,7 +177,7 @@ export function attachElectronicsWorkspace(root,storage=localStorage){
   if(button.hasAttribute('data-board-apply')){
    const [a,b]=boardUI.selection;if(!a||!b)throw Error('Select two endpoints');
    const value=Number(at('[data-board-new-value]').value),tool=boardUI.tool;let action;
-   if(tool==='wire')action={type:'connect',wire:{id:'W-'+crypto.randomUUID(),fromHole:a,toHole:b,closed:true}};
+   if(tool==='wire')action={type:'connect',wire:{id:'W-'+crypto.randomUUID(),label:nextPartLabel('W',board().state.wires),fromHole:a,toHole:b,closed:true}};
    else if(['resistor','source'].includes(tool))action={type:'place',component:{id:(tool==='resistor'?'R-':'V-')+crypto.randomUUID(),label:nextPartLabel(tool==='resistor'?'R':'V'),type:tool==='resistor'?'resistor':'dc-source',holes:[a,b],properties:tool==='resistor'?{resistanceOhms:value}:{voltageVolts:value},state:{open:false}}};
    else if(tool==='move')action={type:'move',id:at('[data-board-move-id]').value,holes:[a,b]};
    else if(tool==='reroute')action={type:'reroute-wire',id:at('[data-board-reroute-id]').value,fromHole:a,toHole:b};
