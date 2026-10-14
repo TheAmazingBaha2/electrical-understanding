@@ -1,0 +1,19 @@
+import assert from 'node:assert/strict';
+import {chromium} from 'playwright';
+import {go} from './navigation-helper.mjs';
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH||undefined,args:process.env.CHROMIUM_PATH?['--no-sandbox']:[]});
+try{for(const width of [390,1440]){
+ const page=await browser.newPage({viewport:{width,height:1000},hasTouch:width<700}),errors=[],external=[];page.on('pageerror',e=>errors.push(e.message));await page.route('**/*',r=>{if(new URL(r.request().url()).hostname==='127.0.0.1')return r.continue();external.push(r.request().url());return r.abort();});
+ await page.goto('http://127.0.0.1:8080/');await go(page,'workbench');await page.locator('[data-experiment-mode="free"]').click();const pane=async()=>{if(width<700)await page.locator('[data-lab-pane="project"]').tap();};await pane();await page.locator('[data-project-manager]>summary').click();
+ await page.locator('[data-project-new-name]').fill('Alpha board');await page.locator('[data-project-template]').selectOption('blank');await page.locator('[data-project-create]').click();await page.waitForFunction(()=>document.querySelector('[data-project-title]').value==='Alpha board');
+ const first=await page.locator('[data-lab-project]').inputValue();await page.locator('[data-record-measurement]').click();await page.locator('[data-recorded-measurements] .snapshot-row').waitFor();assert.match(first,/^P-/);await page.locator('[data-project-notes]').fill('Independent notes');await page.locator('[data-project-description]').fill('Personal build');await page.locator('[data-project-refresh]').click();
+ await page.locator('[data-project-search]').fill('Alpha');assert.equal(await page.locator('.project-list-row').count(),1);
+ await page.locator('[data-project-duplicate="'+first+'"]').click();await page.waitForFunction(()=>document.querySelector('[data-project-title]').value==='Alpha board copy');const second=await page.locator('[data-lab-project]').inputValue();assert.notEqual(first,second);assert.equal(await page.locator('[data-project-notes]').inputValue(),'Independent notes');
+ await page.locator('[data-project-title]').fill('Beta board');await page.locator('[data-project-search]').fill('');await page.locator('[data-project-refresh]').click();
+ await page.locator('[data-project-delete="'+first+'"]').click();await page.locator('[data-project-confirm-delete="'+first+'"]').click();await page.waitForFunction(id=>JSON.parse(localStorage.getItem('eu_projects_v1:local:'+encodeURIComponent(id))).deleted===true,first);
+ assert.equal(await page.locator('[data-lab-project]').inputValue(),second);assert.equal(await page.locator('[data-project-notes]').inputValue(),'Independent notes');
+ await page.locator('[data-project-show-recovery]').check();await page.locator('[data-project-recover="'+first+'"]').click();await page.locator('[data-project-open="'+first+'"]').waitFor();await page.locator('[data-project-open="'+first+'"]').click();await page.waitForFunction(id=>document.querySelector('[data-lab-project]').value===id,first);
+ assert.equal(await page.locator('[data-project-title]').inputValue(),'Alpha board');assert.equal(await page.locator('[data-project-description]').inputValue(),'Personal build');
+ await go(page,'account');await go(page,'workbench');await pane();assert.equal(await page.locator('[data-lab-project]').inputValue(),first);await page.reload();await go(page,'workbench');await pane();assert.equal(await page.locator('[data-lab-project]').inputValue(),first);
+ assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2));assert.deepEqual(errors,[]);assert.deepEqual(external,[]);await page.close();
+}console.log('PASS: project templates, independent identity/notes, descriptions/search, duplication, deletion/recovery, reopening and exact local restoration on desktop/phone.');}finally{await browser.close();}

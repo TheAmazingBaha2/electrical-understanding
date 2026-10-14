@@ -20,7 +20,7 @@ if(isWorkersBuild){
 const output = "dist";
 const publicFiles = [
   "index.html",
-  "app.js", "persistence.js", "approved-lessons.js", "published-lessons.js", "lesson-package.js", "widget-registry.js", "widget-improvements.js", "data-contract.js", "circuit-model.js", "project-store.js", "tutor-contract.js", "electronics-workspace.js", "guided-activities.js", "lab-guidance.js", "lab-guidance-view.js", "circuit-view.js", "breadboard-model.js", "breadboard-view.js", "breadboard-project.js", "shared-multimeter.js", "scope-signals.js", "scope-view.js", "ai-chat-widget.js", "generated-library.js", "generated-simulations.js", "legacy-groups.js", "math-lessons.js", "math-widgets.js", "math-track.js",
+  "app.js", "persistence.js", "approved-lessons.js", "published-lessons.js", "lesson-package.js", "widget-registry.js", "widget-improvements.js", "data-contract.js", "circuit-model.js", "project-store.js", "tutor-contract.js", "electronics-workspace.js", "guided-activities.js", "lab-guidance.js", "lab-guidance-view.js", "circuit-view.js", "breadboard-model.js", "breadboard-view.js", "breadboard-project.js", "shared-multimeter.js", "scope-signals.js", "scope-view.js", "project-manager.js", "ai-chat-widget.js", "generated-library.js", "generated-simulations.js", "legacy-groups.js", "math-lessons.js", "math-widgets.js", "math-track.js",
   "lessons.js",
   "course-catalog.js", "learning-structure.js", "source-navigation.js",
   "v2-panels.js",

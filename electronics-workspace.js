@@ -1,3 +1,4 @@
+import {duplicateProject,renderProjectManager} from './project-manager.js';
 import {scopeCapture} from './scope-signals.js';
 import {renderScopeControls,renderScopeCapture} from './scope-view.js';
 import {sharedMeterReading,formatMeterReading,prepareCurrentConnection} from './shared-multimeter.js';
@@ -20,13 +21,14 @@ export function renderElectronicsWorkspace(){return `<section class="electronics
  <section class="panel workspace-pane" data-pane="circuit"><h3>Circuit</h3><div data-breadboard-editor></div><div data-circuit-scene></div><label class="lab-control workspace-check"><input type="checkbox" data-circuit-power checked> Circuit power enabled</label><div data-circuit-controls></div><div data-circuit-values></div></section>
  <section class="panel workspace-pane" data-pane="meter"><h3>Digital multimeter</h3><label class="lab-control">Meter function<select data-meter-mode><option value="voltage">DC voltage · across two nodes</option><option value="resistance">Resistance · sources disconnected</option><option value="continuity">Continuity · sources disconnected</option><option value="current">DC current · prepared series branch</option></select></label><label class="lab-control">Red input jack<select data-meter-jack><option value="VΩ">VΩ</option><option value="A">A</option></select></label><p class="muted sm">Black lead: COM. This instrument is ideal; accuracy, current fuses and burden voltage are not modeled.</p><div data-meter-controls></div><div data-current-connection></div><div data-meter-scene></div><p data-meter-explanation></p><label class="lab-control">Difficulty<select data-lab-difficulty><option value="beginner">Beginner · guided</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced · model limits apply</option></select></label><label class="lab-control">Instrument view<select data-meter-view><option value="realistic">Instrument</option><option value="educational">Measurement explanation</option></select></label></section>
  <section class="panel workspace-pane" data-pane="scope"><h3>Oscilloscope foundation</h3><p>Choose an actual steady DC observation or an independent demonstration generator. Demonstrations are not calculated AC circuit behavior.</p><div data-scope-controls></div><div data-scope-display></div></section>
- <section class="panel workspace-pane" data-pane="project"><h3>Personal project</h3><p class="muted sm">Experiments save locally, separately from lesson grades. Cloud synchronization is not enabled.</p><label class="lab-control">Notes<textarea data-project-notes rows="4"></textarea></label><label class="lab-control">Snapshot name<input data-snapshot-name placeholder="Before opening R1"></label><button class="outline" data-save-snapshot>Save snapshot</button><details data-snapshot-manager class="snapshot-manager"><summary>Manage snapshots <span data-snapshot-count></span></summary><div data-snapshots></div></details><div data-project-conflicts></div><div class="actions"><button class="outline" data-project-export>Export project</button><label class="project-import-control">Import project JSON<input type="file" data-project-import accept="application/json,.json"></label></div><button class="outline" data-export-project-recovery>Export saved copies</button></section>
+ <section class="panel workspace-pane" data-pane="project"><h3>Personal project</h3><label class="lab-control">Project title<input data-project-title></label><label class="lab-control">Description<textarea data-project-description rows="2"></textarea></label><details data-project-manager><summary>Browse and manage projects</summary><label class="lab-control">Search saved projects<input data-project-search></label><label class="lab-control">New project name<input data-project-new-name placeholder="My experiment"></label><label class="lab-control">Template<select data-project-template><option value="divider">Voltage divider</option><option value="breadboard">Breadboard divider</option><option value="blank">Blank breadboard</option></select></label><button class="outline" data-project-create>Create project</button><button class="outline" data-project-refresh>Refresh saved projects</button><label class="lab-control workspace-check"><input type="checkbox" data-project-show-recovery> Include projects in recovery</label><div data-project-list></div></details><p class="muted sm">Experiments save locally, separately from lesson grades. Cloud synchronization is not enabled.</p><label class="lab-control">Notes<textarea data-project-notes rows="4"></textarea></label><label class="lab-control">Snapshot name<input data-snapshot-name placeholder="Before opening R1"></label><button class="outline" data-save-snapshot>Save snapshot</button><details data-snapshot-manager class="snapshot-manager"><summary>Manage snapshots <span data-snapshot-count></span></summary><div data-snapshots></div></details><div data-project-conflicts></div><div class="actions"><button class="outline" data-record-measurement>Record current measurements</button><div data-recorded-measurements></div><button class="outline" data-project-export>Export project</button><label class="lab-control">Project import action<select data-project-import-mode><option value="new">Import as independent project</option><option value="replace">Replace current project after review</option></select></label><label class="project-import-control">Import project JSON<input type="file" data-project-import accept="application/json,.json"></label></div><button class="outline" data-export-project-recovery>Export saved copies</button></section>
  </div><p data-project-status role="status" aria-live="polite"></p><details class="panel"><summary>Model limitations and safety</summary><ul>${circuitLimitations.map(l=>'<li>'+esc(l)+'</li>').join('')}</ul><p>Use this trainer for simulated low-voltage experiments only. Advanced presentation uses the same ideal DC solver; it does not enable unsupported realism.</p></details></section>`;}
 export function attachElectronicsWorkspace(root,storage=localStorage){
  const scope=root.querySelector('.electronics-lab');if(!scope)return;
- let projectId='divider-project';try{const id=storage.getItem('eu_lab_active_project_v1');if(['divider-project','breadboard-project'].includes(id))projectId=id;}catch{}
- const makeProject=()=>projectId==='breadboard-project'?newBreadboardProject():newProject();
- const store=new ProjectStore(storage);let boardUI={tool:'wire',selection:[],section:'left'},project,revision=0,blocked=false,timer,saveChain=Promise.resolve(),pendingDelete=null;
+ let projectId='divider-project';try{const id=storage.getItem('eu_lab_active_project_v1');if(id)projectId=id;}catch{}
+ const makeProject=()=>projectId==='breadboard-project'?newBreadboardProject():newProject(projectId);
+ const store=new ProjectStore(storage);try{if(store.readDocument(projectId)?.deleted){projectId=store.list().find(p=>!p.unreadable)?.id||'P-'+crypto.randomUUID();}}catch{}
+ let boardUI={tool:'wire',selection:[],section:'left'},project,revision=0,blocked=false,timer,saveChain=Promise.resolve(),pendingDelete=null,pendingProjectDelete=null;
  const at=selector=>scope.querySelector(selector),status=message=>{at('[data-project-status]').textContent=message;};
  try{const saved=store.read(projectId);project=saved?.project||makeProject();revision=saved?.revision||0;if(saved?.conflicts.length){blocked=true;status('Saved copies disagree. Export saved copies for review; autosave is paused.');}}catch(error){project=makeProject();blocked=true;status(error.message+' Autosave is paused; original storage is preserved.');}
  project.experimentState.guidance=guidanceState(dividerActivity,project.experimentState.guidance||{mode:revision?'free':'guided'});
@@ -47,6 +49,8 @@ export function attachElectronicsWorkspace(root,storage=localStorage){
  function syncBoard(){if(!board())return;project.circuit=compileBreadboard(board().state);project.componentInventory=project.circuit.components.map(c=>({componentId:c.id,quantity:1}));}
  function nextPartLabel(prefix){const used=new Set(board().state.placements.map(p=>p.label||p.id));let i=1;while(used.has(prefix+i))i++;return prefix+i;}
  function applyBoard(action){if(blocked)throw Error('Resolve saved copies before editing');project.experimentState.breadboard=boardHistoryEdit(board(),action);syncBoard();boardView();controls();autosave();}
+ function manager(){at('[data-project-list]').innerHTML=renderProjectManager(store.list({includeDeleted:at('[data-project-show-recovery]').checked}),{search:at('[data-project-search]').value,pendingDelete:pendingProjectDelete});}
+ function activateDocument(doc){project=doc.project;projectId=project.id;revision=doc.revision;blocked=Boolean(doc.conflicts.length);project.experimentState.guidance=guidanceState(dividerActivity,project.experimentState.guidance||{mode:'free'});boardUI={tool:'wire',selection:[],section:'left'};storage.setItem('eu_lab_active_project_v1',projectId);controls();}
  function download(name,value){const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'}));const link=document.createElement('a');link.href=url;link.download=name;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
  async function persist(){if(!scope.isConnected||blocked)return false;try{project.metadata.updatedAt=new Date().toISOString();const saved=await store.save(project,revision);revision=saved.revision;if(saved.conflict){blocked=true;status('Another saved copy changed. Both versions are preserved; review saved copies in Project.');conflicts();}else{status('Experiment saved on this device · revision '+revision);return true;}}catch(e){status('Not saved: '+e.message);return false;}}
  function save(){saveChain=saveChain.then(persist);return saveChain;}
@@ -73,7 +77,9 @@ export function attachElectronicsWorkspace(root,storage=localStorage){
   const probe=project.circuit.instruments[0];project.instrumentSettings.SCOPE1??={source:'dc',redNode:probe?.redNode,blackNode:probe?.blackNode,timeDiv:.001,voltsDiv:1,triggerLevel:0,signal:{schemaVersion:1,waveform:'sine',amplitude:2,offset:0,frequency:1000}};
   if(!project.widgetInstances.some(w=>w.instanceId==='scope-view'))project.widgetInstances.push({instanceId:'scope-view',widgetId:'scope-foundation',version:'1.0.0'});
   at('[data-scope-controls]').innerHTML=renderScopeControls(project.circuit,project.instrumentSettings.SCOPE1);
-  at('[data-lab-project]').value=projectId;boardView();
+  const choices=store.list().filter(p=>!p.unreadable);for(const [id,title] of [['divider-project','Voltage-divider experiment'],['breadboard-project','Editable breadboard']])if(!choices.some(p=>p.id===id)&&!store.readDocument(id))choices.push({id,title});if(!choices.some(p=>p.id===projectId))choices.push({id:projectId,title:project.metadata.title+' · current'});
+  at('[data-lab-project]').innerHTML=choices.map(p=>'<option value="'+esc(p.id)+'">'+esc(p.title)+'</option>').join('');at('[data-lab-project]').value=projectId;boardView();
+  at('[data-project-title]').value=project.metadata.title;at('[data-project-description]').value=project.metadata.description||'';manager();
   at('[data-circuit-power]').checked=project.circuit.state.powered;
   at('[data-circuit-controls]').innerHTML=project.circuit.components.map(p=>'<fieldset class="component-control"><legend>'+esc(p.label||p.id)+(p.type==='dc-source'?' · DC source':' · resistor')+'</legend><label class="lab-control">'+esc(p.id)+(p.type==='dc-source'?' source voltage (V)':' resistance (Ω)')+'<input type="number" data-component-value="'+esc(p.id)+'" min="'+(p.type==='dc-source'?'-24':'.001')+'" max="'+(p.type==='dc-source'?'24':'1000000000')+'" step="any" value="'+(p.type==='dc-source'?p.properties.voltageVolts:p.properties.resistanceOhms)+'"></label><label class="lab-control workspace-check"><input type="checkbox" data-component-open="'+esc(p.id)+'" '+(p.state.open?'checked':'')+'> Disconnect '+esc(p.id)+' path <span class="connection-badge">'+(p.state.open?'Disconnected':'Connected')+'</span></label></fieldset>').join('');
   const meter=project.circuit.instruments[0];if(!meter){readings();return;}
@@ -83,8 +89,9 @@ export function attachElectronicsWorkspace(root,storage=localStorage){
   at('[data-meter-mode]').value=settings.mode||'voltage';at('[data-meter-jack]').value=settings.jack||'VΩ';
   at('[data-current-connection]').innerHTML='<label class="lab-control">Series component branch<select data-current-branch>'+project.circuit.components.map(p=>'<option value="'+p.id+'" '+(settings.currentConnection?.componentId===p.id?'selected':'')+'>'+esc(p.label||p.id)+'</option>').join('')+'</select></label><button class="outline" data-prepare-current>Prepare series connection · power off first</button><label class="lab-control workspace-check"><input type="checkbox" data-current-reverse '+(settings.currentConnection?.polarity==='reverse'?'checked':'')+'> Reverse current connection polarity</label>';
   at('[data-lab-difficulty]').value=settings.difficulty;at('[data-meter-view]').value=settings.presentation;
-  snapshots();conflicts();readings();
+  snapshots();conflicts();readings();recordings();
  }
+ function recordings(){at('[data-recorded-measurements]').innerHTML=(project.experimentState.recordedMeasurements||[]).map(r=>'<article class="snapshot-row"><strong>'+esc(r.recordedAt)+'</strong><p>'+r.measurements.map(m=>esc(m.instrumentId+': '+(m.instrumentId==='SCOPE1'?m.origin+' · '+m.status:formatMeterReading(m)))).join('<br>')+'</p></article>').join('');}
  function snapshots(){
   at('[data-snapshot-count]').textContent='('+project.snapshots.length+')';
   at('[data-snapshots]').innerHTML=project.snapshots.length?project.snapshots.map((s,i)=>{
@@ -94,6 +101,7 @@ export function attachElectronicsWorkspace(root,storage=localStorage){
  }
  scope.addEventListener('change',async event=>{
   const input=event.target;try{
+   if(input.matches('[data-project-show-recovery]')){manager();return;}
    if(input.dataset.scopeSetting||input.dataset.scopeSignal){
     const previous=structuredClone(project.instrumentSettings.SCOPE1),settings=project.instrumentSettings.SCOPE1;
     if(input.dataset.scopeSetting)settings[input.dataset.scopeSetting]=['source','redNode','blackNode'].includes(input.dataset.scopeSetting)?input.value:Number(input.value);
@@ -136,9 +144,28 @@ export function attachElectronicsWorkspace(root,storage=localStorage){
    readings();autosave();
   }catch(e){status(e.message);}
  });
+ at('[data-project-search]').addEventListener('input',manager);
+ for(const key of ['title','description'])at('[data-project-'+key+']').addEventListener('input',event=>{const value=event.target.value;if(key==='title'&&!value.trim()){status('Project title cannot be blank.');return;}project.metadata[key]=value;autosave();});
  at('[data-project-notes]').addEventListener('input',event=>{project.notes=event.target.value;autosave();});
  scope.addEventListener('click',async event=>{const button=event.target.closest('button');if(!button)return;try{
-  if(button.hasAttribute('data-prepare-current')){const settings=project.instrumentSettings[project.circuit.instruments[0].id];settings.currentConnection=prepareCurrentConnection(project.circuit,at('[data-current-branch]').value);readings();autosave();return;}
+  if(button.hasAttribute('data-record-measurement')){if(!project.measurementResults.length)throw Error('No supported measurement is available to record');project.experimentState.recordedMeasurements=[...(project.experimentState.recordedMeasurements||[]),{id:crypto.randomUUID(),recordedAt:new Date().toISOString(),circuit:structuredClone(project.circuit),instrumentSettings:structuredClone(project.instrumentSettings),measurements:structuredClone(project.measurementResults)}];recordings();save();return;}
+  if(button.hasAttribute('data-project-create')){
+   const title=at('[data-project-new-name]').value.trim();if(!title)throw Error('Enter a new project name');if(!await save())throw Error('Save or resolve this experiment before creating another');
+   const template=at('[data-project-template]').value,p=template==='divider'?newProject():newBreadboardProject();p.id='P-'+crypto.randomUUID();p.metadata.title=title;
+   if(template==='blank'){p.experimentState.breadboard={schemaVersion:1,state:emptyBreadboard(),undo:[],redo:[]};p.circuit=compileBreadboard(p.experimentState.breadboard.state);p.componentInventory=[];}
+   const doc=await store.save(p,0);activateDocument(doc);at('[data-project-new-name]').value='';manager();return;
+  }
+  if(button.hasAttribute('data-project-refresh')){await save();manager();return;}
+  if(button.dataset.projectOpen){if(!await save())throw Error('Resolve or export unsaved changes before opening another');const doc=store.read(button.dataset.projectOpen);if(!doc)throw Error('Project is unavailable; refresh saved projects');activateDocument(doc);return;}
+  if(button.dataset.projectDuplicate){if(!await save())throw Error('Resolve or export unsaved changes before duplicating');const source=store.read(button.dataset.projectDuplicate);if(!source)throw Error('Project unavailable');const p=duplicateProject(source.project,'P-'+crypto.randomUUID(),at('[data-project-new-name]').value.trim()||source.project.metadata.title+' copy');const doc=await store.save(p,0);activateDocument(doc);manager();return;}
+  if(button.dataset.projectDelete){pendingProjectDelete=button.dataset.projectDelete;manager();return;}
+  if(button.hasAttribute('data-project-cancel-delete')){pendingProjectDelete=null;manager();return;}
+  if(button.dataset.projectConfirmDelete){
+   if(!await save())throw Error('Resolve or export unsaved changes before project deletion');const id=button.dataset.projectConfirmDelete;await store.archiveProject(id,id===projectId?revision:Number(button.dataset.projectRevision));pendingProjectDelete=null;
+   if(id===projectId){const next=store.list().find(p=>!p.unreadable);if(next)activateDocument(store.read(next.id));else{projectId='P-'+crypto.randomUUID();project=newProject(projectId);project.experimentState.guidance=guidanceState(dividerActivity,{mode:'free'});revision=0;blocked=false;controls();}}manager();return;
+  }
+  if(button.dataset.projectRecover){await store.restoreProject(button.dataset.projectRecover,Number(button.dataset.projectRevision));manager();return;}
+  if(button.hasAttribute('data-prepare-current')){ const settings=project.instrumentSettings[project.circuit.instruments[0].id];settings.currentConnection=prepareCurrentConnection(project.circuit,at('[data-current-branch]').value);readings();autosave();return;}
   if(button.dataset.breadboardHole){
    const hole=button.dataset.breadboardHole;
    if(['red','black'].includes(boardUI.tool)){applyBoard({type:'probe',probe:boardUI.tool,hole});return;}
@@ -178,7 +205,17 @@ export function attachElectronicsWorkspace(root,storage=localStorage){
   else if(button.hasAttribute('data-project-export'))download('electronics-project.json',project);
   else if(button.hasAttribute('data-export-project-recovery'))download('electronics-project-saved-copies.json',{raw:store.export(projectId),unsavedProject:project});
  }catch(e){status(e.message);}});
- at('[data-project-import]').addEventListener('change',async event=>{try{const file=event.target.files[0];if(!file)return;if(file.size>2e6)throw Error('Project import exceeds 2 MB local limit');const imported=JSON.parse(await file.text());validateProject(imported);if(imported.id!==projectId)throw Error('Select the matching lab project before importing; original file is untouched');if(blocked)throw Error('Resolve/export saved conflicts before importing');project=imported;project.experimentState.guidance=guidanceState(dividerActivity,project.experimentState.guidance||{mode:'free'});controls();save();}catch(e){status('Import rejected: '+e.message);}finally{event.target.value='';}});
+ at('[data-project-import]').addEventListener('change',async event=>{try{
+  const file=event.target.files[0];if(!file)return;if(file.size>2e6)throw Error('Project import exceeds 2 MB local limit');const imported=JSON.parse(await file.text());validateProject(imported);
+  if(blocked)throw Error('Resolve/export saved conflicts before importing');if(!await save())throw Error('Save or export the current experiment before importing');
+  if(at('[data-project-import-mode]').value==='new'){
+   const p=store.readDocument(imported.id)?duplicateProject(imported,'P-'+crypto.randomUUID(),imported.metadata.title+' imported'):imported;const doc=await store.save(p,0);activateDocument(doc);
+  }else{
+   if(imported.id!==projectId)throw Error('Replacement must match current project identity; choose independent import otherwise');
+   if(!window.confirm('Replace the current experiment with this supplied project? Export your current copy first if you need an independent backup.'))return;
+   project=imported;project.experimentState.guidance=guidanceState(dividerActivity,project.experimentState.guidance||{mode:'free'});controls();save();
+  }
+ }catch(e){status('Import rejected: '+e.message);}finally{event.target.value='';}});
  try{const layout=storage.getItem('eu_workspace_layout_v1:'+(innerWidth<700?'mobile':'desktop'));if(['circuit','meter','scope','project'].includes(layout))at('.lab-workspace-grid').dataset.focusedPane=layout;}catch{}
  controls();
  // A disconnected workspace must not lose its last edit when navigation replaces the DOM.
