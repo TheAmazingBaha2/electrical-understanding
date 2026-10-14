@@ -1,0 +1,27 @@
+# Modular lesson domain and private-app portability
+
+This is a separate Schema V3 domain, not a mutation of lesson packages 1/2 or the progress document's unrelated schema number. The V2/V3 learner routes remain on their existing implementation until migration gates pass. No legacy lesson has been removed or regraded.
+
+`modular/contracts.js` defines 19 domain records and a curriculum bundle. `content/modular/domain.schema.json` is their reproducible JSON Schema Draft 2020-12 family (`$defs`). `node scripts/content/write-modular-schema.mjs` regenerates it. The runtime validator supports exactly the schema vocabulary used here, rejects unknown vocabulary, and adds reference, provenance, independent-platform and graph-cycle checks. It is a bounded evaluator, not a general JSON Schema library.
+
+Sources (work, edition, locator), immutable evidence claims, canonical topics and topic revisions, objectives, semantic blocks, lesson identities/compositions, assessments, lab references, presentation, progress events, migration maps and ingestion proposals have separate contracts. UUIDs identify entities; semantic versions identify revisions; SHA-256 identifies exact artifacts. UUIDv4/v7 are accepted; UUIDv5 supplies reproducible migration identities. Titles and aliases are not primary keys. Unknown editions/pages remain explicitly unknown; a preserved citation does not establish independent verification against a missing PDF.
+
+Topic/lesson revisions compose references rather than embedding copies of source knowledge. Blocks carry semantic types and escaped text, not DOM, scripts or tabs. PresentationProfile owns regional mappings; progress pies must use progress projections. Published entity/revision conflicts fail rather than replacing an earlier record. Disputed claims retain explicit conflict references. Prerequisite and topic-hierarchy cycles fail validation.
+
+Desktop and mobile references retain separate module/activity identities. New completion policies are `either-platform`, `both-platforms`, and `no-required-lab`; the existing schema-2 `either` behavior is preserved. These contracts do not implement new practical rubrics or silently adapt graded legacy workshops. Existing lab presentation, registry, shared electrical engine, instruments and project storage remain the capabilities to consume.
+
+## Storage and host boundaries
+
+The domain modules contain no DOM, Node, HTTP, Supabase, GitHub or native-shell APIs. `ContentRepository` provides immutable defensive-copy get/list/import/export operations. Scoped Evidence/Topic/Lesson/Assessment/Presentation/LabModule repository ports and deterministic SearchProvider use that repository. Progress, Sync and Ingestion ports will operate separately from published content; private events/proposals are deliberately excluded from learner bundles.
+
+`scripts/content/modular-file-repository.mjs` supplies a Node JSON-file read adapter and exclusive private export/read functions. Exports are canonical versioned JSON envelopes with SHA-256, created with mode 0600 and without replacing an existing file. Loaders validate the domain and hash before accepting an artifact. The adapter reads explicitly provided local paths; it never fetches ChatGPT or source scans. Mutable private progress/project persistence requires its own transactional host adapter; content files are not that database.
+
+The intended private Windows and Android apps can package the same approved curriculum bundles and pure domain modules with their separate lab presentations. GitHub is development/version history, not a runtime content server, identity provider or sync service. Do not embed public-repository URLs into canonical identities. Android scoped app storage and Windows app-data/SQLite adapters can implement the same ports later, with explicit backup/export and migration receipts. Do not couple the private curriculum to a browser-origin storage key or copy production credentials into either shell.
+
+Existing browser/native storage has not moved. A later private-app migration must explicitly import an owner-supplied backup, retain original bytes, validate the exact account/project identity, preview conflicts, write transactionally and verify a round trip before switching. Cross-device synchronization is optional and transport-free until separately authorized. Device window layouts stay local; graded events merge append-only with conflicts preserved, never timestamp-only last-write-wins.
+
+Electron and Tauri remain evaluated Windows prototypes; neither has been selected as permanent packaging. Android packaging, signing, app-private persistence and owner-device testing remain future work. No official installer/APK, public release, paid service or repository-visibility change is implied.
+
+## Publication boundary
+
+New domain files are currently development-only and absent from the frontend allowlist. An imported file is not owner approval. Before adding a new learner bundle, validate references/provenance/templates, obtain human technical/content review, check registered widget capabilities, test both presentations, pass exact-commit CI, then preview staging. Ingestion proposals cannot publish themselves. No website-side source ingestion or AI generation is reintroduced.

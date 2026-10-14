@@ -1,4 +1,8 @@
-# Current direction: desktop and mobile modules
+# Current direction: portable modular lessons
+
+Read [MODULAR_LESSON_CHECKPOINT.md](MODULAR_LESSON_CHECKPOINT.md) first. The next assignment creates independent Schema V3 sources/evidence/topics/compositions/assessments/presentation/progress contracts and a gated legacy migration. Private Windows and Android portability is required; GitHub must not become a runtime dependency. Existing desktop/mobile prototypes and all legacy content/progress remain intact until migration gates pass.
+
+# Previous direction: desktop and mobile modules
 
 Read [DESKTOP_MOBILE_CHECKPOINT.md](DESKTOP_MOBILE_CHECKPOINT.md) first. Owner testing supersedes the single responsive lab architecture. Preserve the previous graphical implementations; develop desktop Windows presentation and a separate mobile exercise module, with shared core content and independent practical grades. Either module may satisfy a new lesson's practical requirement.
 
