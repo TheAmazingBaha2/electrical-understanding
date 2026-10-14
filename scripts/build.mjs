@@ -20,7 +20,7 @@ if(isWorkersBuild){
 const output = "dist";
 const publicFiles = [
   "index.html",
-  "app.js", "persistence.js", "approved-lessons.js", "ai-chat-widget.js", "generated-library.js", "generated-simulations.js", "legacy-groups.js", "math-lessons.js", "math-widgets.js", "math-track.js",
+  "app.js", "persistence.js", "approved-lessons.js", "published-lessons.js", "lesson-package.js", "widget-registry.js", "widget-improvements.js", "ai-chat-widget.js", "generated-library.js", "generated-simulations.js", "legacy-groups.js", "math-lessons.js", "math-widgets.js", "math-track.js",
   "lessons.js",
   "course-catalog.js", "learning-structure.js", "source-navigation.js",
   "v2-panels.js",

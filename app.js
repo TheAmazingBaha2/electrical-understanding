@@ -2,6 +2,7 @@ import {renderSavedReinforcement} from './source-navigation.js';
 import {placementForLesson,sectionView,nextSourceLesson,lessonReferencePages,studySections,studyInventory,learningProgress} from './learning-structure.js';
 import { ProgressStore, cloudTransport } from './persistence.js';
 import { preservedLessons } from './approved-lessons.js';
+import {publishedLessons} from './published-lessons.js';
 import { mountAIChat, updateAIChatSession, refreshAIChatContext } from './ai-chat-widget.js';
 import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, SUPABASE_ENVIRONMENT } from './config.js';
 import { lessons, books } from './lessons.js';
@@ -32,13 +33,13 @@ const sourceLessons=[...lessons,...labLessons,...bookLessons,...cetaLessons];
 const allLessons=[...sourceLessons,...mathLessons];
 // Previously approved lessons use repository assets, independent of retired authoring.
 // Their IDs and existing graded answers are never rewritten on library refresh.
-const generatedLessons=new Map(preservedLessons.map(lesson=>[lesson.id,lesson]));
+const generatedLessons=new Map([...preservedLessons,...publishedLessons].map(lesson=>[lesson.id,lesson]));
 const findLesson=id=>allLessons.find(l=>l.id===id)||generatedLessons.get(id);
 const labUnlocked=l=>l?.id===labLessons[0].id || Boolean(labLessons.length && hasPassed(labLessons[0]));
 const bookUnlocked=l=>l?.independent===true || l?.id===bookLessons[0].id || Boolean(bookLessons.length && hasPassed(bookLessons[0]));
 const guideUnlocked=l=>l?.id===cetaLessons[0].id || Boolean(cetaLessons.length && hasPassed(cetaLessons[cetaLessons.findIndex(original=>original.id===l.id)-1]));
 const canOpenLesson=l=>{
- if(!l)return false;if(l.generated||l.subtrack==='math')return true;
+ if(!l)return false;if(l.publicationPackage&&l.prerequisites.some(id=>!hasPassed(findLesson(id))))return false;if(l.generated||l.subtrack==='math')return true;
  const pilotIndex=lessons.findIndex(original=>original.id===l.id);
  if(pilotIndex>=0)return unlocked(pilotIndex);
  if(l.subtrack==='geier')return bookUnlocked(l);

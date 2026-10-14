@@ -1,3 +1,4 @@
+import {activityWidgetMarkup} from './lesson-package.js';
 import {lessonReferencePages} from './learning-structure.js';
 import {renderWorkshopActivity} from './workshop-widgets.js';
 // Teaching-view presentation helpers. Does not mutate saved lesson answers.
@@ -46,7 +47,7 @@ export function lessonActivities(lesson) {
   if (lesson.experiment==="generated") {
     const checks=(lesson.activities||[]).map((a,i)=>({
       kind:a.kind==="simulation"?"generated-simulation":a.kind==="choice"?"generated-choice":"generated-check",simulator:a.simulator,choices:a.choices||[],correct:a.correct,title:a.title||"Prediction "+(i+1),description:"Make a prediction, explain your reasoning, then compare it with the approved reference.",
-      prompt:a.prompt,answer:a.answer,explanation:a.explanation,source_ids:a.source_ids||[]
+      widget:a.widget,prompt:a.prompt,answer:a.answer,explanation:a.explanation,source_ids:a.source_ids||[]
     }));
     if(lesson.simulator&&!checks.some(a=>a.kind==="generated-simulation"&&a.simulator===lesson.simulator))checks.push({kind:"generated-simulation",title:"Adjust the virtual experiment",description:"Change an ideal circuit value and predict how the result responds.",simulator:lesson.simulator});
     return checks;
@@ -103,12 +104,13 @@ export function renderLessonTabs(active,answersCount,questionCount) {
 export function renderActivitySelector(lesson,selected=0,state={}) {
   if(lesson.chapterSummary)return '<section class="panel"><h3>A quick chapter check</h3><p>Use the key takeaways, then test the important ideas in the quiz. Revisit the earlier lessons for interactive practice.</p><button class="primary" data-lesson-tab="quiz">Start the summary quiz →</button></section>';
   const activities=lessonActivities(lesson);
+  if(!activities.length)return '<section class="panel"><p>This lesson has no interactive activities. Continue with Learn or Quiz.</p></section>';
   const selectedIndex=Math.min(Math.max(0,selected),activities.length-1);
   const current=activities[selectedIndex];
   return '<div class="activity-shell"><div class="activity-step-top"><span class="v2-kicker">ACTIVITY '+(selectedIndex+1)+' / '+activities.length+'</span><span class="activity-caption">Try · Observe · Explain</span></div>'+
   '<div class="activity-steps" role="group" aria-label="Choose an activity">'+activities.map((a,i)=>
     '<button type="button" class="activity-step'+(i===selectedIndex?' selected':'')+(lesson.workshop&&state?.workshopChecks?.[a.id]?.correct===true?' checkpoint-complete':'')+'" data-activity-index="'+i+'" aria-current="'+(i===selectedIndex?'step':'false')+'" title="'+escapeHtml(a.title)+'">'+(i+1)+'</button>').join('')+'</div>'+
-  '<h3>'+escapeHtml(current.title)+'</h3><p class="muted">'+escapeHtml(current.description)+'</p>'+(lesson.workshop?'':'<p class="lesson-page-reference"><strong>Reference pages:</strong> '+escapeHtml(lessonReferencePages(lesson))+'</p>')+
+  activityWidgetMarkup(current)+'<h3>'+escapeHtml(current.title)+'</h3><p class="muted">'+escapeHtml(current.description)+'</p>'+(lesson.workshop?'':'<p class="lesson-page-reference"><strong>Reference pages:</strong> '+escapeHtml(lessonReferencePages(lesson))+'</p>')+
   (lesson.workshop?renderWorkshopActivity(current):current.kind==="generated-simulation"?'<p>'+escapeHtml(current.prompt||'Predict how changing an input changes the result.')+'</p><div data-generated-simulator="'+escapeHtml(current.simulator)+'"><p class="muted sm">Loading virtual experiment…</p></div>':
   current.kind==="generated-choice"?'<section class="generated-activity-check" data-generated-correct="'+current.correct+'"><p><strong>Choose your prediction:</strong> '+escapeHtml(current.prompt)+'</p><div class="options">'+current.choices.map((choice,i)=>'<label class="option"><input type="radio" name="generated-prediction" value="'+i+'">'+escapeHtml(choice)+'</label>').join('')+'</div><button type="button" class="primary small-button" data-generated-reveal>Check prediction</button><div class="feedback" data-generated-feedback hidden><strong data-generated-verdict></strong><p><b>Expected:</b> '+escapeHtml(current.answer)+'</p><p>'+escapeHtml(current.explanation)+'</p><p class="muted sm">Practice feedback; scored checks are in Quiz.</p></div></section>':
   current.kind==="generated-check"?'<section class="generated-activity-check"><p><strong>Predict before checking:</strong> '+escapeHtml(current.prompt)+'</p>'+
