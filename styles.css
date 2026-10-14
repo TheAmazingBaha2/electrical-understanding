@@ -1070,3 +1070,10 @@ button:focus-visible,summary:focus-visible,input:focus-visible,textarea:focus-vi
 .lab-workspace-selector{display:flex;gap:8px;flex-wrap:wrap}.shared-meter-reading{display:block;font-size:2rem;font-variant-numeric:tabular-nums;padding:18px;border:1px solid var(--border);border-radius:12px}
 .project-import-control{display:block;max-width:100%}.project-import-control input{display:block;width:100%}
 @media(max-width:700px){.lab-workspace-grid{display:block}.workspace-pane{display:none}.lab-workspace-grid[data-focused-pane="circuit"] [data-pane="circuit"],.lab-workspace-grid[data-focused-pane="meter"] [data-pane="meter"],.lab-workspace-grid[data-focused-pane="project"] [data-pane="project"]{display:block}.lab-workspace-selector button{flex:1;min-width:0}}
+
+.experiment-mode,.guide-actions,.guide-prediction{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}.experiment-mode button,.guide-actions button,.guide-prediction button{min-height:44px}
+.experiment-mode [aria-pressed="true"],.guide-prediction [aria-pressed="true"]{border-color:var(--cyan,#80e9ea);background:#16434c;color:#efffff}
+.guide-instruction{font-size:1.05rem;line-height:1.7}.guided-experiment [data-guide-feedback]{border-left:3px solid #83e9eb;padding:10px 14px;background:#11282d}
+.component-control{min-width:0;border:1px solid #41636b;border-radius:12px;padding:14px;margin:12px 0}.component-control legend{padding:0 8px;font-weight:700}.connection-badge{font-size:.8rem;color:#bbeff0}
+.snapshot-manager{margin-top:12px}.snapshot-manager>summary{min-height:44px;cursor:pointer}.snapshot-row{border-top:1px solid #36525b;padding:14px 0}.snapshot-row strong,.snapshot-row small{display:block;overflow-wrap:anywhere}.snapshot-row small{color:#a9c1c9;margin:5px 0}.snapshot-confirmation,.project-conflict{border:1px solid #b89758;padding:14px;border-radius:10px;margin-top:12px}
+@media(max-width:700px){.guide-actions button{flex:1;min-width:90px}.guided-experiment{padding:16px}.component-control{padding:12px}.workspace-check{flex-wrap:wrap}}

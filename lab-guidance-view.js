@@ -1,0 +1,8 @@
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+export function renderGuidance(activity,state,feedback){
+ if(state.mode==='free')return '<p class="muted sm">Free Experiment: change components, place probes and manage snapshots at your own pace. Switch to Guided Experiment whenever you want step-by-step help.</p>';
+ const index=activity.steps.findIndex(s=>s.id===state.stepId),step=activity.steps[index];
+ return '<section class="panel guided-experiment" aria-label="Guided experiment"><p class="v2-kicker">STEP '+(index+1)+' OF '+activity.steps.length+'</p><h3 tabindex="-1" data-guide-title>'+esc(step.title)+'</h3><p>'+esc(activity.objective)+'</p><p class="guide-instruction">'+esc(step.instructions)+'</p>'+
+ (step.prediction?'<div class="guide-prediction" role="group" aria-label="Prediction">'+step.prediction.choices.map((label,i)=>'<button class="outline" data-guide-prediction="'+i+'" aria-pressed="'+(state.predictions[step.id]===i)+'">'+esc(label)+'</button>').join('')+'</div>':'')+
+ '<p data-guide-feedback role="status">'+esc(feedback.message)+'</p><details data-guide-hint><summary>Show a hint</summary><p>'+esc(step.hint||'Observe the named nodes and use the current circuit settings.')+'</p></details><div class="guide-actions"><button class="outline" data-guide-previous '+(index===0?'disabled':'')+'>Previous</button><button class="outline" data-guide-focus>Open '+esc(step.pane)+' controls</button><button class="primary" data-guide-next '+(!feedback.ready?'disabled':'')+'>'+(index===activity.steps.length-1?'Finish · Free Experiment':'Next step')+'</button></div></section>';
+}

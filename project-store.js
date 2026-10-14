@@ -23,6 +23,16 @@ export function addSnapshot(p,name,id){validateProject(p);if(typeof name!=='stri
  return {...structuredClone(p),snapshots:[...structuredClone(p.snapshots),{id,name:name.trim(),createdAt:new Date().toISOString(),experiment:{circuit,widgetInstances,instrumentSettings,measurementResults,notes,experimentState}}]};
 }
 export function restoreSnapshot(p,id){validateProject(p);const s=p.snapshots.find(s=>s.id===id);if(!s)throw Error('Snapshot not found');const result={...structuredClone(p),...structuredClone(s.experiment)};validateProject(result);return result;}
+export function renameSnapshot(p,id,name){
+ validateProject(p);if(typeof name!=='string'||!name.trim())throw Error('Snapshot name cannot be blank');
+ const result=structuredClone(p),s=result.snapshots.find(s=>s.id===id);if(!s)throw Error('Snapshot not found');
+ s.name=name.trim();s.renamedAt=new Date().toISOString();return result;
+}
+export function deleteSnapshot(p,id){
+ validateProject(p);if(!p.snapshots.some(s=>s.id===id))throw Error('Snapshot not found');
+ const result=structuredClone(p);result.snapshots=result.snapshots.filter(s=>s.id!==id);
+ result.snapshotTombstones=[...(result.snapshotTombstones||[]),{id,deletedAt:new Date().toISOString()}];return result;
+}
 export class ProjectStore{
  constructor(storage,namespace='local',locks=globalThis.navigator?.locks){this.locks=locks;this.storage=storage;this.prefix='eu_projects_v1:'+encodeURIComponent(namespace)+':';}
  read(id){const raw=this.storage.getItem(this.prefix+encodeURIComponent(id));if(!raw)return null;let d;try{d=JSON.parse(raw)}catch{throw Error('Project storage is unreadable; export original before recovery');}if(d.schemaVersion!==1||!Number.isInteger(d.revision)||!Array.isArray(d.conflicts))throw Error('Unsupported project storage; preserve original');validateProject(d.project);return d;}
@@ -32,8 +42,17 @@ export class ProjectStore{
   return this.locks.request(this.prefix+encodeURIComponent(copy.id),()=>this.saveUnderLock(copy,expectedRevision));
  }
  saveUnderLock(project,expectedRevision=0){validateProject(project);const current=this.read(project.id),revision=current?.revision||0;
-  if(revision!==expectedRevision){if(!current)throw Error('Project disappeared from storage; export the unsaved version before recovery');const preserved={schemaVersion:1,revision:revision+1,project:current.project,conflicts:[...current.conflicts,{id:'conflict-'+(revision+1),baseRevision:expectedRevision,savedAt:new Date().toISOString(),project:structuredClone(project)}]};this.storage.setItem(this.prefix+encodeURIComponent(project.id),JSON.stringify(preserved));return {...preserved,conflict:true};}
-  const saved={schemaVersion:1,revision:revision+1,project:structuredClone(project),conflicts:current?.conflicts||[]};this.storage.setItem(this.prefix+encodeURIComponent(project.id),JSON.stringify(saved));return {...saved,conflict:false};
+  if(revision!==expectedRevision){if(!current)throw Error('Project disappeared from storage; export the unsaved version before recovery');const preserved={...current,schemaVersion:1,revision:revision+1,project:current.project,conflicts:[...current.conflicts,{id:'conflict-'+(revision+1),baseRevision:expectedRevision,savedAt:new Date().toISOString(),project:structuredClone(project)}]};this.storage.setItem(this.prefix+encodeURIComponent(project.id),JSON.stringify(preserved));return {...preserved,conflict:true};}
+  const saved={...current,schemaVersion:1,revision:revision+1,project:structuredClone(project),conflicts:current?.conflicts||[]};this.storage.setItem(this.prefix+encodeURIComponent(project.id),JSON.stringify(saved));return {...saved,conflict:false};
+ }
+ async resolveConflict(projectId,conflictId,useIncoming,expectedRevision){
+  if(!this.locks?.request)throw Error('Safe resolution requires browser locks');
+  return this.locks.request(this.prefix+encodeURIComponent(projectId),()=>{
+   const current=this.read(projectId);if(!current||current.revision!==expectedRevision)throw Error('Saved copies changed; refresh before resolving');
+   const conflict=current.conflicts.find(c=>c.id===conflictId);if(!conflict)throw Error('Conflict not found');validateProject(conflict.project);
+   const result={...current,revision:current.revision+1,project:structuredClone(useIncoming?conflict.project:current.project),conflicts:current.conflicts.filter(c=>c.id!==conflictId),resolvedConflicts:[...(current.resolvedConflicts||[]),{id:conflictId,resolvedAt:new Date().toISOString(),choice:useIncoming?'incoming':'current',current:structuredClone(current.project),incoming:structuredClone(conflict.project)}]};
+   this.storage.setItem(this.prefix+encodeURIComponent(projectId),JSON.stringify(result));return result;
+  });
  }
  export(id){return this.storage.getItem(this.prefix+encodeURIComponent(id));}
 }
