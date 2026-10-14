@@ -2,7 +2,8 @@ import {assertSerializable} from './data-contract.js';
 export {assertSerializable} from './data-contract.js';
 // Versioned external-authoring contract. Plain text becomes escaped markup only.
 import {widgetFor,validateWidgetReference,renderRegisteredWidget} from './widget-registry.js';
-export const LESSON_SCHEMA_VERSION=1;
+import {validateLabModules} from './lab-modules.js';
+export const LESSON_SCHEMA_VERSION=2;
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const idPattern=/^[A-Za-z0-9][A-Za-z0-9._:-]*$/;
 function object(v,label){if(!v||typeof v!=='object'||Array.isArray(v)||Object.getPrototypeOf(v)!==Object.prototype)throw Error(label+' must be a plain object');}
@@ -11,8 +12,8 @@ function text(v,label){if(typeof v!=='string'||!v.trim())throw Error(label+' mus
 function list(v,label){if(!Array.isArray(v))throw Error(label+' must be an array');}
 function id(v,label){text(v,label);if(!idPattern.test(v))throw Error('Invalid '+label);}
 export function validateLessonPackage(p,{knownLessonIds=[]}={}){
- assertSerializable(p);keys(p,['schemaVersion','id','title','description','curriculum','source','references','objectives','sections','workedExamples','checkpoints','activities','questions','reviewRules','prerequisites','approval'],'lesson');
- if(p.schemaVersion!==1)throw Error('Unsupported lesson schema; preserve original input');
+ assertSerializable(p);keys(p,['schemaVersion','id','title','description','curriculum','source','references','objectives','sections','workedExamples','checkpoints','activities','questions','reviewRules','prerequisites','approval',...(p.schemaVersion===2?['labs']:[])],'lesson');
+ if(![1,2].includes(p.schemaVersion))throw Error('Unsupported lesson schema; preserve original input');
  id(p.id,'lesson ID');for(const k of ['title','description'])text(p[k],k);
  if(knownLessonIds.includes(p.id))throw Error('Stable lesson ID already exists; explicit reviewed revision required');
  keys(p.curriculum,['section','source_id','source_title','chapter_id','chapter_title','order','dashboard'],'curriculum');
@@ -41,6 +42,7 @@ export function validateLessonPackage(p,{knownLessonIds=[]}={}){
  if(p.reviewRules.passFraction!==.8||p.reviewRules.missedDays!==1||p.reviewRules.initialSuccessDays!==7||p.reviewRules.retrySuccessDays!==21)throw Error('Review or grading rules incompatible with five-tab engine');
  list(p.prerequisites,'prerequisites');for(const prior of p.prerequisites){id(prior,'prerequisite');if(prior===p.id||!knownLessonIds.includes(prior))throw Error('Unknown/self prerequisite');}
  keys(p.approval,['status','reviewedBy','approvedAt'],'approval');if(p.approval.status!=='owner-approved')throw Error('Owner approval required');text(p.approval.reviewedBy,'reviewer');text(p.approval.approvedAt,'approval date');if(!Number.isFinite(Date.parse(p.approval.approvedAt)))throw Error('Invalid approval date');
+ if(p.schemaVersion===2)validateLabModules(p.labs,{references:[...refs],reservedIds:[p.id,...activityIds,...questionIds,...p.checkpoints.map(c=>c.id)]});
  return p;
 }
 export function lessonFromPackage(p,options){
@@ -48,6 +50,6 @@ export function lessonFromPackage(p,options){
  const blocks=p.sections.map(s=>'<h3>'+esc(s.heading)+'</h3><p>'+esc(s.body).replaceAll('\n','</p><p>')+'</p><small>Source: '+esc(s.source_ids.join(', '))+'</small>');
  for(const e of p.workedExamples)blocks.push('<h3>'+esc(e.title)+'</h3><ol>'+e.steps.map(s=>'<li>'+esc(s)+'</li>').join('')+'</ol><p>'+esc(e.result)+'</p>');
  const activities=[...p.activities.map(a=>({...a,answer:a.expected,widget:a.widget})),...p.checkpoints.map(c=>({id:c.id,title:c.kind,prompt:c.prompt,answer:c.debrief,explanation:c.debrief,source_ids:c.source_ids}))];
- return {publicationPackage:true,id:p.id,title:p.title,description:p.description,curriculum:p.curriculum,module:p.source.book,sourcePages:p.source.printedPages,sourceAttribution:[p.source.book,p.source.edition,p.source.chapter,p.source.printedPages].join(' · '),sourceReferences:p.references,objectives:p.objectives,html:blocks.join(''),teachingSections:p.sections,activities,questions:p.questions,prerequisites:p.prerequisites,reviewRules:p.reviewRules,generated:true,experiment:'generated',archived:false,simulator:null};
+ return {publicationPackage:true,...(p.labs?{labs:structuredClone(p.labs)}:{}),id:p.id,title:p.title,description:p.description,curriculum:p.curriculum,module:p.source.book,sourcePages:p.source.printedPages,sourceAttribution:[p.source.book,p.source.edition,p.source.chapter,p.source.printedPages].join(' · '),sourceReferences:p.references,objectives:p.objectives,html:blocks.join(''),teachingSections:p.sections,activities,questions:p.questions,prerequisites:p.prerequisites,reviewRules:p.reviewRules,generated:true,experiment:'generated',archived:false,simulator:null};
 }
 export function activityWidgetMarkup(activity){return activity.widget?renderRegisteredWidget(activity.widget):'';}

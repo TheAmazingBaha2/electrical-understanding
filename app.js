@@ -65,7 +65,7 @@ function localLoad(){
 function getAnonymousSnapshot(){return new ProgressStore(localStorage,null).read().progress}
 function getState(id){return progress[id] || {answers:{},complete:false,updatedAt:0}}
 function getAccuracy(lesson){const a=getState(lesson.id).answers||{};const done=lesson.questions.filter(q=>a[q.id]?.correct===true).length;return {correct:done,total:lesson.questions.length,answered:lesson.questions.filter(q=>typeof a[q.id]?.correct==='boolean').length}}
-function hasPassed(lesson){if(!lesson)return false;const state=getState(lesson.id);if(lesson.workshop)return lessonRequirementsMet(lesson,state);if(state.complete===true)return true;const a=state.answers||{};const hits=lesson.questions.filter(q=>a[q.id]?.correct===true).length;
+function hasPassed(lesson){if(!lesson)return false;const state=getState(lesson.id);if(lesson.workshop||lesson.labs)return lessonRequirementsMet(lesson,state);if(state.complete===true)return true;const a=state.answers||{};const hits=lesson.questions.filter(q=>a[q.id]?.correct===true).length;
   return lesson.questions.every(q=>typeof a[q.id]?.correct==='boolean') && hits>=Math.ceil(.8*lesson.questions.length) && lesson.questions.filter(q=>q.safety).every(q=>a[q.id]?.correct===true);
 }
 function unlocked(index){return index===0 || hasPassed(lessons[index-1]);}
@@ -126,7 +126,7 @@ async function saveAnswer(lessonId,qid,update){
   const doc=await currentStore.edit(lessonId,s=>{
    s.answers[qid]=update(s.answers[qid]||{});
    const lesson=findLesson(lessonId),a=s.answers;
-   s.complete=lesson.workshop?lessonRequirementsMet(lesson,s):s.complete===true||(lesson.questions.every(q=>typeof a[q.id]?.correct==='boolean')&&lesson.questions.filter(q=>a[q.id]?.correct===true).length>=Math.ceil(.8*lesson.questions.length)&&lesson.questions.filter(q=>q.safety).every(q=>a[q.id]?.correct===true));
+   s.complete=lesson.workshop||lesson.labs?lessonRequirementsMet(lesson,s):s.complete===true||(lesson.questions.every(q=>typeof a[q.id]?.correct==='boolean')&&lesson.questions.filter(q=>a[q.id]?.correct===true).length>=Math.ceil(.8*lesson.questions.length)&&lesson.questions.filter(q=>q.safety).every(q=>a[q.id]?.correct===true));
    s.updatedAt=now();
   });
   if(store!==currentStore)return;
