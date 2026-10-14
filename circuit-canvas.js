@@ -63,15 +63,15 @@ export function editCircuitCanvas(circuit,layout,action){
  else throw Error('Unsupported canvas edit');
  // Retain floating probe/reference nodes, but do not exhaust capacity with removed parts.
  const used=new Set([c.groundNode,...c.components.flatMap(p=>p.terminals.map(t=>t.nodeId)),...(c.externalTerminals||[]).map(t=>t.nodeId),...c.instruments.flatMap(i=>[i.redNode,i.blackNode])]);
- c.nodes=c.nodes.filter(n=>used.has(n.id));
+ if(action.type==='remove-component')c.nodes=c.nodes.filter(n=>used.has(n.id));
  validateCircuit(c);validateCanvasLayout(l,c);return {circuit:c,layout:l};
 }
-export function canvasHistoryEdit(circuit,layout,history,action){
+export function canvasHistoryEdit(circuit,layout,history,action,componentInventory){
  const result=editCircuitCanvas(circuit,layout,action);
- return {...result,history:{schemaVersion:1,undo:[...(history?.undo||[]),{circuit:clone(circuit),layout:clone(layout)}].slice(-50),redo:[]}};
+ return {...result,history:{schemaVersion:1,undo:[...(history?.undo||[]),{circuit:clone(circuit),layout:clone(layout),...(componentInventory!==undefined?{componentInventory:clone(componentInventory)}:{})}].slice(-50),redo:[]}};
 }
-export function canvasHistoryRestore(circuit,layout,history,direction){
+export function canvasHistoryRestore(circuit,layout,history,direction,componentInventory){
  if(!['undo','redo'].includes(direction)||!history?.[direction]?.length)throw Error('No '+direction+' available');
  const source=clone(history),value=source[direction].pop(),opposite=direction==='undo'?'redo':'undo';validateCircuit(value.circuit);validateCanvasLayout(value.layout,value.circuit);
- source[opposite]=[...(source[opposite]||[]),{circuit:clone(circuit),layout:clone(layout)}].slice(-50);return {...value,history:source};
+ source[opposite]=[...(source[opposite]||[]),{circuit:clone(circuit),layout:clone(layout),...(componentInventory!==undefined?{componentInventory:clone(componentInventory)}:{})}].slice(-50);return {...value,history:source};
 }

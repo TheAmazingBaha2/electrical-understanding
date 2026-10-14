@@ -28,3 +28,5 @@ test('practical voltage checks use engine readings and reject live resistance, w
  const c=dividerCircuit();c.components[1].state.open=true;c.components[2].state.open=true;assert.equal(recordLabActivity(l,{},'mobile','TEST-mobile-measure',{circuit:c,settings:{mode:'voltage',jack:'VΩ'}}).labModules.mobile['TEST-mobile@1.0.0'].complete,false);
  assert.throws(()=>recordLabActivity(l,{},'mobile','wrong',{circuit:c}));
 });
+
+test('practical grading reads the same instrument it checks, never a differently ordered meter',()=>{const lesson=lessonFromPackage(dualFixture()),circuit=dividerCircuit();circuit.instruments.unshift({...structuredClone(circuit.instruments[0]),id:'DMM2'});assert.equal(recordLabActivity(lesson,{},'desktop','TEST-desktop-measure',{circuit,settings:{mode:'voltage',jack:'VΩ'}}).labModules.desktop['TEST-desktop@1.0.0'].complete,false);});

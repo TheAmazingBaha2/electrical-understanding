@@ -4,11 +4,17 @@ import {validateCircuit,dividerCircuit} from './circuit-model.js';
 import {assertSerializable} from './data-contract.js';
 import {compileBreadboard} from './breadboard-model.js';
 import {widgetFor} from './widget-registry.js';
+export function inventoryForCircuit(circuit,previous=[]){
+ assertSerializable(previous);if(!Array.isArray(previous))throw Error('Unsupported component inventory; original retained');
+ const active=new Set(circuit.components.map(c=>c.id)),kept=previous.filter(i=>typeof i?.componentId!=='string'||active.has(i.componentId));
+ const present=new Set(kept.map(i=>i?.componentId));
+ return [...structuredClone(kept),...circuit.components.filter(c=>!present.has(c.id)).map(c=>({componentId:c.id,quantity:1}))];
+}
 export function validateProject(p){
  assertSerializable(p);if(p?.schemaVersion!==1||typeof p.id!=='string'||!p.id||!p.metadata||typeof p.metadata.title!=='string')throw Error('Unsupported or incomplete project; original input remains unchanged');
  validateCircuit(p.circuit);
  if(p.experimentState?.canvasLayout)validateCanvasLayout(p.experimentState.canvasLayout,p.circuit);
- if(p.experimentState?.canvasHistory){const h=p.experimentState.canvasHistory;if(h.schemaVersion!==1||!Array.isArray(h.undo)||!Array.isArray(h.redo))throw Error('Unsupported canvas history');for(const entry of [...h.undo,...h.redo])validateCanvasLayout(entry.layout,entry.circuit);}
+ if(p.experimentState?.canvasHistory){const h=p.experimentState.canvasHistory;if(h.schemaVersion!==1||!Array.isArray(h.undo)||!Array.isArray(h.redo))throw Error('Unsupported canvas history');for(const entry of [...h.undo,...h.redo]){validateCanvasLayout(entry.layout,entry.circuit);if(entry.componentInventory!==undefined&&!Array.isArray(entry.componentInventory))throw Error('Unsupported history inventory; original retained');}}
  if(p.experimentState?.breadboard){const b=p.experimentState.breadboard;if(b.schemaVersion!==1||!Array.isArray(b.undo)||!Array.isArray(b.redo))throw Error('Unsupported breadboard history');const c=compileBreadboard(b.state);for(const k of ['groundNode','nodes','externalTerminals','components','connections','instruments','state'])if(JSON.stringify(c[k])!==JSON.stringify(p.circuit[k]))throw Error('Breadboard state and circuit disagree; original input preserved');}
  for(const key of ['componentInventory','widgetInstances','measurementResults','snapshots','lessonReferences'])if(!Array.isArray(p[key]))throw Error('Missing project '+key);
  if(!p.instrumentSettings||!p.experimentState||typeof p.notes!=='string')throw Error('Incomplete experiment');

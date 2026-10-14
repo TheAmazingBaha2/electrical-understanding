@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {dividerCircuit,solveDC,measureVoltage} from '../circuit-model.js';
 import {circuitCanvasLayout,editCircuitCanvas,canvasHistoryEdit,canvasHistoryRestore,canvasTerminals,canvasProbeTerminal,snapCanvasTerminal} from '../circuit-canvas.js';
-import {newProject,validateProject,addSnapshot,restoreSnapshot} from '../project-store.js';
+import {newProject,validateProject,inventoryForCircuit,addSnapshot,restoreSnapshot} from '../project-store.js';
 import {defaultDesktopLayout,fitDesktopWindow,resizeDesktopWindow,dockDesktopWindow,validateDesktopLayout} from '../desktop-windows.js';
 import {detectLabPlatform,selectedLabPlatform,renderLabPlatform} from '../lab-platform.js';
 import {renderPowerSupply} from '../component-editors.js';
@@ -52,3 +52,5 @@ test('physical probe endpoints stay on the selected terminal, and clearing/remov
  const clear=canvasHistoryEdit(selected.circuit,selected.layout,null,{type:'clear'});assert.equal(sharedMeterReading(clear.circuit).value,null);assert.equal(sharedMeterReading(clear.circuit).status,'blocked');
  const undo=canvasHistoryRestore(clear.circuit,clear.layout,clear.history,'undo');assert.equal(undo.circuit.instruments[0].redTerminalId,'R2.a');assert.equal(sharedMeterReading(undo.circuit).value,2.5);assert.equal(sharedMeterReading(circuit).value,2.5);
 });
+
+test('geometric edits and clear/undo preserve inventory annotations and unknown unlinked stock',()=>{const p=newProject();p.componentInventory[0].annotation={keep:'source calibration note'};p.componentInventory.push({futureStock:'keep',quantity:15});const original=structuredClone(p.componentInventory),layout=circuitCanvasLayout(p.circuit);const moved=editCircuitCanvas(p.circuit,layout,{type:'move',id:'R1',position:{x:800,y:600}});assert.deepEqual(inventoryForCircuit(moved.circuit,p.componentInventory),original);const cleared=canvasHistoryEdit(p.circuit,layout,null,{type:'clear'},p.componentInventory),active=inventoryForCircuit(cleared.circuit,p.componentInventory);assert.deepEqual(active,[{futureStock:'keep',quantity:15}]);const undo=canvasHistoryRestore(cleared.circuit,cleared.layout,cleared.history,'undo',active);assert.deepEqual(undo.componentInventory,original);assert.deepEqual(canvasHistoryRestore(undo.circuit,undo.layout,undo.history,'redo',undo.componentInventory).componentInventory,active);});

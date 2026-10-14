@@ -4,7 +4,7 @@ Read [DESKTOP_MOBILE_CHECKPOINT.md](DESKTOP_MOBILE_CHECKPOINT.md) first. Owner t
 
 # Durable V3 checkpoint
 
-> Active graphical-first assignment: read [GRAPHICAL_LAB_CHECKPOINT.md](GRAPHICAL_LAB_CHECKPOINT.md). Its current resumption status and [GRAPHICAL_LAB_REPORT.md](GRAPHICAL_LAB_REPORT.md) supersede old pending statements. Earlier foundation/transaction history below remains preserved; owner graphical acceptance is separate.
+> Historical graphical-first assignment (superseded by the desktop/mobile checkpoint above): read [GRAPHICAL_LAB_CHECKPOINT.md](GRAPHICAL_LAB_CHECKPOINT.md). Its current resumption status and [GRAPHICAL_LAB_REPORT.md](GRAPHICAL_LAB_REPORT.md) supersede old pending statements. Earlier foundation/transaction history below remains preserved; owner graphical acceptance is separate.
 
 ## Current resumption point — October 13 (America/New_York)
 

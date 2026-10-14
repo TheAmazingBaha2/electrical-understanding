@@ -5,7 +5,7 @@ import {go} from './navigation-helper.mjs';
 export async function desktopAcceptance(page,{native=false}={}){
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  await page.evaluate(()=>{localStorage.setItem('eu_lab_platform_v1','desktop');});await go(page,'workbench');
- const pane=page.locator('[data-pane="circuit"]'),world=page.locator('[data-canvas-world]');await world.waitFor();
+ const pane=page.locator('[data-pane="circuit"]'),world=page.locator('[data-canvas-world]');await world.waitFor();const initial=await page.locator('[data-canvas-terminal="R2.a"]').boundingBox();assert.ok(initial.y>=0&&initial.y+initial.height<page.viewportSize()?.height||native&&initial.y+initial.height<await page.evaluate(()=>innerHeight),'The opening desktop viewport must show the circuit contacts without scrolling');
  assert.equal(await page.locator('.desktop-window-title').count(),4);assert.equal(await page.locator('[data-window-resize]').count(),32);
  const command=async(name,value,root=page)=>root.locator('[data-graphic-command="'+name+'"]'+(value===undefined?'':'[data-graphic-value="'+value+'"]')+':visible').first().click();
  const transform=async(locator,x=0,y=0)=>{await locator.scrollIntoViewIfNeeded();return locator.evaluate((el,p)=>{const svg=el.closest('svg')||el,m=el.getScreenCTM();const q=new DOMPoint(p.x,p.y).matrixTransform(m);return {x:q.x,y:q.y};},{x,y});};
@@ -24,7 +24,7 @@ export async function desktopAcceptance(page,{native=false}={}){
  await dragProbe('[data-canvas-terminal="R2.a"]');assert.match(await page.locator('[data-lab-live-reading]').innerText(),/2\.500 V/);
  await command('canvas-tool','inspect');const part=page.locator('[data-canvas-part="R1"]'),position=await part.getAttribute('transform');
  await drag(await transform(part),await transform(part,100,30));assert.notEqual(await part.getAttribute('transform'),position);assert.match(await page.locator('[data-lab-live-reading]').innerText(),/2\.500 V/);
- const body=await transform(part);await page.mouse.click(body.x,body.y);assert.equal(await pane.locator('.component-sheet').count(),1,await page.locator('[data-project-status]').innerText());await command('resistor-value','2000',pane);assert.match(await page.locator('[data-lab-live-reading]').innerText(),/1\.667 V/);
+ const body=await transform(part);await page.mouse.click(body.x,body.y);assert.equal(await pane.locator('.component-sheet').count(),1,await page.locator('[data-project-status]').innerText());assert.equal(await pane.locator('.component-sheet').evaluate(el=>getComputedStyle(el).position),'absolute');await command('resistor-value','2000',pane);assert.match(await page.locator('[data-lab-live-reading]').innerText(),/1\.667 V/);
  await page.locator('[data-canvas-part="V1"]').click();
  assert.equal(await pane.locator('[data-graphic-range="supply-voltage"]').getAttribute('min'),'0');await command('supply-voltage','9',pane);assert.match(await page.locator('[data-lab-live-reading]').innerText(),/3\.000 V/);
  // Clear requires explicit confirmation; undo restores exact electrical state.

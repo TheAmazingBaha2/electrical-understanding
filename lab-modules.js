@@ -53,8 +53,8 @@ export function evaluateLabActivity(a,submission){
  if(r.type==='choice')return {correct:Number.isInteger(submission.choice)&&submission.choice===r.correct,value:submission.choice??null,explanation:r.explanation};
  if(r.type!=='dc-voltage')throw Error('Unsupported practical assessment');
  validateCircuit(submission.circuit);
- const meter=submission.circuit.instruments.find(i=>i.id==='DMM1'),reading=sharedMeterReading(submission.circuit,submission.settings||{});
- const correct=meter?.redNode===r.redNode&&meter?.blackNode===r.blackNode&&reading.mode==='voltage'&&reading.status==='valid'&&Number.isFinite(reading.value)&&Math.abs(reading.value-r.valueVolts)<=r.toleranceVolts;
+ const meter=submission.circuit.instruments[0],reading=sharedMeterReading(submission.circuit,submission.settings||{});
+ const correct=meter?.id==='DMM1'&&meter?.redNode===r.redNode&&meter?.blackNode===r.blackNode&&reading.mode==='voltage'&&reading.status==='valid'&&Number.isFinite(reading.value)&&Math.abs(reading.value-r.valueVolts)<=r.toleranceVolts;
  return {correct,value:reading.value??null,explanation:r.explanation,measurement:{status:reading.status,mode:reading.mode,redNode:meter?.redNode??null,blackNode:meter?.blackNode??null}};
 }
 export function recordLabActivity(lesson,state,platform,activityId,submission,time=Date.now()){
