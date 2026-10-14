@@ -1,6 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {mkdtemp,rm} from 'node:fs/promises';import {tmpdir} from 'node:os';import {join} from 'node:path';
 import {FilePrivateStorage} from '../scripts/content/private-file-storage.mjs';import {PrivateLearningStore} from '../modular/private-learning.js';import {learningFixture} from './modular-learning-fixture.mjs';import {ref,uid} from './modular-fixture.mjs';import {dividerCircuit} from '../circuit-model.js';import {inspectPublication} from '../modular/publication.js';
+import {generatePractice} from '../modular/assessments.js';import {privateRecord} from '../modular/private-documents.js';
 async function setup(options={},run){const root=await mkdtemp(join(tmpdir(),'eu-study-journal-'));try{const fixture=await learningFixture(options),host=await FilePrivateStorage.open({root,ownerId:uid(100)}),args={...fixture,host,ownerId:uid(100),widgetLookup:()=>true,clock:()=> '2026-10-14T12:00:00.000Z'},store=await PrivateLearningStore.open(args);await run(store,args);}finally{await rm(root,{recursive:true,force:true});}}
 test('draft practice persists exact historical values across reopen and repeated correct practice never awards mastery',async()=>{
  await setup({published:false},async(store,args)=>{
@@ -31,4 +32,12 @@ test('publication requires exact content/grade hashes, rights, edition/locator, 
  const {bundle,publication}=await learningFixture();assert.equal((await inspectPublication(bundle,publication,{widgetLookup:()=>true})).valid,true);
  for(const mutate of [m=>m.reviews=[],m=>m.rights=[],m=>m.locatorReviews=[],m=>m.editionReviews=[],m=>m.gradeDiffHash='a'.repeat(64),m=>m.target='public']){const m=structuredClone(publication);mutate(m);assert.equal((await inspectPublication(bundle,m,{widgetLookup:()=>true})).valid,false);}
  assert.equal((await inspectPublication(bundle,publication)).valid,false);const changed=structuredClone(bundle);changed.entities[6].text='Changed after approval';assert.equal((await inspectPublication(changed,publication,{widgetLookup:()=>true})).valid,false);
+});
+test('conflicting valid start snapshots remain readable with all results retained and disputed credit withheld',async()=>{
+ await setup({},async(store)=>{
+  const a=await store.startQuestion(ref(13),ref(10),{seed:'original'});await store.submit(a.id,{value:a.instance.expected,unit:'A'});
+  const variant={...a,instance:await generatePractice(a.template,'another-device')};await store.append([variant]);const p=await store.project(ref(13));assert.equal(p.journalConflicts.length,1);assert.equal(p.core.correct,0);assert.equal((await store.read()).value.records.filter(r=>r.id===a.id).length,2);
+  const before=await store.fingerprint(),invalid=await store.exportRecovery(),bad=await privateRecord(store.ownerId,'learning',invalid.head,{format:'future-unreadable',unknown:{retained:true}});invalid.records.push(bad);invalid.head=bad.revision;
+  await assert.rejects(store.importRecovery(invalid),/Unknown private learning format/);assert.equal(await store.fingerprint(),before);
+ });
 });

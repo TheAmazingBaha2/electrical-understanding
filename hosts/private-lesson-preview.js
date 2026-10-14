@@ -1,13 +1,13 @@
-import {ContentRepository} from './repositories.js';
-import {composeLesson,presentationPlan} from './composition.js';
+import {ContentRepository} from '../modular/repositories.js';
+import {composeLesson,presentationPlan} from '../modular/composition.js';
 import {renderLessonTabs} from '../lesson-tabs.js';
 import {progressPie} from '../source-navigation.js';
-import {IndexedDBPrivateStorage} from '../hosts/browser-private-storage.js';
-import {mountQuestionPractice,mountPractical} from '../hosts/private-study-panel.js';
-import {PrivateLearningStore} from './private-learning.js';
-import {inspectPublication} from './publication.js';
+import {IndexedDBPrivateStorage} from './browser-private-storage.js';
+import {mountQuestionPractice,mountPractical} from './private-study-panel.js';
+import {PrivateLearningStore} from '../modular/private-learning.js';
+import {inspectPublication} from '../modular/publication.js';
 import {widgetFor} from '../widget-registry.js';
-import {validatePrivateDocument} from './private-documents.js';
+import {validatePrivateDocument} from '../modular/private-documents.js';
 const escape=x=>String(x??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 export function renderProgressPie(projection,{graded=false}={}){
  const correct=projection.correct??0,total=projection.total??0,incorrect=projection.needsReview??0,percentage=total?100*correct/total:0;

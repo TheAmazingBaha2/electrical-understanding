@@ -32,3 +32,8 @@ test('concurrent processes cannot overwrite a locked private record and interrup
  const root=await mkdtemp(join(tmpdir(),'eu-private-lock-'));try{const a=await FilePrivateStorage.open({root,ownerId:uid(100)}),b=await FilePrivateStorage.open({root,ownerId:uid(100)});const f=await open(join(root,a.key('learning')+'.lock'),'wx',0o600);try{await assert.rejects(b.compareAndSwap('learning',null,{value:1}),/busy or interrupted/);assert.equal((await a.readPrivateDocument('learning')).revision,null);}finally{await f.close();}
  }finally{await rm(root,{recursive:true,force:true});}
 });
+test('a corrupt existing backup cannot be silently reused while replacing a healthy primary',async()=>{
+ const root=await mkdtemp(join(tmpdir(),'eu-private-backup-'));try{const a=await FilePrivateStorage.open({root,ownerId:uid(100)});await a.compareAndSwap('learning',null,{value:'base'});await a.compareAndSwap('learning',null,{value:'stale'});await a.compareAndSwap('learning',null,{value:'stale'});
+  const before=await a.exportRecovery('learning'),files=await a.listRecoveryFiles('learning');for(const name of files)await writeFile(join(root,name),'broken backup');await assert.rejects(a.compareAndSwap('learning',null,{value:'stale'}),/backup is corrupt/);assert.deepEqual(await a.exportRecovery('learning'),before);
+ }finally{await rm(root,{recursive:true,force:true});}
+});

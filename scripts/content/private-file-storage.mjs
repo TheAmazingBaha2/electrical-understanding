@@ -26,7 +26,7 @@ export class FilePrivateStorage {
   try{handle=await open(lock,'wx',0o600);}catch(e){if(e.code==='EEXIST')throw Error('Private storage is busy or interrupted; inspect the lock and export backups before recovery');throw e;}
   let temporary;try{
    const before=await this.document(namespace),{document,result}=await change(before);await validatePrivateDocument(document,this.ownerId,namespace);
-   if(before.head){const backup=join(this.root,key+'.backup-'+await artifactHash(before)+'.json');let f;try{f=await open(backup,'wx',0o600);await f.writeFile(canonicalJSON(before)+'\n');await f.sync();}catch(e){if(e.code!=='EEXIST')throw e;}finally{await f?.close();}}
+   if(before.head){const backup=join(this.root,key+'.backup-'+await artifactHash(before)+'.json'),text=canonicalJSON(before)+'\n';let f;try{f=await open(backup,'wx',0o600);await f.writeFile(text);await f.sync();}catch(e){if(e.code!=='EEXIST')throw e;const prior=await open(backup,constants.O_RDONLY|(constants.O_NOFOLLOW||0));try{if(await prior.readFile('utf8')!==text)throw Error('Existing private backup is corrupt; primary retained for explicit recovery');}finally{await prior.close();}}finally{await f?.close();}}
    temporary=join(this.root,key+'.pending-'+globalThis.crypto.randomUUID()+'.json');const file=await open(temporary,'wx',0o600);try{await file.writeFile(canonicalJSON(document)+'\n');await file.sync();}finally{await file.close();}
    await rename(temporary,this.path(namespace));temporary=null;
    // Linux fsyncs the directory; Windows atomic replacement is retained, while a

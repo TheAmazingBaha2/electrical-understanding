@@ -1,5 +1,5 @@
 import test from 'node:test';import assert from 'node:assert/strict';
-import {renderPreview,renderProgressPie} from '../modular/lesson-preview.js';
+import {renderPreview,renderProgressPie} from '../hosts/private-lesson-preview.js';
 import {ContentRepository} from '../modular/repositories.js';import {composeLesson} from '../modular/composition.js';
 import {modularFixture,ref} from './modular-fixture.mjs';
 test('private renderer reuses classic tabs, shows citations/projection pies and escapes semantic input',()=>{

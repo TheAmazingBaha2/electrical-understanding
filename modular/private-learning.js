@@ -4,7 +4,7 @@ import {generateAssessment,generatePractice,evaluateAssessment,evaluatePractice}
 import {evaluatePractical} from './practical-rubrics.js';
 import {requirePublication} from './publication.js';
 import {validateEntity} from './validation.js';
-import {privateScope} from './private-documents.js';
+import {privateScope,validatePrivateDocument} from './private-documents.js';
 import {assertSerializable} from '../data-contract.js';
 import {projectPracticalProgress} from './progress-events.js';
 const same=(a,b)=>canonicalJSON(a)===canonicalJSON(b),reference=e=>({id:e.id,version:e.version});
@@ -23,21 +23,23 @@ export function journalConflicts(records){
  return {conflicts,clean:clean.filter(r=>!duplicates.has(r.id)&&!conflicts.some(c=>c.id===r.id||c.id==='attempt:'+r.attemptId))};
 }
 async function validateRecords(records){
- const starts=new Map();for(const r of records){assertSerializable(r);privateScope(r.id,'record');timestamp(r.createdAt);
+ const starts=new Map(),addStart=r=>starts.set(r.id,[...(starts.get(r.id)||[]),r]);for(const r of records){assertSerializable(r);privateScope(r.id,'record');timestamp(r.createdAt);
   if(r.kind.endsWith('-start')){privateScope(r.lesson?.id,'record');if(!/^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$/.test(r.lesson?.version))throw Error('Invalid pinned lesson revision');}
   if(r.kind==='question-start'){
    if(!['practice','graded'].includes(r.purpose))throw Error('Unknown assessment purpose');validateEntity(r.template,'AssessmentTemplate');validateEntity(r.instance,'AssessmentInstance');
    const reproduced=await (r.purpose==='graded'?generateAssessment:generatePractice)(r.template,r.instance.seed);if(!same(reproduced,r.instance)||r.subject.id!==r.template.id||r.subject.version!==r.template.version)throw Error('Historical question snapshot mismatch');
-   if(r.platform!=='core'||r.purpose==='graded'&&(!r.authorization||r.template.status!=='published'))throw Error('Unauthorized graded question record');starts.set(r.id,r);
+   if(r.platform!=='core'||r.purpose==='graded'&&(!r.authorization||r.template.status!=='published'))throw Error('Unauthorized graded question record');addStart(r);
   }else if(r.kind==='lab-start'){
    validateEntity(r.definition,'LabModuleDefinition');if(!['practice','graded'].includes(r.purpose)||r.platform!==r.definition.platform||!r.definition.activities.some(a=>a.id===r.subject.id)||r.subject.version!==r.definition.version||r.module.version!==r.definition.version)throw Error('Practical revision mismatch');
-   if(r.purpose==='graded'&&(!r.authorization||r.definition.status!=='published'))throw Error('Unauthorized graded practical record');starts.set(r.id,r);
+   if(r.purpose==='graded'&&(!r.authorization||r.definition.status!=='published'))throw Error('Unauthorized graded practical record');addStart(r);
   }else if(!['question-result','lab-result'].includes(r.kind))throw Error('Unknown journal record kind; original retained');
  }
- for(const r of records.filter(r=>r.kind.endsWith('-result'))){const start=starts.get(r.attemptId);if(!start||start.kind.replace('-start','-result')!==r.kind)throw Error('Orphan historical result');
-  const result=r.kind==='question-result'?await (start.purpose==='graded'?evaluateAssessment:evaluatePractice)(start.template,start.instance,r.answer):evaluatePractical(start.definition,start.subject.id,r.submission,{purpose:start.purpose});
-  if(!same(result,r.result))throw Error('Historical result/rubric mismatch; never silently regrade');
-  if(start.purpose==='graded'){privateScope(r.reviewEventId,'review');timestamp(r.reviewDue);}
+ for(const r of records.filter(r=>r.kind.endsWith('-result'))){const candidates=(starts.get(r.attemptId)||[]).filter(s=>s.kind.replace('-start','-result')===r.kind);if(!candidates.length)throw Error('Orphan historical result');let reproduced=false;
+  for(const start of candidates)try{
+   const result=r.kind==='question-result'?await (start.purpose==='graded'?evaluateAssessment:evaluatePractice)(start.template,start.instance,r.answer):evaluatePractical(start.definition,start.subject.id,r.submission,{purpose:start.purpose});
+   if(!same(result,r.result))continue;if(start.purpose==='graded'){privateScope(r.reviewEventId,'review');timestamp(r.reviewDue);}reproduced=true;
+  }catch{/* Other valid start variants remain available; disputed credit is withheld. */}
+  if(!reproduced)throw Error('Historical result/rubric mismatch; never silently regrade');
  }
 }
 export class PrivateLearningStore {
@@ -83,8 +85,8 @@ export class PrivateLearningStore {
  }
  async exportRecovery(){return this.host.exportRecovery(this.namespace);}
  async importRecovery(recovery){
-  // Identity/hash validation is done by the host before any imported state is used.
-  await this.host.importRecovery(this.namespace,recovery);const imported=[];for(const r of recovery.records){const j=journal(this.ownerId,r.value);await validateRecords(j.records);imported.push(...j.records);}return this.append(imported);
+  // Validate every historical journal before the host can select an imported head.
+  await validatePrivateDocument(recovery,this.ownerId,this.namespace);const imported=[];for(const r of recovery.records){const j=journal(this.ownerId,r.value);await validateRecords(j.records);imported.push(...j.records);}await this.host.importRecovery(this.namespace,recovery);return this.append(imported);
  }
  async fingerprint(){return artifactHash((await this.read()).value);}
 }

@@ -13,17 +13,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      actions: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Cancel obsolete V3 validation runs
-        if: github.event_name == 'push' && github.ref == 'refs/heads/draft/v2-dmm-companion'
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: node scripts/cancel-obsolete-v3-checks.mjs
       - name: Check module syntax
         run: npm run check
       - name: Verify Cloudflare staging build
@@ -84,7 +78,7 @@ jobs:
       - name: Build isolated public assets
         run: npm run build
       - name: Verify private file persistence on Windows
-        run: node --test tests/modular-storage.test.mjs tests/modular-learning.test.mjs
+        run: node --test tests/modular-storage.test.mjs tests/modular-learning.test.mjs tests/modular-portability.test.mjs
       - name: Exercise Windows Electron desktop UI
         run: node tests/electron-windows.mjs
       - uses: actions/upload-artifact@v4
