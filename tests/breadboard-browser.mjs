@@ -1,0 +1,30 @@
+import assert from 'node:assert/strict';
+import {chromium} from 'playwright';
+import {go} from './navigation-helper.mjs';
+import {mkdir} from 'node:fs/promises';
+await mkdir('test-artifacts',{recursive:true});
+const browser=await chromium.launch({headless:true,executablePath:process.env.CHROMIUM_PATH||undefined,args:process.env.CHROMIUM_PATH?['--no-sandbox']:[]});
+try{for(const width of [320,390,1440]){
+ const page=await browser.newPage({viewport:{width,height:1000},hasTouch:width<700}),errors=[],external=[];
+ page.on('pageerror',e=>errors.push(e.message));await page.route('**/*',r=>{if(new URL(r.request().url()).hostname==='127.0.0.1')return r.continue();external.push(r.request().url());return r.abort();});
+ await page.goto('http://127.0.0.1:8080/');await go(page,'workbench');await page.locator('[data-experiment-mode="free"]').click();await page.locator('[data-lab-project]').selectOption('breadboard-project');await page.locator('[data-breadboard-root]').waitFor();
+ const pane=async name=>{if(width<700)await page.locator('[data-lab-pane="'+name+'"]').tap();};
+ const section=async name=>{if(width<700)await page.locator('[data-board-section="'+name+'"]').click();};
+ const hole=async name=>{await section(name.startsWith('LP')||name.startsWith('LN')||name.startsWith('RP')||name.startsWith('RN')?'rails':name[0]<'F'?'left':'right');const node=page.locator('[data-breadboard-hole="'+name+'"]');if(width<700)await node.tap();else await node.click();};
+ await pane('meter');assert.match(await page.locator('[data-meter-scene]').innerText(),/2.500 V/);await pane('circuit');
+ assert.ok((await page.locator('[data-breadboard-hole="A1"]').boundingBox()).width>=44);
+ await page.locator('[data-component-value="R2"]').fill('2000');await page.locator('[data-component-value="R2"]').press('Tab');await pane('meter');assert.match(await page.locator('[data-meter-scene]').innerText(),/3.333 V/);await pane('circuit');
+ await page.locator('[data-board-tool]').selectOption('move');await page.locator('[data-board-move-id]').selectOption('R2');await hole('H1');await hole('H3');await page.locator('[data-board-apply]').click();
+ await page.locator('[data-board-undo]').click();await pane('meter');assert.match(await page.locator('[data-meter-scene]').innerText(),/3.333 V/);await pane('circuit');await page.locator('[data-board-redo]').click();await page.locator('[data-board-undo]').click();
+ await page.locator('[data-board-tool]').selectOption('resistor');await page.locator('[data-board-new-value]').fill('2200');await hole('A4');await hole('A5');await page.locator('[data-board-apply]').click();assert.equal(await page.locator('[data-board-remove-component]').count(),4);
+ const added=await page.locator('[data-board-remove-component]').last().getAttribute('data-board-remove-component');await page.locator('[data-board-remove-component="'+added+'"]').click();assert.equal(await page.locator('[data-board-remove-component]').count(),3);await page.locator('[data-board-undo]').click();assert.equal(await page.locator('[data-board-remove-component]').count(),4);
+ await page.locator('[data-board-tool]').selectOption('wire');await hole('LP3');await hole('LN3');await page.locator('[data-board-apply]').click();await pane('meter');assert.match(await page.locator('[data-meter-scene]').innerText(),/shorted/);await pane('circuit');await page.locator('[data-board-undo]').click();
+ await page.locator('[data-board-tool]').selectOption('red');await hole('LP4');await pane('meter');assert.match(await page.locator('[data-meter-scene]').innerText(),/5.000 V/);await pane('circuit');
+ await page.locator('[data-board-tool]').selectOption('reroute');await page.locator('[data-board-reroute-id]').selectOption('W1');await hole('LP2');await hole('C1');await page.locator('[data-board-apply]').click();
+ await pane('project');await page.locator('[data-project-notes]').fill('Breadboard notes');await page.locator('[data-snapshot-name]').fill('My board');await page.locator('[data-save-snapshot]').click();await page.locator('[data-restore-snapshot]').waitFor();
+ await pane('circuit');await page.locator('[data-board-blank]').click();assert.equal(await page.locator('[data-board-remove-component]').count(),0);await pane('project');await page.locator('[data-restore-snapshot]').click();await pane('circuit');assert.equal(await page.locator('[data-board-remove-component]').count(),4);
+ await go(page,'account');await go(page,'workbench');assert.equal(await page.locator('[data-lab-project]').inputValue(),'breadboard-project');await pane('project');assert.equal(await page.locator('[data-project-notes]').inputValue(),'Breadboard notes');
+ await page.reload();await go(page,'workbench');await pane('circuit');assert.equal(await page.locator('[data-board-remove-component]').count(),4);
+ assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+2),'Breadboard overflows at '+width);assert.deepEqual(errors,[]);assert.deepEqual(external,[]);
+ await page.screenshot({path:'test-artifacts/editable-breadboard-'+width+'.png',fullPage:true});await page.close();
+}console.log('PASS: shared breadboard connectivity, mobile tap placement/wiring, keyboard/native controls, move/remove/reroute, values, short diagnostics, probes, undo/redo, independent saving, snapshots and reload.');}finally{await browser.close();}

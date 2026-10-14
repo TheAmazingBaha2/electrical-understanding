@@ -1,10 +1,12 @@
 // Experiment content is separate from lesson progress and device layout. No cloud backend.
 import {validateCircuit,dividerCircuit} from './circuit-model.js';
 import {assertSerializable} from './data-contract.js';
+import {compileBreadboard} from './breadboard-model.js';
 import {widgetFor} from './widget-registry.js';
 export function validateProject(p){
  assertSerializable(p);if(p?.schemaVersion!==1||typeof p.id!=='string'||!p.id||!p.metadata||typeof p.metadata.title!=='string')throw Error('Unsupported or incomplete project; original input remains unchanged');
  validateCircuit(p.circuit);
+ if(p.experimentState?.breadboard){const b=p.experimentState.breadboard;if(b.schemaVersion!==1||!Array.isArray(b.undo)||!Array.isArray(b.redo))throw Error('Unsupported breadboard history');const c=compileBreadboard(b.state);for(const k of ['groundNode','nodes','externalTerminals','components','connections','instruments','state'])if(JSON.stringify(c[k])!==JSON.stringify(p.circuit[k]))throw Error('Breadboard state and circuit disagree; original input preserved');}
  for(const key of ['componentInventory','widgetInstances','measurementResults','snapshots','lessonReferences'])if(!Array.isArray(p[key]))throw Error('Missing project '+key);
  if(!p.instrumentSettings||!p.experimentState||typeof p.notes!=='string')throw Error('Incomplete experiment');
  for(const w of p.widgetInstances)if(!widgetFor(w.widgetId,w.version)||typeof w.instanceId!=='string')throw Error('Unknown project widget/version');

@@ -111,3 +111,6 @@ export function drawLabGraphic(el,kind){
 
 // Reuse the existing visual frame for project circuit scenes without scenario calculations.
 export const circuitSvgFrame = (inner,label,viewBox) => base(inner,label,viewBox);
+
+// Decorative hole reuses the existing breadboard hole styling; native buttons supply touch/keyboard interaction.
+export const breadboardHoleArtwork=()=>'<svg viewBox="0 0 40 24" aria-hidden="true" focusable="false"><circle class="lab-hole" cx="20" cy="12" r="7"/></svg>';

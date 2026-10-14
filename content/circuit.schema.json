@@ -180,6 +180,24 @@
         "powered"
       ],
       "additionalProperties": true
+    },
+    "externalTerminals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "nodeId"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "nodeId": {
+            "type": "string"
+          }
+        }
+      }
     }
   },
   "required": [

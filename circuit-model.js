@@ -10,7 +10,9 @@ export function validateCircuit(c){
  if(!Array.isArray(c.nodes)||!Array.isArray(c.components)||!Array.isArray(c.connections)||!Array.isArray(c.instruments))throw Error('Incomplete circuit');
  if(c.nodes.length>64||c.components.length>128||c.connections.length>256)throw Error('Circuit exceeds bounded solver capacity');
  unique(c.nodes.map(n=>n.id),'nodes');unique(c.components.map(n=>n.id),'components');unique(c.connections.map(n=>n.id),'connections');unique(c.instruments.map(n=>n.id),'instruments');
- const nodes=new Set(c.nodes.map(n=>n.id)),terminals=new Map();if(!nodes.has(c.groundNode))throw Error('Missing ground reference');
+ const nodes=new Set(c.nodes.map(n=>n.id)),terminals=new Map();
+ for(const t of c.externalTerminals||[]){if(!identifier(t.id)||terminals.has(t.id)||!nodes.has(t.nodeId))throw Error('Invalid external terminal');terminals.set(t.id,t.nodeId);}
+ if(!nodes.has(c.groundNode))throw Error('Missing ground reference');
  for(const part of c.components){
   if(!['resistor','dc-source'].includes(part.type))throw Error('Unsupported component: '+part.type);
   if(!Array.isArray(part.terminals)||part.terminals.length!==2)throw Error('Two terminals required');
@@ -36,7 +38,7 @@ function linearSolve(matrix,rhs){
 export function solveDC(c){
  validateCircuit(c);const parent=new Map(c.nodes.map(n=>[n.id,n.id]));
  const root=id=>{while(parent.get(id)!==id)id=parent.get(id);return id;};
- const terminals=new Map(c.components.flatMap(p=>p.terminals.map(t=>[t.id,t.nodeId])));
+ const terminals=new Map([...(c.externalTerminals||[]).map(t=>[t.id,t.nodeId]),...c.components.flatMap(p=>p.terminals.map(t=>[t.id,t.nodeId]))]);
  for(const wire of c.connections)if(wire.closed)parent.set(root(terminals.get(wire.from)),root(terminals.get(wire.to)));
  const ground=root(c.groundNode),parts=c.components.filter(p=>!p.state.open&&(c.state.powered||p.type!=='dc-source')).map(p=>({...p,a:root(p.terminals[0].nodeId),b:root(p.terminals[1].nodeId)}));
  const adjacent=new Map(c.nodes.map(n=>[root(n.id),new Set()]));
