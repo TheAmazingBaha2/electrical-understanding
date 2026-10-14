@@ -32,9 +32,13 @@ export interface IngestionProvider {
  validate(batch:Entity,proposals:Entity[]):{valid:boolean; issues:string[]};
 }
 export interface PrivateHostStorage {
+ readonly ownerId:string;
  loadApprovedContent():Promise<ContentRepository>;
  // Mutable private events/projects require an atomic revision-aware transaction.
  readPrivateDocument(namespace:string):Promise<{revision:string|null; value:Json|null}>;
  compareAndSwap(namespace:string,expectedRevision:string|null,value:Json):Promise<{saved:boolean; revision:string; conflicts:Json[]}>;
  exportRecovery(namespace:string):Promise<Json>;
+ // Import retains both heads and every variant. It does not choose a conflict winner.
+ importRecovery(namespace:string,recovery:Json):Promise<{heads:string[];conflicted:boolean}>;
+ restoreRevision(namespace:string,revision:string,expectedRevision:string|null):Promise<{saved:boolean;revision:string;conflicts:Json[]}>;
 }

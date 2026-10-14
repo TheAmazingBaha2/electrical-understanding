@@ -73,6 +73,8 @@ jobs:
         run: npm install --no-save playwright@1.55.1 electron@44.7.2
       - name: Build isolated public assets
         run: npm run build
+      - name: Verify private file persistence on Windows
+        run: node --test tests/modular-storage.test.mjs tests/modular-learning.test.mjs
       - name: Exercise Windows Electron desktop UI
         run: node tests/electron-windows.mjs
       - uses: actions/upload-artifact@v4
