@@ -29,7 +29,10 @@ export function attachElectronicsWorkspace(root,storage=localStorage){
  const makeProject=()=>projectId==='breadboard-project'?newBreadboardProject():newProject(projectId);
  const store=new ProjectStore(storage);try{if(store.readDocument(projectId)?.deleted){projectId=store.list().find(p=>!p.unreadable)?.id||'P-'+crypto.randomUUID();}}catch{}
  let boardUI={tool:'wire',selection:[],section:'left'},project,revision=0,blocked=false,timer,saveChain=Promise.resolve(),pendingDelete=null,pendingProjectDelete=null;
+ let transitionDone=Promise.resolve(),finishTransition=null;
  const at=selector=>scope.querySelector(selector),status=message=>{at('[data-project-status]').textContent=message;};
+ function beginTransition(){if(finishTransition)throw Error('A project operation is already in progress');scope.inert=true;scope.setAttribute('aria-busy','true');transitionDone=new Promise(resolve=>{finishTransition=resolve;});status('Saving and updating projects…');}
+ function endTransition(){scope.inert=false;scope.removeAttribute('aria-busy');const finish=finishTransition;finishTransition=null;finish?.();}
  try{const saved=store.read(projectId);project=saved?.project||makeProject();revision=saved?.revision||0;if(saved?.conflicts.length){blocked=true;status('Saved copies disagree. Export saved copies for review; autosave is paused.');}}catch(error){project=makeProject();blocked=true;status(error.message+' Autosave is paused; original storage is preserved.');}
  project.experimentState.guidance=guidanceState(dividerActivity,project.experimentState.guidance||{mode:revision?'free':'guided'});
  function currentGuide(){return project.experimentState.guidance;}
@@ -52,8 +55,12 @@ export function attachElectronicsWorkspace(root,storage=localStorage){
  function manager(){at('[data-project-list]').innerHTML=renderProjectManager(store.list({includeDeleted:at('[data-project-show-recovery]').checked}),{search:at('[data-project-search]').value,pendingDelete:pendingProjectDelete});}
  function activateDocument(doc){project=doc.project;projectId=project.id;revision=doc.revision;blocked=Boolean(doc.conflicts.length);project.experimentState.guidance=guidanceState(dividerActivity,project.experimentState.guidance||{mode:'free'});boardUI={tool:'wire',selection:[],section:'left'};storage.setItem('eu_lab_active_project_v1',projectId);controls();}
  function download(name,value){const url=URL.createObjectURL(new Blob([JSON.stringify(value,null,2)],{type:'application/json'}));const link=document.createElement('a');link.href=url;link.download=name;link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
- async function persist(){if(blocked)return false;try{project.metadata.updatedAt=new Date().toISOString();const saved=await store.save(project,revision);revision=saved.revision;if(saved.conflict){blocked=true;status('Another saved copy changed. Both versions are preserved; review saved copies in Project.');conflicts();}else{status('Experiment saved on this device · revision '+revision);return true;}}catch(e){status('Not saved: '+e.message);return false;}}
- function save(){saveChain=saveChain.then(persist);return saveChain;}
+ async function persist(){if(blocked)return false;try{project.metadata.updatedAt=new Date().toISOString();const savingId=project.id,saved=await store.save(project,revision);
+  // A save result belongs to its captured identity. A concurrently completed
+  // project switch must not inherit another document's revision/conflict flag.
+  if(project.id!==savingId)return !saved.conflict;
+  revision=saved.revision;if(saved.conflict){blocked=true;status('Another saved copy changed. Both versions are preserved; review saved copies in Project.');conflicts();}else{status('Experiment saved on this device · revision '+revision);return true;}}catch(e){status('Not saved: '+e.message);return false;}}
+ function save(){clearTimeout(timer);timer=null;saveChain=saveChain.then(persist);return saveChain;}
  function autosave(){clearTimeout(timer);timer=setTimeout(save,250);}
  function scene(result,hidden){
   at('[data-circuit-scene]').innerHTML=renderCircuitView(project.circuit,{hidden,instrumentSettings:project.instrumentSettings[project.circuit.instruments[0]?.id]});
@@ -100,7 +107,8 @@ export function attachElectronicsWorkspace(root,storage=localStorage){
   }).join(''):'<p class="muted sm">No snapshots yet. Save a named snapshot before changing the circuit.</p>';
  }
  scope.addEventListener('change',async event=>{
-  const input=event.target;try{
+  if(finishTransition)return;const input=event.target;let transitioning=false;try{
+   if(input.matches('[data-lab-project]')){beginTransition();transitioning=true;}
    if(input.matches('[data-project-show-recovery]')){manager();return;}
    if(input.dataset.scopeSetting||input.dataset.scopeSignal){
     const previous=structuredClone(project.instrumentSettings.SCOPE1),settings=project.instrumentSettings.SCOPE1;
@@ -143,12 +151,13 @@ export function attachElectronicsWorkspace(root,storage=localStorage){
    else return;
    for(const part of project.circuit.components){const badge=scope.querySelector('[data-component-open="'+part.id+'"]')?.closest('label').querySelector('.connection-badge');if(badge)badge.textContent=part.state.open?'Disconnected':'Connected';}
    readings();autosave();
-  }catch(e){status(e.message);}
+  }catch(e){status(e.message);}finally{if(transitioning)endTransition();}
  });
  at('[data-project-search]').addEventListener('input',manager);
  for(const key of ['title','description'])at('[data-project-'+key+']').addEventListener('input',event=>{const value=event.target.value;if(key==='title'&&!value.trim()){status('Project title cannot be blank.');return;}project.metadata[key]=value;autosave();});
  at('[data-project-notes]').addEventListener('input',event=>{project.notes=event.target.value;autosave();});
- scope.addEventListener('click',async event=>{const button=event.target.closest('button');if(!button)return;try{
+ scope.addEventListener('click',async event=>{const button=event.target.closest('button');if(!button||finishTransition)return;let transitioning=false;try{
+  if(button.matches('[data-project-create],[data-project-open],[data-project-duplicate],[data-project-confirm-delete]')){beginTransition();transitioning=true;}
   if(button.hasAttribute('data-record-measurement')){if(!project.measurementResults.length)throw Error('No supported measurement is available to record');project.experimentState.recordedMeasurements=[...(project.experimentState.recordedMeasurements||[]),{id:crypto.randomUUID(),recordedAt:new Date().toISOString(),circuit:structuredClone(project.circuit),instrumentSettings:structuredClone(project.instrumentSettings),measurements:structuredClone(project.measurementResults)}];recordings();save();return;}
   if(button.hasAttribute('data-project-create')){
    const title=at('[data-project-new-name]').value.trim();if(!title)throw Error('Enter a new project name');if(!await save())throw Error('Save or resolve this experiment before creating another');
@@ -205,8 +214,9 @@ export function attachElectronicsWorkspace(root,storage=localStorage){
   else if(button.dataset.restoreSnapshot){if(blocked)throw Error('Resolve saved copy conflicts first');project=restoreSnapshot(project,button.dataset.restoreSnapshot);project.experimentState.guidance=guidanceState(dividerActivity,project.experimentState.guidance||{mode:'free'});controls();save();}
   else if(button.hasAttribute('data-project-export'))download('electronics-project.json',project);
   else if(button.hasAttribute('data-export-project-recovery'))download('electronics-project-saved-copies.json',{raw:store.export(projectId),unsavedProject:project});
- }catch(e){status(e.message);}});
- at('[data-project-import]').addEventListener('change',async event=>{try{
+ }catch(e){status(e.message);}finally{if(transitioning)endTransition();}});
+ at('[data-project-import]').addEventListener('change',async event=>{if(finishTransition)return;let transitioning=false;try{
+  beginTransition();transitioning=true;
   const file=event.target.files[0];if(!file)return;if(file.size>2e6)throw Error('Project import exceeds 2 MB local limit');const imported=JSON.parse(await file.text());validateProject(imported);
   if(blocked)throw Error('Resolve/export saved conflicts before importing');if(!await save())throw Error('Save or export the current experiment before importing');
   if(at('[data-project-import-mode]').value==='new'){
@@ -216,11 +226,11 @@ export function attachElectronicsWorkspace(root,storage=localStorage){
    if(!window.confirm('Replace the current experiment with this supplied project? Export your current copy first if you need an independent backup.'))return;
    project=imported;project.experimentState.guidance=guidanceState(dividerActivity,project.experimentState.guidance||{mode:'free'});controls();save();
   }
- }catch(e){status('Import rejected: '+e.message);}finally{event.target.value='';}});
+ }catch(e){status('Import rejected: '+e.message);}finally{event.target.value='';if(transitioning)endTransition();}});
  try{const layout=storage.getItem('eu_workspace_layout_v1:'+(innerWidth<700?'mobile':'desktop'));if(['circuit','meter','scope','project'].includes(layout))at('.lab-workspace-grid').dataset.focusedPane=layout;}catch{}
  controls();
  // app.render invokes cleanup before replacing this DOM. The queued locked save
  // must still finish after detachment; it belongs to this workspace's project.
  window.addEventListener('pagehide',save);
- return async()=>{clearTimeout(timer);window.removeEventListener('pagehide',save);await save();};
+ return async()=>{clearTimeout(timer);window.removeEventListener('pagehide',save);await transitionDone;await save();};
 }
