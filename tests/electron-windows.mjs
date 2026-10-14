@@ -8,4 +8,4 @@ try{
  assert.equal(await page.evaluate(()=>typeof window.require),'undefined');assert.equal(await page.evaluate(()=>Boolean(navigator.locks)),true);
  const native=await app.evaluate(({BrowserWindow,app})=>{const window=BrowserWindow.getAllWindows()[0];window.setBounds({width:1500,height:1000});return {bounds:window.getBounds(),versions:process.versions,metrics:app.getAppMetrics()};});assert.equal(native.bounds.width,1500);
  await desktopAcceptance(page,{native:true});await mkdir('test-artifacts',{recursive:true});await writeFile('test-artifacts/electron-evaluation.json',JSON.stringify({platform:process.platform,launchMs,...native,prototype:true},null,2));
-}finally{await app.close();}
+}catch(error){await mkdir('test-artifacts',{recursive:true});const p=await app.firstWindow();await p.screenshot({path:'test-artifacts/electron-failure.jpg',type:'jpeg',quality:60});throw error;}finally{await app.close();}

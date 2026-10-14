@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict';import {resolve,join} from 'node:path';import {homedir} from 'node:os';import {spawn} from 'node:child_process';import {mkdir,writeFile,stat} from 'node:fs/promises';
+import assert from 'node:assert/strict';import {resolve,join} from 'node:path';import {homedir} from 'node:os';import {spawn} from 'node:child_process';import {mkdir,writeFile,stat,readFile} from 'node:fs/promises';
 import {Builder,By,Capabilities,until} from 'selenium-webdriver';
 assert.equal(process.platform,'win32');await mkdir('test-artifacts',{recursive:true});
 const executable=resolve('native/tauri/src-tauri/target/debug/eu-tauri-evaluation.exe'),processDriver=spawn(join(homedir(),'.cargo/bin/tauri-driver.exe'),[],{stdio:'inherit'});let driver;
@@ -16,5 +16,5 @@ try{
  await driver.wait(async()=>/5\.000 V/.test(await driver.findElement(By.css('[data-lab-live-reading]')).getText()),10000);
  await click('[data-clear-lab]');await click('[data-confirm-clear-lab]');assert.equal((await driver.findElements(By.css('[data-canvas-part]'))).length,0);await click('[data-graphic-command="canvas-undo"]');assert.equal((await driver.findElements(By.css('[data-canvas-part]'))).length,3);
  await writeFile('test-artifacts/tauri-windows-desktop.png',Buffer.from(await driver.takeScreenshot(),'base64'));await writeFile('test-artifacts/tauri-evaluation.json',JSON.stringify({platform:process.platform,launchMs,debugExecutableBytes:(await stat(executable)).size,capabilities:await driver.getCapabilities().then(c=>Object.fromEntries(c)),prototype:true},null,2));
- console.log('PASS: real Windows Tauri/WebView2 launch, secure local locks, docking, native pointer probe snap, clear and undo.');
+ console.log('NATIVE_QA_LOCK:'+(await readFile(resolve('native/tauri/src-tauri/Cargo.lock'))).toString('base64'));console.log('PASS: real Windows Tauri/WebView2 launch, secure local locks, docking, native pointer probe snap, clear and undo.');
 }finally{if(driver)await driver.quit();processDriver.kill();}

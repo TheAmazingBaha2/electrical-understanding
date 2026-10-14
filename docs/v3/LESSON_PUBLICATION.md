@@ -15,3 +15,7 @@ Preserved approvals are a separate compatibility archive. `node scripts/content/
 ## Widget reuse and refinement
 
 Search `searchWidgets`/`widgetFor` first; check capabilities, version, config, limits and compatibility; configure or propose a reusable enhancement before building replacements. Registry lookup is local and deterministic. Existing lessons continue through their original adapters. `content/widget-improvements.json` is the developer-managed queue for owner suggestions, bugs, capabilities, priority, proposed changes, affected lessons/projects, compatibility and test requirements. Critical safety/correctness comes first; batch ordinary work. Any behavior/grading/compatibility change requires owner approval and a version decision, with old graded results retained.
+
+## Desktop and mobile modules
+
+Schema 1 packages and historical practical/quiz IDs remain unchanged. New schema 2 packages use `content/lesson-package-v2.schema.json`; read [DESKTOP_MOBILE_ARCHITECTURE.md](DESKTOP_MOBILE_ARCHITECTURE.md) for independently versioned `labs.desktop` and `labs.mobile`, deterministic assessments and the owner-approved `either` completion policy. Both module activity IDs must be distinct from common quiz and other activity IDs. The same developer publication command validates both versions; no website authoring or automatic ChatGPT access is added. Preview both modules with the device-local Lab presentation override before owner approval. Do not retrofit approved lessons or reinterpret historical workshop scores.

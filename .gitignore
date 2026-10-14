@@ -9,3 +9,4 @@ supabase/.temp/
 test-artifacts/
 native/tauri/src-tauri/target/
 native/tauri/src-tauri/gen/
+native/tauri/src-tauri/icons/
