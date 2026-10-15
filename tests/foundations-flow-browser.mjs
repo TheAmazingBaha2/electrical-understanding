@@ -16,7 +16,8 @@ try{for(const width of [320,390,1440]){
   if(k===3){assert.match(await p.locator('[data-flow-observation]').innerText(),/2 A/);assert.equal(await p.locator('[data-study-action="resistance:6"]').isDisabled(),true);}
   await p.screenshot({path:'test-artifacts/flow-'+k+'-'+width+'.jpg',type:'jpeg',quality:65,fullPage:true});
   await p.reload({waitUntil:'networkidle'});await open(p,l);assert.match(await p.locator('.study-widget').innerText(),/Synthetic flow explanation/);assert.equal(await p.locator('[data-study-predict]').count(),0);assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
-  for(const b of await p.locator('.study-widget button').all()){const box=await b.boundingBox();if(box)assert.ok(box.height>=44&&box.x>=0&&box.x+box.width<=width+1);}
+  async function checkTargets(){let visible=0;for(const b of await p.locator('.study-widget button').all()){if(await b.evaluate(el=>Boolean(el.closest('details:not([open])')))||!await b.isVisible())continue;const box=await b.boundingBox();assert.ok(box&&box.height>=44&&box.x>=0&&box.x+box.width<=width+1,JSON.stringify({width,k,label:await b.innerText(),box}));visible++;}assert.ok(visible>0);assert.equal(await p.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);}
+  await checkTargets();for(const summary of await p.locator('.study-explore > summary').all()){await summary.click();await checkTargets();}
  }
  const recap=bank.lessons.at(-1);await open(p,recap);await click(p,'[data-lesson-tab="learn"]');assert.match(await p.locator('#main').innerText(),/no new enrollment/);await click(p,'[data-lesson-tab="overview"]');await click(p,'[data-study-recap-start]');assert.match(await p.locator('#main').innerText(),/check 1 \/ 10/);
  await p.locator('input[name="study-answer"][value="no"]').check();await ready(p);await click(p,'[data-study-submit]');await click(p,'[data-study-quiz="4"]');assert.match(await p.locator('#main').innerText(),/Block 2/);

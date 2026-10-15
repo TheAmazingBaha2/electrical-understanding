@@ -1,3 +1,7 @@
+# Disclosure-aware browser acceptance
+
+Source6a320842c56cfd362a74e74178fd92aadecb3cb2 passed344 deterministic tests and both Windows jobs. Its browser run38789898767 passed all three additions widths but the flow suite treated controls inside closed optional disclosures as visible touch targets. This commit tests visible controls, opens each optional disclosure, then checks touch size and overflow again, with target geometry in any failure. Electrical/source behavior is unchanged. Verify this exact commit full CI before final delivery. Cloudflare check for6a failed with no exposed error text; read-back did not establish deployment. Cloudflare logs/retry are unavailable without a configured connection.
+
 # Visual correctness refinement
 
 Screenshot review of the c9 intermediate caught a false written V/R equality for an open initial circuit. The shared solver was correct; presentation now distinguishes source-terminal voltage from load voltage and only substitutes V/R when the complete path actually applies that voltage across R1. Optional V/R/device-chain controls are disclosed to reduce phone scrolling. A focused open-path rendering regression is added;344 local tests are expected. The optional recap has its own selected-check gauge and is excluded from aggregate core denominators/earned completion, as required by R2. The b57 intermediate CI is still pending and must not be treated as final-source verification. Current exact source and private receipt names must be read from actual Git/updated private checkpoint.
