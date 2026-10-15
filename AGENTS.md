@@ -1,5 +1,7 @@
 # Electrical Understanding — durable product contract
 
+**Latest owner direction (October 15):** future source-inspired content belongs in **Lessons → topic series → lesson**, independently of books. Retain original inspiration and append further books/editions/pages/citations to that same stable lesson. The earlier source/book hierarchy below is historical for this area; retain metadata, aliases, exam/manual routes and all old grades. Read docs/v3/LESSONS_AND_RECAP_CHECKPOINT.md for the current Prompt 3/4 implementation.
+
 Before changing this project, read `docs/v2/TEACHING_AND_DESIGN_CONTRACT.md` and the latest `docs/qa` checkpoint. Treat design requests as changes to presentation unless the user also requests a behavior or data change.
 
 - Official V2 on main uses hkwmtjhgrskidaizamwy; never migrate, deploy experimental Edge code or write test records there. V3 work stays on draft/v2-dmm-companion at the existing eu-v2-staging URL. Its cloud/paid AI is disabled until a separate development backend is explicitly configured. Preserve V1 backup/v1-2026-10-13 and the untouched V1 database.

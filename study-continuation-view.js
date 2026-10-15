@@ -1,3 +1,5 @@
+import {isFlowWidget} from './foundation-flow-model.js';
+import {renderFlowScene,renderEnergyScene} from './study-flow-view.js';
 import {isMaterialWidget} from './foundation-material-model.js';
 import {renderMaterialScene} from './study-material-view.js';
 import {moleculeCase,motionFrame,continuationObservation} from './foundation-continuation-model.js';
@@ -6,7 +8,9 @@ export function renderContinuationWidget(bank,item,s,{compact=false,attempts=[],
  const revealed=s.phase==='revealed',committed=s.phase!=='prediction',last=attempts.find(a=>a.id===s.attemptId),w=s.working;
  const button=(action,label,disabled=false)=>'<button class="outline" data-study-action="'+e(action)+'" '+(disabled?'disabled':'')+'>'+e(label)+'</button>';
  let visual='',actions='',observation='';
- if(isMaterialWidget(item)){({visual,actions,observation}=renderMaterialScene(item,s,{compact,e,button}));}
+ if(isFlowWidget(item)){({visual,actions,observation}=renderFlowScene(item,s,{compact,e,button}));}
+ else if(item.widgetKey==='energy-map'){({visual,actions,observation}=renderEnergyScene(item,s,{compact,e,button}));}
+ else if(isMaterialWidget(item)){({visual,actions,observation}=renderMaterialScene(item,s,{compact,e,button}));}
  else if(item.widgetKey==='material-classifier') {
   const c=moleculeCase(w.formula),positions=c.atoms.map((a,i)=>({id:a.id,x:70+i*95,y:i===1&&c.atoms.length===3?72:110}));
   visual='<svg viewBox="0 0 340 190" class="study-concept-scene" role="img" aria-label="Original formula-based model '+e(c.formula)+'; lines explicitly join named atoms; not a reconstruction of a textbook figure">'+c.bonds.map(b=>{const a=positions.find(p=>p.id===b.from),z=positions.find(p=>p.id===b.to);return '<path d="M'+a.x+' '+a.y+'L'+z.x+' '+z.y+'" stroke="currentColor" stroke-width="5"/>';}).join('')+c.atoms.map((a,i)=>'<g><circle cx="'+positions[i].x+'" cy="'+positions[i].y+'" r="28" fill="'+(a.element==='O'?'#273e51':'#4c4664')+'" stroke="'+(w.inspectedAtomIds.includes(a.id)?'#f6d968':'#8eecff')+'" stroke-width="3"/><text x="'+positions[i].x+'" y="'+(positions[i].y+6)+'" text-anchor="middle" fill="white">'+a.element+'</text></g>').join('')+'</svg><p>Authored formula: <b>'+e(c.formula.replace('2','₂').replace('3','₃'))+'</b> · pure sample · '+c.atoms.length+' labeled atom positions.</p>';

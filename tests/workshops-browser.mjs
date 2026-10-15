@@ -13,17 +13,17 @@ try{
   page.on('pageerror',e=>errors.push(e.message));page.on('request',r=>{if(/api\.openai|api\.anthropic|functions\/v1/.test(r.url()))providerRequests.push(r.url());});
   await page.route('https://esm.sh/**',route=>route.abort());
   await page.addInitScript(()=>{if(!localStorage.getItem('eu_demo_v1'))localStorage.setItem('eu_demo_v1',JSON.stringify({'BDMM-01':{answers:{b101:{value:'0',correct:true,reviewDue:777,extra:'retain'}},complete:false}}));});
-  await page.goto('http://127.0.0.1:8080/');await page.locator('[data-dashboard-source="geier"]').waitFor();
-  assert.equal(await page.locator('[data-dashboard-source="geier"] .dashboard-chapter').count(),2);
+  await page.goto('http://127.0.0.1:8080/');await page.locator('[data-dashboard-source="practical-electronics"]').waitFor();
+  assert.equal(await page.locator('[data-dashboard-source="practical-electronics"] .dashboard-chapter').count(),2);
   async function open(l){
-   await go(page,'textbooks');
-   const chapter=page.locator('[data-disclosure="contents:geier:'+l.curriculum.chapter_id+'"]');
+   await go(page,'lessons');
+   const chapter=page.locator('[data-disclosure="contents:practical-electronics:'+(l.curriculum.chapter_id==='6'?'measurement':'electronic-tools')+'"]');
    if(!(await chapter.getAttribute('open')!==null))await chapter.locator('summary').first().click();
    if(l.id==='GEIER-C2-W01')await chapter.locator('[data-content-lesson="'+l.id+'"]').screenshot({path:'test-artifacts/reference-card-'+width+'.png'});
    await chapter.locator('[data-goto="lesson"][data-lesson="'+l.id+'"]').click();await page.locator('.lesson-header').waitFor();
   }
-  await go(page,'textbooks');assert.equal(await page.locator('.content-chapter').count(),15);
-  assert.match(await page.locator('[data-disclosure="contents:geier:6"]').innerText(),/Working Your Weapons/);
+  await go(page,'lessons');assert.equal(await page.locator('.content-chapter').count(),2);
+  assert.match(await page.locator('[data-disclosure="contents:practical-electronics:measurement"]').innerText(),/Digital multimeter skills/);
   assert.equal(await page.locator('.chapter-lesson-copy .lesson-page-reference').count(),16);
   const referenceOrder=await page.locator('[data-content-lesson="GEIER-C2-W01"] .chapter-lesson-copy').evaluate(el=>{const nodes=[...el.children];return nodes.findIndex(n=>n.classList.contains('lesson-page-reference'))<nodes.findIndex(n=>n.tagName==='SMALL');});assert.equal(referenceOrder,true);
   for(const l of [...reviseDmmLessons(bookLessons),...geierWorkshops].filter(l=>l.workshop)){
@@ -58,7 +58,7 @@ try{
    }
    await page.locator('.lesson-tabs [data-lesson-tab="review"]').click();assert.match(await page.locator('.workshop-review').innerText(),/complete/);
    await page.locator('[data-workshop-jump="0"]').click();assert.equal(await page.locator('[data-workshop-activity]').getAttribute('data-workshop-activity'),l.activities[0].id);assert.match(await page.locator('[data-workshop-status]').innerText(),/completed/);
-   await page.locator('.lesson-tabs [data-lesson-tab="review"]').click();await page.locator('[data-goto="textbooks"][data-lesson="geier:'+l.curriculum.chapter_id+'"]').click();assert.equal(await page.locator('[data-disclosure="contents:geier:'+l.curriculum.chapter_id+'"]').getAttribute('open'),'');
+   await page.locator('.lesson-tabs [data-lesson-tab="review"]').click();await page.locator('[data-goto="lessons"][data-lesson="practical-electronics:'+(l.curriculum.chapter_id==='6'?'measurement':'electronic-tools')+'"]').click();assert.equal(await page.locator('[data-disclosure="contents:practical-electronics:'+(l.curriculum.chapter_id==='6'?'measurement':'electronic-tools')+'"]').getAttribute('open'),'');
   }
   // A reload preserves checkpoint decisions and restores the actual control state.
   await page.reload();await open(geierWorkshops[0]);await page.locator('.lesson-tabs [data-lesson-tab="interact"]').click();assert.equal(await page.locator('[data-workshop-field="device"]').inputValue(),'center');assert.match(await page.locator('[data-workshop-feedback]').innerText(),/Saved checkpoint/);
@@ -70,7 +70,7 @@ try{
   }
   await page.locator('.lesson-tabs [data-lesson-tab="review"]').click();assert.match(await page.locator('.lesson-summary').innerText(),/Lesson mastered/);await page.locator('[data-goto="lesson"][data-lesson="GEIER-C2-W02"]').click();assert.match(await page.locator('.lesson-header').innerText(),/Choose the tool/);
   const summary=geierWorkshops.find(l=>l.chapterSummary);await open(summary);assert.equal(await page.locator('.chapter-takeaways li').count(),10);await page.locator('.lesson-tabs [data-lesson-tab="quiz"]').click();assert.equal(await page.locator('.quiz-step').count(),12);
-  await go(page,'dashboard');const c2=page.locator('[data-disclosure="dashboard:geier:2"]');assert.match(await c2.innerText(),/1 \/ 11 lessons mastered/);await c2.locator('summary').first().click();assert.equal(await c2.locator('.chapter-lesson').count(),11);
+  await go(page,'dashboard');const c2=page.locator('[data-disclosure="dashboard:practical-electronics:electronic-tools"]');assert.match(await c2.innerText(),/1 \/ 11 lessons mastered/);await c2.locator('summary').first().click();assert.equal(await c2.locator('.chapter-lesson').count(),11);
   const old=await page.evaluate(key=>JSON.parse(localStorage.getItem(key)).progress['BDMM-01'].answers.b101,key);assert.deepEqual(old,{value:'0',correct:true,reviewDue:777,extra:'retain'});
   assert.equal(providerRequests.length,0);assert.deepEqual(errors,[]);await page.close();
  }

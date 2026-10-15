@@ -11,7 +11,7 @@ async function click(page,selector){await page.locator(selector).click();await r
 async function tab(page,id){await click(page,'[data-lesson-tab="'+id+'"]');}
 async function choose(page,selector){await page.locator(selector).check();await ready(page);}
 async function open(page,lesson){
- await go(page,'textbooks');const chapter=page.locator('[data-source="fixture"] details.content-chapter');
+ await go(page,'lessons');const chapter=page.locator('[data-source="electricity-foundations"] details.content-chapter');
  if(await chapter.getAttribute('open')===null)await chapter.locator('summary').click();
  await page.locator('[data-goto="lesson"][data-lesson="'+lesson.id+'"]').click();await page.locator('.study-module').waitFor();
 }

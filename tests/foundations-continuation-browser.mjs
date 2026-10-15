@@ -15,7 +15,7 @@ const history={...emptyStudyJournal(),events:[{id:'old-intro',type:'introduction
 const browser=await chromium.launch({headless:true,args:['--no-sandbox']});await mkdir('test-artifacts',{recursive:true});
 const ready=p=>p.waitForFunction(()=>!document.querySelector('#main').inert);
 async function click(p,s){await p.locator(s).click();await ready(p);}
-async function open(p,l){await go(p,'textbooks');const chapter=p.locator('[data-source="fixture"] details.content-chapter');if(await chapter.getAttribute('open')===null)await chapter.locator('summary').click();await click(p,'[data-goto="lesson"][data-lesson="'+l.id+'"]');}
+async function open(p,l){await go(p,'lessons');const chapter=p.locator('[data-source="electricity-foundations"] details.content-chapter');if(await chapter.getAttribute('open')===null)await chapter.locator('summary').click();await click(p,'[data-goto="lesson"][data-lesson="'+l.id+'"]');}
 const read=p=>p.evaluate(()=>JSON.parse(localStorage.getItem('eu_introduced_practice_v1:anonymous')));
 try {for(const width of [320,360,390,768,1280,1920]){
  const context=await browser.newContext({viewport:{width,height:1000},reducedMotion:'reduce',...(width<500?{isMobile:true,hasTouch:true}:{})}),page=await context.newPage(),errors=[],external=[];page.setDefaultTimeout(10000);page.on('pageerror',e=>errors.push(e.message));

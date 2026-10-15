@@ -27,7 +27,7 @@ export const eimBasicExperiments = [
 ];
 export const catalog = [
  {id:'ceta',title:'Exam Prep',subtracks:[{id:'guide',title:'Associate CET',status:'indexed',summary:'Chapter-by-chapter certification practice.',units:cetaGuideUnits}]},
- {id:'textbooks',title:'Textbook Companions',subtracks:[{id:'geier',title:'How to Diagnose and Fix Everything Electronic',status:'active',summary:'Troubleshooting book; full contents pending.',units:[{id:'6',title:'Digital Multimeter',page:97}]}]},
+ {id:'textbooks',title:'Lessons',subtracks:[{id:'geier',title:'Tools and troubleshooting',status:'active',summary:'Modular tool and measurement lessons with source references.',units:[{id:'6',title:'Digital Multimeter',page:97}]}]},
  {id:'labs',title:'Labs',subtracks:[
   {id:'basic',title:'EIM · Basic Electric Circuits',status:'active',units:eimBasicExperiments.map(([id,title,page,source])=>({id,title,page,source}))},
   {id:'analog',title:'EIM · Fundamental Analog Circuits and Semiconductors',status:'paused',units:[{id:'2.1',title:'Equipment and Tools',page:81}]},

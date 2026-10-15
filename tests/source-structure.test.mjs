@@ -28,11 +28,11 @@ test('future chapters and books update the same menus and dashboard without hard
  const c={...ctx,activeGeneratedLessons:[...lessons,next,book]};
  assert.equal(sourceIndex(c).find(s=>s.id==='new-book').chapters.length,2);
  assert.match(renderSourceSection('textbooks',c),/data-content-lesson="FUTURE-BOOK"/);
- const d=renderChapterDashboard(c);assert.equal((d.match(/class="dashboard-chapter"/g)||[]).length,3);assert.match(d,/data-dashboard-source="new-book"/);
+ const d=renderChapterDashboard(c);assert.equal((d.match(/class="dashboard-chapter"/g)||[]).length,3);assert.match(d,/data-dashboard-source="practical-electronics"/);
 });
 test('missing TOC data stays pending, textbook placeholders are limited to the troubleshooting book',()=>{
  const c={progress:{}};const books=renderSourceSection('textbooks',c),labs=renderSourceSection('labs',c);
- assert.equal((books.match(/data-source=/g)||[]).length,1);assert.doesNotMatch(books,/Teach Yourself|Principles and Applications|Cabling/);
+ assert.equal((books.match(/data-source=/g)||[]).length,0);assert.doesNotMatch(books,/Teach Yourself|Principles and Applications|Cabling/);
  assert.match(labs,/table of contents is supplied/);assert.equal((labs.match(/data-source=/g)||[]).length,4);
  assert.equal(sourcePlacement({source_track:'guide',title:'Chapter 4',source_book:'Associate CET'}, {kind:'math'}).section,'exam');
 });

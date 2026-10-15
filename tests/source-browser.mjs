@@ -35,7 +35,7 @@ try{
   assert.match(await page.locator('[data-dashboard-source="associate-cet"] .dashboard-chapter-progress [role="img"]').getAttribute('aria-label'),/1 correct, 0 needs review, 175 unanswered out of 176/);
   await page.locator('[data-dashboard-source="associate-cet"] .dashboard-chapter > summary').focus();await page.locator('[data-dashboard-source="associate-cet"] .dashboard-chapter > summary').press('Enter');assert.equal(await page.locator('[data-dashboard-source="associate-cet"] .dashboard-lesson-list').isVisible(),true);
   await go(page,'math');assert.equal(await page.locator('.chapter-lesson').count(),0);
-  await go(page,'textbooks');assert.equal(await page.locator('.source-book').count(),1);await page.locator('[data-disclosure="contents:geier:6"] > summary').click();assert.equal(await page.locator('[data-lesson="BDMM-01"]').count(),1);
+  await go(page,'lessons');assert.equal(await page.locator('.source-book').count(),1);await page.locator('[data-disclosure="contents:practical-electronics:measurement"] > summary').click();assert.equal(await page.locator('[data-lesson="BDMM-01"]').count(),1);
   await go(page,'labs');assert.equal(await page.locator('.source-book').count(),4);assert.equal(await page.locator('.content-chapter').count(),21);
   await go(page,'reviews');assert.match(await page.locator('#main').innerText(),/Review practice/);
   await go(page,'account');assert.match(await page.locator('#main').innerText(),/cross-device sync/);await page.locator('.account-maintenance > summary').click();assert.equal(await page.locator('[data-goto="scan-inbox"]').count(),0);

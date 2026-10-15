@@ -67,8 +67,8 @@ export function v2Page(name,c,subId){
  if(name==='math')return renderMathPractice(c);
  if(name==='subtrack'){
   if(subId==='core')return legacyView(c);
-  return renderSourceSection(['guide','exam'].includes(subId)?'ceta':['basic','analog','fpga','rp2040'].includes(subId)?'labs':'textbooks',c,subId==='guide'?'associate-cet:3':subId==='basic'?'basic:PreLab':subId==='geier'?'geier:6':subId);
+  return renderSourceSection(['guide','exam'].includes(subId)?'ceta':['basic','analog','fpga','rp2040'].includes(subId)?'labs':'lessons',c,subId==='guide'?'associate-cet:3':subId==='basic'?'basic:PreLab':subId==='geier'?'geier:6':subId);
  }
- if(['ceta','textbooks','labs'].includes(name))return renderSourceSection(name,c,subId);
+ if(['ceta','lessons','textbooks','labs'].includes(name))return renderSourceSection(name,c,subId);
  return v2Dashboard(c);
 }

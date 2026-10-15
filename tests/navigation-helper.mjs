@@ -1,4 +1,5 @@
 export async function go(page,view){
+ if(view==='textbooks')view='lessons';
  if(view==='workbench')await page.evaluate(()=>{if(!localStorage.getItem('eu_lab_platform_v1'))localStorage.setItem('eu_lab_platform_v1','legacy');});
  if(!page.__labDialogs){page.__labDialogs=true;page.on('dialog',dialog=>dialog.accept());}
  const menu=page.locator('#menu-toggle'),sidebar=page.locator('.sidebar');

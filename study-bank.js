@@ -1,3 +1,4 @@
+import {validateLessonReferences} from './lesson-catalog.js';
 import {assertSerializable} from './data-contract.js';
 import {particleState,energyTransition} from './foundation-model.js';
 import {isContinuationWidget,isLegacyClassifier,validateContinuation} from './foundation-continuation-model.js';
@@ -21,9 +22,9 @@ export function validateStudyBank(bank) {
   if(item.kind==='single_choice') {
    if(typeof item.stem!=='string'||item.options?.length!==4||new Set(item.options.map(o=>o.id)).size!==4||new Set(item.options.map(o=>o.text)).size!==4||item.options.filter(o=>o.id===item.correctOptionId).length!==1||item.options.some(o=>!o.text||!o.feedback))throw Error('Invalid single-choice item');
   } else if(item.kind==='widget_challenge') {
-   if(!['atom-identity','charge-balance','shell-energy','material-classifier','particle-motion','material-response','carrier-vacancy'].includes(item.widgetKey))throw Error('Unregistered study widget');
+   if(!['atom-identity','charge-balance','shell-energy','material-classifier','particle-motion','material-response','carrier-vacancy','charge-flow','simple-dc-scene','energy-map'].includes(item.widgetKey))throw Error('Unregistered study widget');
    if(isContinuationWidget(item))validateContinuation(item);
-   if(['atom-identity','charge-balance'].includes(item.widgetKey)){
+   if(['atom-identity','charge-balance'].includes(item.widgetKey)&&!isContinuationWidget(item)){
     particleState(item.config.initialCounts);if(!Array.isArray(item.config.allowedActions)||!item.config.allowedActions.length||item.config.allowedActions.some(a=>!/^(add|remove)-(proton|neutron|electron)$/.test(a)))throw Error('Invalid particle controls');
     if(item.grading.expectedCounts)particleState(item.grading.expectedCounts);
    }
@@ -36,14 +37,16 @@ export function validateStudyBank(bank) {
  for(const note of bank.annotations||[]){if(note.assessed!==false||!note.title||!note.text)throw Error('Clarifications must remain explicitly ungraded');refs(note.sourceIds,sources,'clarification source');}
  for(const lesson of bank.lessons) {
   if(lesson.annotationIds?.length)refs(lesson.annotationIds,annotations,'clarification');
-  refs(lesson.sourceIds,sources,'lesson source');refs(lesson.requiredIds,ids,'lesson check');
+  refs(lesson.sourceIds,sources,'lesson source');
+  if(lesson.kind==='recap'){if(lesson.newTeaching!==false||!lesson.coverageGroups||Object.values(lesson.coverageGroups).some(g=>!Array.isArray(g)||!g.length||g.some(c=>!concepts.has(c))))throw Error('Invalid recap coverage');continue;}
+  refs(lesson.requiredIds,ids,'lesson check');
   if(!ids.has(lesson.challengeId)||!lesson.steps?.length||lesson.objectives?.length>2||!lesson.recap||!lesson.confusion)throw Error('Incomplete lesson');
   for(const step of [...lesson.steps,...(lesson.preparation||[])]){refs(step.conceptIds,concepts,'step concept');refs(step.sourceIds,sources,'step source');if(!step.text||!step.title)throw Error('Empty teaching step');}
   if(lesson.requiredIds.some(id=>allStudyItems(bank).find(i=>i.id===id)?.lessonId!==lesson.id))throw Error('Lesson check belongs to another lesson');
  }
  for(const c of bank.concepts){const families=new Set(allStudyItems(bank).filter(i=>i.primaryConceptId===c.id).map(i=>i.variantFamilyId));if(families.size<2)throw Error('Each assessed concept needs two distinct practice variants: '+c.id);}
  if(/<\s*script|javascript:|sb_secret_|service_role/i.test(JSON.stringify(bank)))throw Error('Unsafe study content');
- return bank;
+ validateLessonReferences(bank);return bank;
 }
 export function presentedItem(item,seed) {
  // Option order is a display property, never variant identity or answer key.
@@ -61,7 +64,7 @@ export function answerStudyItem(item,answer,{caseId=null}={}) {
 export function studyLessonAssets(bank) {
  if(!bank)return [];
  validateStudyBank(bank);return bank.lessons.map(l=>({...l,studyModule:true,contentRevision:studyLessonRevision(bank,l),seriesId:l.seriesId||bank.id,seriesOrder:l.curriculum.order,module:l.seriesTitle||bank.title,curriculum:{...l.curriculum,...(bank.chapterTitle?{chapter_title:bank.chapterTitle}:{})},independent:true,subtrack:'private-study',sourcePages:l.sourcePages,
-  questions:l.requiredIds.map(id=>{const i=allStudyItems(bank).find(q=>q.id===id);return {id:i.id,prompt:i.stem,type:'choice'};})}));
+  questions:(l.requiredIds||[]).map(id=>{const i=allStudyItems(bank).find(q=>q.id===id);return {id:i.id,prompt:i.stem,type:'choice'};})}));
 }
 // Additive developer import. Same identity with different content is a reviewable
 // revision, never a last-write-wins replacement. Unknown base fields survive.
@@ -70,7 +73,7 @@ export function mergeStudyBanks(base,addition) {
  if(addition.schemaVersion!==1||addition.approved!==true)throw Error('Approved compatible addition required');
  const result=structuredClone(base);
  result.lessonRevisions={...(base.lessonRevisions||{}),...Object.fromEntries(base.lessons.map(l=>[l.id,studyLessonRevision(base,l)]))};
- for(const key of ['sources','concepts','lessons','questions','variants','challenges','bridges','sourceUploads','annotations']) {
+ for(const key of ['sources','concepts','lessons','questions','variants','challenges','bridges','sourceUploads','annotations','lessonReferences']) {
   if(addition[key]===undefined)continue;
   if(!Array.isArray(addition[key]))throw Error('Invalid content collection: '+key);
   const values=result[key]??=[];

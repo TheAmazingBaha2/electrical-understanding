@@ -63,6 +63,7 @@ export function repairReview(bank,events,session,attempt) {
 export function lessonCompletion(lesson,state,events) {
  const acknowledged=new Set(state?.acknowledged||[]),requiredSteps=[...(lesson.preparation||[]),...lesson.steps].filter(s=>!s.optional);
  const attempts=events.filter(e=>e.type==='attempt'&&e.sessionId===state?.id),checks=state?.requiredItems?.map(i=>i.id)||lesson.requiredIds;
+ if(lesson.kind==='recap')return {complete:!!state?.started&&checks.length>0&&checks.every(id=>attempts.some(a=>a.item.id===id)),stepsDone:0,stepsTotal:0,checksDone:checks.filter(id=>attempts.some(a=>a.item.id===id)).length,checksTotal:checks.length,activityAttempted:false};
  const a=state?.activity,activity=!!a?.comparisonAttempted&&(a.caseCount? a.caseAnswers.length>=a.caseCount&&a.caseAnswers.every(c=>attempts.some(e=>e.id===c.attemptId&&e.item.id===lesson.challengeId)):a.attemptedWorking?.actionCount>=a.minimumActions&&attempts.some(e=>e.id===a.attemptId&&e.item.id===lesson.challengeId));
  return {complete:requiredSteps.every(s=>acknowledged.has(s.id))&&activity&&checks.every(id=>attempts.some(a=>a.item.id===id)),stepsDone:requiredSteps.filter(s=>acknowledged.has(s.id)).length,stepsTotal:requiredSteps.length,checksDone:checks.filter(id=>attempts.some(a=>a.item.id===id)).length,checksTotal:checks.length,activityAttempted:!!activity};
 }

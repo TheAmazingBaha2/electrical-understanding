@@ -1,3 +1,7 @@
+# Active: Lessons catalog and completed Prompt 3/4 implementation
+
+Read [LESSONS_AND_RECAP_CHECKPOINT.md](LESSONS_AND_RECAP_CHECKPOINT.md) first. Topic-based Lessons supersedes the previous book-companion navigation. Actual new lesson banks remain private; a public null-bank build is never evidence of learner access.
+
 # Current assignment: Chapter continuation, prompts 1–4
 
 Read [FOUNDATIONS_B_CHECKPOINT.md](FOUNDATIONS_B_CHECKPOINT.md) first. Continue the owner's four sequential prompts; preserve A and the existing lab. Private post-commit receipts live beside the continuation bank. Do not assume later milestones are implemented from the shared eventual-series specification.

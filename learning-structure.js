@@ -1,10 +1,11 @@
+import {catalogSection,lessonCatalogPlacement} from './lesson-catalog.js';
 // Shared organization for content menus, dashboard and lesson return routes.
 // Placement changes presentation only; graded lesson/question IDs never change.
 import {cetaGuideUnits,eimBasicExperiments} from './course-catalog.js';
 import {geierChapters} from './geier-catalog.js';
 import {workshopActivityProgress} from './workshop-progress.js';
 export const studySections=[
- {id:'textbooks',section:'textbooks',title:'Textbook Companions',description:'Lessons alongside your book chapters.'},
+ {id:'lessons',section:'lessons',title:'Lessons',description:'Explore topics, experiments and references.'},
  {id:'labs',section:'labs',title:'Labs',description:'Practice alongside your lab manuals.'},
  {id:'ceta',section:'exam',title:'Exam Prep',description:'Chapter practice for certification exams.'},
  {id:'math',section:'math',title:'Math',description:'Refresh the mathematics behind electricity.'},
@@ -19,7 +20,7 @@ export const learningSources=[
  {id:'rp2040',section:'labs',title:'EIM · Introduction to Microcontroller with RP2040',book:'EIM Introduction to Microcontroller with RP2040',note:'Manual waiting. Table of contents has not been supplied.',chapters:[]}
 ];
 const clean=v=>String(v??'').trim();
-export const sectionView=section=>studySections.find(s=>s.section===section)?.id||'textbooks';
+export const sectionView=section=>studySections.find(s=>s.section===catalogSection(section))?.id||'lessons';
 export function manualSourceId(title){const s=clean(title).toLowerCase();return /rp2040/.test(s)?'rp2040':/fpga/.test(s)?'fpga':/analog.*(?:circuits|semiconductor)/.test(s)?'analog':/basic electric circuits/.test(s)?'basic':null;}
 const sourceKey=title=>'book-'+clean(title).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
 export function sourcePlacement(job,unit={},kind='unique'){
@@ -59,19 +60,19 @@ export function sourceIndex(c={}){
 }
 export function learningProgress(lessons,c={}){
  let correct=0,incorrect=0,total=0,mastered=0;
- for(const l of lessons){const state=c.progress?.[l.id]||{},answers=state.answers||{},practice=workshopActivityProgress(l,state);total+=l.questions.length+practice.total;correct+=practice.correct;incorrect+=practice.incorrect;for(const q of l.questions){if(answers[q.id]?.correct===true)correct++;else if(answers[q.id]?.correct===false)incorrect++;}if(c.hasPassed?.(l))mastered++;}
+ for(const l of lessons){const state=c.progress?.[l.id]||{},answers=state.answers||{};if(l.studyModule&&l.kind==='recap'){total+=state.checksTotal||0;correct+=Object.values(answers).filter(a=>a.correct===true).length;incorrect+=Object.values(answers).filter(a=>a.correct===false).length;if(c.hasPassed?.(l))mastered++;continue;}const practice=workshopActivityProgress(l,state);total+=l.questions.length+practice.total;correct+=practice.correct;incorrect+=practice.incorrect;for(const q of l.questions){if(answers[q.id]?.correct===true)correct++;else if(answers[q.id]?.correct===false)incorrect++;}if(c.hasPassed?.(l))mastered++;}
  return {correct,incorrect,total,unanswered:total-correct-incorrect,mastered,lessons:lessons.length,percent:total?Math.round(correct/total*100):0};
 }
-export const chapterLabel=ch=>/^\d/.test(ch.id)?'Chapter '+ch.id:ch.id==='unassigned'?'Chapter assignment pending':ch.id;
+export const chapterLabel=ch=>ch.label||(/^\d/.test(ch.id)?'Chapter '+ch.id:ch.id==='unassigned'?'Chapter assignment pending':ch.id);
 // References reflect supplied metadata, never a guessed book page based on the topic.
 export function lessonReferencePages(l){
  const known={'EIM-BEC-PRELAB':'1–12','EIM-BEC-DC02':'21–27','CETA-G03-01':'16 · table of contents only; chapter text not used'};
  const pages=l.sourcePages||l.referencePages||known[l.id]||(l.module||'').match(/\bpp?\.\s*(\d+(?:[–-]\d+)?)/)?.[1];
  if(pages)return String(pages).replace(/^\s*pp?\.?(?=\s|\d)\s*/i,'');
- if(l.generated||['exam','textbooks','labs'].includes(l.curriculum?.section)||l.subtrack==='geier')return 'Not recorded for this source';
+ if(l.generated||['exam','textbooks','lessons','labs'].includes(l.curriculum?.section)||l.subtrack==='geier')return 'Not recorded for this source';
  return 'Original practice · no book pages';
 }
-export const sourceReturn=l=>{const p=placementForLesson(l);return {view:sectionView(p.section),key:p.source_id+':'+p.chapter_id};};
+export const sourceReturn=l=>{const p=placementForLesson(l);if(catalogSection(p.section)==='lessons'){const c=lessonCatalogPlacement(l);return {view:'lessons',key:c.trackId+':'+c.groupId};}return {view:sectionView(p.section),key:p.source_id+':'+p.chapter_id};};
 export function nextSourceLesson(lesson,inventory){
  const p=placementForLesson(lesson);
  const chapter=inventory.filter(l=>{const q=placementForLesson(l);return q.section===p.section&&q.source_id===p.source_id&&q.chapter_id===p.chapter_id;})

@@ -1,3 +1,4 @@
+import {catalogSection} from './lesson-catalog.js';
 import {conceptEvidence} from './review-engine.js';
 import {studyContent} from './study-content.js';
 import {studyLessonAssets} from './study-bank.js';
@@ -114,7 +115,7 @@ async function loadCloud(){
    syncLabel(count?`${count} sync conflict(s) · review Account`:'Cloud synced',!count);
    if(count)notify('Both copies are safe. Open Account to review sync conflicts.');
   }catch(error){if(store===currentStore){syncLabel('Sync paused · local copy retained');notify(error.message)}}
-  finally {if(store===currentStore&&!['lesson','scan-inbox','reviews','textbooks','subtrack','ceta','labs','legacy','math'].includes(view)&&!document.activeElement?.matches('input,textarea,select'))render()}
+  finally {if(store===currentStore&&!['lesson','scan-inbox','reviews','lessons','textbooks','subtrack','ceta','labs','legacy','math'].includes(view)&&!document.activeElement?.matches('input,textarea,select'))render()}
  })();
  try{await syncTask}finally{syncTask=null;if(syncAgain){syncAgain=false;void loadCloud()}}
 }
@@ -143,6 +144,7 @@ async function saveAnswer(lessonId,qid,update){
 }
 async function switchTo(next,id=null,qid=null){
  await workspaceCleanup?.();workspaceCleanup=null;
+ if(['textbooks','library'].includes(next))next='lessons';
  if(['scan-inbox','ai-lab'].includes(next))next='account';
  const startingLesson=['lesson','generated-lesson'].includes(next)&&(view!==next||activeLesson!==id);
  if(startingLesson){lessonTab=qid?'quiz':'overview';activityIndex=0;learnIndex=0;quizIndex=Math.max(0,findLesson(id)?.questions.findIndex(q=>q.id===qid)||0);}
@@ -151,7 +153,7 @@ async function switchTo(next,id=null,qid=null){
  if(qid)setTimeout(()=>document.getElementById('question-'+qid)?.scrollIntoView({behavior:'smooth',block:'center'}),70);
  if(next==='legacy'&&id==='unreferenced')setTimeout(()=>document.getElementById('legacy-unreferenced')?.scrollIntoView({behavior:'smooth',block:'start'}),90);
  if(next==='legacy'&&id==='chapter')setTimeout(()=>document.getElementById('legacy-scanned-chapter')?.scrollIntoView({behavior:'smooth',block:'start'}),90);
- if(view!=='scan-inbox'&&user&&supabase&&['dashboard','legacy','reviews','ceta','textbooks','math','labs','subtrack'].includes(next))void loadApprovedInventory();
+ if(view!=='scan-inbox'&&user&&supabase&&['dashboard','legacy','reviews','ceta','lessons','textbooks','math','labs','subtrack'].includes(next))void loadApprovedInventory();
 }
 function allowAutomaticCloudSync(){return true}
 function setSidebarOpen(open){
@@ -194,7 +196,7 @@ function bindNavigation(){document.querySelectorAll('[data-view]').forEach(b=>b.
  document.addEventListener('keydown',event=>{if(event.key==='Escape'&&$('.sidebar').classList.contains('open')){setSidebarOpen(false);$('#menu-toggle').focus()}});
  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&user&&supabase&&allowAutomaticCloudSync())void loadCloud()});
  window.addEventListener('online',()=>{if(user&&allowAutomaticCloudSync())void loadCloud()});
- window.addEventListener('storage',event=>{if(event.key===store.key){try{progress=store.read().progress;if(!['lesson','scan-inbox','reviews','textbooks','subtrack','ceta','labs','legacy','math'].includes(view)&&!document.activeElement?.matches('input,textarea,select'))render()}catch(error){storageError=error.message;notify(error.message)}}});
+ window.addEventListener('storage',event=>{if(event.key===store.key){try{progress=store.read().progress;if(!['lesson','scan-inbox','reviews','lessons','textbooks','subtrack','ceta','labs','legacy','math'].includes(view)&&!document.activeElement?.matches('input,textarea,select'))render()}catch(error){storageError=error.message;notify(error.message)}}});
  setInterval(()=>{if(user&&navigator.onLine&&document.visibilityState==='visible'&&allowAutomaticCloudSync())void loadCloud()},30000);
 }
 function v2Context(){
@@ -212,14 +214,14 @@ function v2Context(){
  sourceLessons,mathIsAvailable:l=>canOpenLesson(l,allLessons.indexOf(l)),
  sourceIsAvailable:l=>canOpenLesson(l,sourceLessons.indexOf(l))};
 }
-function setNav(){const current=view==='generated-lesson'?(generatedLessons.get(activeLesson)?.archived?'account':sectionView(placementForLesson(generatedLessons.get(activeLesson)||{}).section)):view==='lesson'?(isArchivedLesson(activeLesson)?'account':mathLessons.some(l=>l.id===activeLesson)?'math':lessons.some(l=>l.id===activeLesson)?'ceta':bookLessons.some(l=>l.id===activeLesson)?'textbooks':cetaLessons.some(l=>l.id===activeLesson)?'ceta':'labs'):(view==='legacy'||view==='curriculum')?'account':view==='subtrack'?(activeLesson==='core'||['guide','exam'].includes(activeLesson)?'ceta':['geier','teach','principles','cabling'].includes(activeLesson)?'textbooks':'labs'):view;
+function setNav(){const current=view==='generated-lesson'?(generatedLessons.get(activeLesson)?.archived?'account':sectionView(placementForLesson(generatedLessons.get(activeLesson)||{}).section)):view==='lesson'?(isArchivedLesson(activeLesson)?'account':mathLessons.some(l=>l.id===activeLesson)?'math':lessons.some(l=>l.id===activeLesson)?'ceta':bookLessons.some(l=>l.id===activeLesson)?'lessons':cetaLessons.some(l=>l.id===activeLesson)?'ceta':'labs'):(view==='legacy'||view==='curriculum')?'account':view==='subtrack'?(activeLesson==='core'||['guide','exam'].includes(activeLesson)?'ceta':['geier','teach','principles','cabling'].includes(activeLesson)?'lessons':'labs'):view;
  document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',current===b.dataset.view));
  const context=v2Context(),inventory=studyInventory(context);
- for(const section of studySections){const status=$('[data-nav-status="'+section.id+'"]');if(status){const graded=learningProgress(inventory.filter(l=>l.curriculum.section===section.section),context).total;status.textContent=graded||(section.id==='reviews'&&context.reviews)?'':'TBD'}}
+ for(const section of studySections){const status=$('[data-nav-status="'+section.id+'"]');if(status){const graded=learningProgress(inventory.filter(l=>catalogSection(l.curriculum.section)===section.section),context).total;status.textContent=graded||(section.id==='reviews'&&context.reviews)?'':'TBD'}}
 }
 const dashboardPanelStates=new Map();
 let workspaceCleanup=null;
-function render(){setNav();refreshAIChatContext();const names={'generated-lesson':'Approved lesson workbench',dashboard:'Your learning dashboard',ceta:'Exam Prep',curriculum:'Legacy lessons',legacy:'Legacy lessons',textbooks:'Textbook companions',labs:'Labs',math:'Math Practice',subtrack:'Learning sub-track',lesson:'Lesson workbench',reviews:'Review',workbench:'Electronics lab',library:'Textbook companions','scan-inbox':'Scan Inbox',account:'Your study account','ai-lab':'Private AI model tests'};
+function render(){setNav();refreshAIChatContext();const names={'generated-lesson':'Approved lesson workbench',dashboard:'Your learning dashboard',ceta:'Exam Prep',curriculum:'Legacy lessons',legacy:'Legacy lessons',lessons:'Lessons',textbooks:'Lessons',labs:'Labs',math:'Math Practice',subtrack:'Learning sub-track',lesson:'Lesson workbench',reviews:'Review',workbench:'Electronics lab',library:'Lessons','scan-inbox':'Scan Inbox',account:'Your study account','ai-lab':'Private AI model tests'};
  $('#page-title').textContent=names[view]||names.dashboard;
  const main=$('#main');
  workspaceCleanup?.();workspaceCleanup=null;
@@ -272,7 +274,7 @@ function cloudBanner(){
 function renderDashboard(){return v2Dashboard(v2Context());}
 function lessonRows(group){return group.map(l=>{const i=lessons.indexOf(l),a=getAccuracy(l),passed=hasPassed(l),lock=!unlocked(i);return `<div class="lesson-row"><div class="lesson-num">${lock?'⌁':passed?'✓':String(i+1).padStart(2,'0')}</div><div class="lesson-info"><p class="smallcaps">${esc(l.module)} · ${l.minutes} MIN</p><h3>${esc(l.title)}</h3><p>${esc(l.description)}</p><p class="lesson-page-reference"><strong>Reference pages:</strong> ${esc(lessonReferencePages(l))}</p>${a.answered?`<p class="muted sm">${a.correct}/${a.total} checks correct</p>`:''}</div><button class="${lock?'ghost':passed?'outline':'primary'} small-button" ${lock?'disabled':''} data-goto="lesson" data-lesson="${l.id}">${lock?'Locked':passed?'Revisit':'Study lesson'}</button></div>`}).join('')}
 function renderCurriculum(){return v2Page('curriculum',v2Context());}
-function renderLibrary(){return v2Page('textbooks',v2Context());}
+function renderLibrary(){return v2Page('lessons',v2Context());}
 function renderLesson(){const lesson=findLesson(activeLesson);if(!lesson)return '<p>Lesson not found.</p>';
  if(lesson.studyModule)return studySafe(doc=>renderStudyLesson(studyContent,lesson,doc));
  const idx=lessons.indexOf(lesson),isPilot=idx>=0;

@@ -1,3 +1,7 @@
+# October 15 — topic-based Lessons (owner direction supersedes book navigation)
+
+V3 organizes source-inspired lessons under Lessons, grouped by topic series rather than book. Each lesson starts with its original inspiration and accumulates reviewed references from further sources. Do not create another active lesson or reset learning progress merely to add citations. Keep old book/chapter metadata for attribution and compatible links. Exam Prep and lab-manual study remain accessible with existing IDs and behavior. The historical textbook navigation requirements below no longer define the Lessons interface.
+
 # Teaching and design contract
 
 The Workbench is a long-term guided electronics tutor. A chapter becomes as many substantial lessons as its concepts require, rather than one summary or a fixed twelve lessons. The technical limit is 40 units per source. Long material must be supplied in readable excerpts; an outline cannot recover information missing from its source extraction.

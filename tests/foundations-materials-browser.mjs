@@ -6,7 +6,7 @@ import {go} from './navigation-helper.mjs';
 const {bank}=materialsFixture(),browser=await chromium.launch({headless:true,args:['--no-sandbox']});await mkdir('test-artifacts',{recursive:true});
 const ready=p=>p.waitForFunction(()=>!document.querySelector('#main').inert);
 async function click(p,s){await p.locator(s).click();await ready(p);}
-async function open(p,l){await go(p,'textbooks');const ch=p.locator('[data-source="fixture"] details.content-chapter');if(await ch.getAttribute('open')===null)await ch.locator('summary').click();await click(p,'[data-goto="lesson"][data-lesson="'+l.id+'"]');}
+async function open(p,l){await go(p,'lessons');const ch=p.locator('[data-source="electricity-foundations"] details.content-chapter');if(await ch.getAttribute('open')===null)await ch.locator('summary').click();await click(p,'[data-goto="lesson"][data-lesson="'+l.id+'"]');}
 try {for(const width of [320,360,390,768,1280,1920]){
  const context=await browser.newContext({viewport:{width,height:1000},reducedMotion:'reduce',...(width<500?{isMobile:true,hasTouch:true}:{})}),page=await context.newPage(),errors=[],external=[];page.setDefaultTimeout(10000);page.on('pageerror',e=>errors.push(e.message));
  await page.route('**/*',r=>{const u=new URL(r.request().url());if(u.hostname!=='127.0.0.1'){external.push(u.href);return r.abort();}if(u.pathname.endsWith('/study-content.js'))return r.fulfill({contentType:'text/javascript',body:'export const studyContent='+JSON.stringify(bank)+';'});return r.continue();});await page.goto('http://127.0.0.1:8080/',{waitUntil:'networkidle'});

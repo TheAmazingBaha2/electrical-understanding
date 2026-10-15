@@ -19,7 +19,7 @@ test('verified 15-chapter book retains original DMM records and appends source-b
  assert.equal(source.chapters.find(c=>c.id==='2').lessons.length,11);
  const six=source.chapters.find(c=>c.id==='6');assert.equal(six.lessons.length,5);assert.equal(six.lessons[0].id,'BDMM-01');assert.equal(six.lessons[1].id,'BDMM-02');assert.match(six.coverage,/Partial/);
  assert.equal(six.lessons.filter(l=>l.chapterSummary).length,0);assert.equal(source.chapters.find(c=>c.id==='2').lessons.at(-1).chapterSummary,true);
- assert.match(renderSourceSection('textbooks',ctx),/15 chapters/);assert.match(renderChapterDashboard(ctx),/data-dashboard-source="geier"/);
+ assert.match(renderSourceSection('textbooks',ctx),/2 topic groups/);assert.match(renderChapterDashboard(ctx),/data-dashboard-source="practical-electronics"/);
  assert.deepEqual(bookLessons.map(l=>l.id),['BDMM-01','BDMM-02']);
  assert.equal(nextSourceLesson(bookLessons[0],ctx.bookLessons).id,'BDMM-02');
  assert.equal(nextSourceLesson(bookLessons[1],ctx.bookLessons).id,'GEIER-C6-W03');
@@ -72,7 +72,7 @@ test('activity state survives existing storage migration, export/import and whol
 test('five-tab workshop view has correct source return, self-paced label and checkpoint review',()=>{
  const l=geierWorkshops[0];const c={lesson:l,answers:{},score:{correct:0,total:l.questions.length},passed:false,questionHtml:()=>''};
  const overview=tabbedLesson({...c,tab:'overview'});assert.match(overview,/Self-paced workshop/);assert.doesNotMatch(overview,/undefined minutes/);assert.match(overview,/Chapter 2, pp. 5–8/);assert.match(overview,/workshop-tool-reference/);
- const review=tabbedLesson({...c,tab:'review'});assert.match(review,/data-goto="textbooks" data-lesson="geier:2"/);assert.match(review,/Workshop checkpoints/);
+ const review=tabbedLesson({...c,tab:'review'});assert.match(review,/data-goto="lessons" data-lesson="practical-electronics:electronic-tools"/);assert.match(review,/Workshop checkpoints/);
  const interactive=tabbedLesson({...c,tab:'interact',activityIndex:0});assert.match(interactive,/data-workshop-activity="GEIER-C2-W01-A01"/);assert.doesNotMatch(interactive,/textarea|legacy.*workbench/);
 });
 

@@ -1,3 +1,4 @@
+import {startStudyRecap,recapAction} from './study-recap.js';
 import {allStudyItems,studyPresentation,availableStudyItem} from './study-bank.js';
 import {challengeAction,challengeWorking} from './foundation-model.js';
 import {makeStudyAttempt,startReview,repairReview,introducedConcepts} from './review-engine.js';
@@ -21,6 +22,8 @@ export function attachStudyModule(root,{bank,store,lesson=null,rerender,notify,n
   return {...makeStudyAttempt({id,sessionId:state.id,item:item.sourceSnapshot?item:studyPresentation(bank,item,lesson?state.id:task.id),answer,at:now(),assisted:lesson?!!state.hints?.includes(item.id):task.assisted,parentAttemptId:task?.parentAttemptId||null,caseId,working}),taskId:task?.id||null};
  }
  function feedbackReview(a) {if(!lesson)state=repairReview(bank,[...events(),a],state,a);}
+ action('[data-study-recap-start]',async()=>{if(state.started&&!confirm('Start another recap? All earlier attempts remain saved.'))return;state=startStudyRecap(bank,lesson,events(),{limit:Number(root.querySelector('[data-study-recap-size]')?.value||12),run:(state.run||0)+1});await save();});
+ action('[data-study-recap-action]',async el=>{state=recapAction(state,el.dataset.studyRecapAction);await save();});
  action('[data-study-tab]',async el=>{state.tab=el.dataset.studyTab;await save();});
  action('[data-study-step]',async el=>{state.step=Number(el.dataset.studyStep);await save();});
  action('[data-study-continue]',async()=>{

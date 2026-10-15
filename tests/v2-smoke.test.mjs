@@ -69,7 +69,7 @@ test('guide, lab, catalog and Scan Inbox views are renderable',()=>{
 test('navigation and script imports are wired up',()=>{
  const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
  const app=readFileSync(new URL('../app.js',import.meta.url),'utf8');
- for(const name of ['ceta','textbooks','labs','math','reviews','account'])assert.ok(html.includes('data-view="'+name+'"'));
+ for(const name of ['ceta','lessons','labs','math','reviews','account'])assert.ok(html.includes('data-view="'+name+'"'));
  assert.ok(app.includes("from './v2-panels.js'"));
  assert.ok(app.includes('v2Page(view,v2Context(),activeLesson)'));
  assert.ok(!app.includes('Find this in your books'));
@@ -209,7 +209,7 @@ test('DMM book track launches first lesson and locks second until first passes',
  let html=v2Page('subtrack',c,'geier');
  assert.match(html,/data-lesson="BDMM-01"/);
  assert.doesNotMatch(html,/data-lesson="BDMM-02"/);
- assert.match(html,/supplied table of contents/);
+ assert.match(html,/Tools and troubleshooting/);
  c.progress['BDMM-01']={complete:true,answers:{},updatedAt:Date.now()};
  html=v2Page('subtrack',c,'geier');
  assert.match(html,/data-lesson="BDMM-02"/);
