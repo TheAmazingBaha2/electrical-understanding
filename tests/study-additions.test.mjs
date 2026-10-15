@@ -2,7 +2,7 @@ import {artifactHash} from '../modular/repositories.js';
 import {verifyStudyAdditionRequirements} from '../scripts/content/study-addition-requirements.mjs';
 import test from 'node:test';import assert from 'node:assert/strict';
 import {additionsFixture} from './study-additions-fixture.mjs';
-import {additionAssets,additionCompletion,additionGauge,renderAdditionCards,renderOptionalAdditionHomes,renderAdditionReadingLists,additionActivityComplete,renderStudyContentStatus,additionRouteHash,parseAdditionRoute,additionRequirementDescriptor,additionActivityAttemptSuffix} from '../study-additions.js';
+import {additionAssets,additionCompletion,additionGauge,renderAdditionCards,renderOptionalAdditionHomes,renderAdditionReadingLists,additionActivityComplete,renderStudyContentStatus,additionRouteHash,parseAdditionRoute,additionRequirementDescriptor,additionActivityAttemptSuffix,additionRouteURL} from '../study-additions.js';
 import {initialStudyLesson,initialStudyActivity,lessonTarget,studyEsc,renderStudyLesson} from '../study-module-view.js';
 import {allStudyItems,studyPresentation,mergeStudyBanks,studyLessonAssets} from '../study-bank.js';
 import {makeStudyAttempt,lessonCompletion,introducedConcepts} from '../review-engine.js';
@@ -93,4 +93,12 @@ test('eleven optional units leave partly and fully completed core denominators, 
   for(const l of additionAssets(bank)){const {s,events}=exercise(bank,l);assert.equal(additionCompletion(l,s,events).complete,true);assert.equal(additionGauge(l,s,events).correct,0);}
   assert.deepEqual(progress,before);assert.deepEqual(learningProgress(after,c),gauge);
  }
+});
+
+test('optional routes preserve private desktop/Android custom protocols and file origins',()=>{
+ const {addition}=additionsFixture();for(const href of ['eu-lab://app/index.html','tauri://localhost/index.html','file:///C:/Private%20Lab/index.html','https://private.invalid/workbench/?mode=phone','http://127.0.0.1:8081/']){const route=additionRouteURL(href,addition.id,addition.version),a=new URL(href),b=new URL(route);assert.equal(a.protocol,b.protocol);assert.equal(a.host,b.host);assert.equal(a.pathname,b.pathname);assert.equal(a.search,b.search);assert.deepEqual(parseAdditionRoute(b.hash),{id:addition.id,version:addition.version});assert.equal(additionRouteURL(route),href);}
+});
+
+test('additions to an existing canonical home outside this bank are accessible without inventing a core grade',()=>{
+ const {base,pack,addition}=additionsFixture(),home={id:'00000000-0000-4000-8000-000000000777',aliases:['existing-external-module'],title:'Existing canonical module'};const bank=mergeStudyBanks(base,{...pack,canonicalLessons:[home],additions:[{...addition,homeLessonId:home.id}]});const html=renderOptionalAdditionHomes(bank,emptyStudyJournal(),{escape:studyEsc});assert.match(html,/CANONICAL LESSON ADDITIONS/);assert.match(html,/core module is not included/);assert.ok(html.includes('data-lesson="'+addition.id+'"'));assert.equal(studyLessonAssets(bank).length,base.lessons.length);
 });

@@ -1,4 +1,4 @@
-import {additionAssets,renderAdditionCards,renderOptionalAdditionHomes,renderAdditionReadingLists,renderStudyContentStatus,additionRouteHash,parseAdditionRoute} from './study-additions.js';
+import {additionAssets,renderAdditionCards,renderOptionalAdditionHomes,renderAdditionReadingLists,renderStudyContentStatus,additionRouteHash,parseAdditionRoute,additionRouteURL} from './study-additions.js';
 import {catalogSection} from './lesson-catalog.js';
 import {conceptEvidence} from './review-engine.js';
 import {studyContent} from './study-content.js';
@@ -160,8 +160,8 @@ async function switchTo(next,id=null,qid=null,{restore=false}={}){
  if(enteringAddition&&!restore){
   const disclosures=[...document.querySelectorAll('#main details[open]')].map(el=>el.dataset.disclosure).filter(Boolean);
   history.replaceState({...history.state,euStudyReturn:{owner:user?.id||'anonymous',view,id:activeLesson,qid:focusQuestion,revision:activeAdditionRevision,disclosures,scrollY}},'',location.href);
-  history.pushState({euStudyAddition:{owner:user?.id||'anonymous',id,version:qid}},'',location.pathname+location.search+additionRouteHash(id,qid));
- }else if(activeAdditionRevision&&!restore)history.replaceState(null,'',location.pathname+location.search);
+  history.pushState({euStudyAddition:{owner:user?.id||'anonymous',id,version:qid}},'',additionRouteURL(location.href,id,qid));
+ }else if(activeAdditionRevision&&!restore)history.replaceState(null,'',additionRouteURL(location.href));
 
  await workspaceCleanup?.();workspaceCleanup=null;
  if(next==='addition'){if(!privateStudyAdditions.some(l=>l.id===id&&l.contentRevision===qid)){notify('This addition revision is not installed; saved progress is retained.');return;}activeAdditionRevision=qid;next='lesson';qid=null;}else activeAdditionRevision=null;

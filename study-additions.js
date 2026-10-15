@@ -42,7 +42,7 @@ export function renderAdditionCards(bank,journal,homeId,{escape:e,context='lesso
  return '<details class="study-additions" data-disclosure="additions:'+e(context)+':'+e(home.id)+'" data-entry-context="'+e(context)+'"><summary>Additions · '+enrolledDone+' / '+enrolledTotal+' enrolled completed · '+inProgress+' in progress · '+newUnits+' new</summary><p>Optional work has separate requirements and results. It contributes nothing to core progress.</p>'+cards+'</details>';
 }
 export function renderOptionalAdditionHomes(bank,journal,{escape:e}={}){
- return (bank?.canonicalLessons||[]).filter(h=>h.optionalOnly&&(bank.additions||[]).some(a=>a.homeLessonId===h.id)).map(h=>'<section class="panel" data-optional-topic-home="'+e(h.id)+'"><p class="v2-kicker">OPTIONAL TOPIC EXPANSION</p><h3>'+e(h.title)+'</h3><p>No core completion requirement. All practice is tracked in its own additions.</p>'+renderAdditionCards(bank,journal,h.id,{escape:e,context:'lessons'})+'</section>').join('');
+ return (bank?.canonicalLessons||[]).filter(h=>(h.optionalOnly||!bank.lessons.some(l=>h.aliases.includes(l.id)))&&(bank.additions||[]).some(a=>a.homeLessonId===h.id)).map(h=>'<section class="panel" data-optional-topic-home="'+e(h.id)+'"><p class="v2-kicker">'+(h.optionalOnly?'OPTIONAL TOPIC EXPANSION':'CANONICAL LESSON ADDITIONS')+'</p><h3>'+e(h.title)+'</h3><p>'+(h.optionalOnly?'No core completion requirement. All practice is tracked in its own additions.':'The core module is not included in this preview; its existing grades are preserved separately. These additions use their own progress.')+'</p>'+renderAdditionCards(bank,journal,h.id,{escape:e,context:'lessons'})+'</section>').join('');
 }
 
 // An attribution/reading view into the same compositions, never a book-owned copy.
@@ -82,4 +82,9 @@ export function additionRequirementDescriptor(a){
 export function additionActivityAttemptSuffix(lesson,platform){
  if(!lesson?.supplemental||lesson.addition.variants.desktop.challengeId!==lesson.addition.variants.mobile.challengeId)return '';
  const v=lesson.addition.variants[platform];if(!v)throw Error('Choose the authored activity variant');return '/activity/'+v.id+'@'+v.version;
+}
+
+// Change only a fragment, retaining file/custom-protocol origins for native hosts.
+export function additionRouteURL(href,id=null,revision=null){
+ const url=new URL(href);url.hash=id?additionRouteHash(id,revision):'';return url.href;
 }
