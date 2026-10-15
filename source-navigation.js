@@ -12,7 +12,7 @@ function progressBar(p,label){
  return '<div class="lesson-progress-bar" role="progressbar" aria-label="'+esc(label)+' correct checks" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+p.percent+'" aria-valuetext="'+p.correct+' correct, '+p.incorrect+' needs review, '+p.unanswered+' unanswered out of '+p.total+' checks"><span class="lesson-progress-correct" style="width:'+correct+'%"></span><span class="lesson-progress-retry" style="width:'+retry+'%"></span></div>';
 }
 function lessonRows(lessons,c){
- return lessons.map(l=>{const p=learningProgress([l],c),ready=available(l,c);
+ return lessons.map(l=>{const p=learningProgress([l],c,{includePractice:true}),ready=available(l,c);
  const copy='<div class="chapter-lesson-copy">'+(l.chapterSummary?'<span class="v2-kicker">CHAPTER WRAP-UP</span>':l.workshop?'<span class="v2-kicker">WORKSHOP · SELF-PACED</span>':'')+'<h4>'+esc(l.title)+'</h4><p>'+esc(l.description)+'</p><p class="lesson-page-reference"><strong>Reference pages:</strong> '+esc(lessonReferencePages(l))+'</p>'+progressBar(p,l.title)+'<small>'+p.correct+' / '+p.total+' correct · '+(p.total-p.unanswered)+' attempted'+(p.mastered?(l.studyModule?' · Completed':' · Mastered'):'')+'</small></div>';
  const action='<button type="button" class="'+(p.mastered?'outline':'primary')+' small-button" '+(ready?openLesson(l):'disabled')+'>'+(p.mastered?'Review':ready?(l.workshop?'Open workshop':'Study'):'Previous lesson required')+' →</button>';
  return '<article class="chapter-lesson" data-content-lesson="'+esc(l.id)+'"><span class="chapter-lesson-number">'+esc(l.curriculum?.order?String(l.curriculum.order).padStart(2,'0'):'•')+'</span>'+copy+action+(c.additionCards?.(l.id,'catalog')||'')+'</article>';

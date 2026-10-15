@@ -9,7 +9,7 @@ import {emptyStudyJournal,StudyStore,studyState,evidenceEvents,mergeStudyJournal
 import {learningProgress} from '../learning-structure.js';
 import {renderChapterDashboard,renderSourceSection,renderMathPractice} from '../source-navigation.js';
 const at='2026-10-16T00:00:00.000Z';
-function attempt(s,item,answer,p='shared',assisted=false){return {...makeStudyAttempt({id:s.id+':'+item.id,sessionId:s.id,item,answer,at,assisted}),scope:{...s.scope,platform:p}};}
+function attempt(s,item,answer,p='shared',assisted=false){return {...makeStudyAttempt({id:s.id+':'+item.id,sessionId:s.id,item,answer,at,assisted}),scope:{...s.scope,platform:p,variant:p==='shared'?null:structuredClone(s.requirements.variants[p])}};}
 function exercise(bank,lesson,{platform='desktop'}={}){
  const s=initialStudyLesson(bank,lesson),step=lesson.steps[0],events=[{id:'intro-addition',type:'introduction',at,stepId:step.id,sourceIds:step.sourceIds,conceptIds:step.conceptIds,scope:s.scope}];s.acknowledged=lesson.steps.map(s=>s.id);
  events.push(...s.requiredItems.map((q,i)=>attempt(s,q,'no','shared',i===1)));s.platform=platform;const item=allStudyItems(bank).find(i=>i.id===lesson.addition.variants[platform].challengeId);s.activity=initialStudyActivity(item);const a=attempt(s,studyPresentation(bank,item,s.id),item.predictionOptions[1].value,platform);events.push(a);s.activity.attemptId=a.id;s.activity.working=challengeAction(item,s.activity.working,item.config.allowedActions[0]);s.activity.attemptedWorking=structuredClone(s.activity.working);s.activity.comparisonAttempted=true;s.activity.phase='revealed';return {s,events};
@@ -21,7 +21,7 @@ test('optional enrollment/completion cannot change actual core gauges, IDs, grad
  assert.deepEqual(learningProgress(studyLessonAssets(bank),context),learningProgress(core,context));assert.deepEqual(initialStudyLesson(bank,studyLessonAssets(bank)[0]).requiredItems.map(i=>i.id),before.requiredItems.map(i=>i.id));assert.equal(progress[core[0].id].answers[core[0].questions[0].id].reviewDue,777);assert.equal(lessonCompletion(core[0],before,events).complete,false);
 });
 test('authored platform selection is independent, either meets only common work and movements create no attempts',()=>{
- const {bank}=additionsFixture(),l=additionAssets(bank)[0],{s,events}=exercise(bank,l,{platform:'mobile'}),c=additionCompletion(l,s,events);assert.equal(c.complete,true);assert.equal(c.platform.mobile.complete,true);assert.equal(c.platform.desktop.complete,false);assert.equal(c.platform.desktop.attempts.length,0);
+ const {bank}=additionsFixture(),l=additionAssets(bank)[0],{s,events}=exercise(bank,l,{platform:'mobile'}),c=additionCompletion(l,s,events);assert.equal(c.complete,true);assert.equal(c.platform.mobile.complete,true);assert.equal(c.platform.desktop.complete,false);assert.equal(c.platform.desktop.attempts.length,0);const mislabeled=structuredClone(events);mislabeled.at(-1).scope.platform='desktop';assert.equal(additionCompletion(l,s,mislabeled).activityAttempted,false);
  const newState=initialStudyLesson(bank,l);assert.equal(newState.platform,null);assert.equal(introducedConcepts([]).size,0);assert.equal(additionCompletion(l,newState,events).platform.desktop.complete,false);assert.equal(additionCompletion({...l,addition:{...l.addition,completionPolicy:'both-platforms'}},s,events).complete,false);
  assert.match(renderStudyLesson(bank,l,{...emptyStudyJournal(),events:[]}),/Optional addition/);
 });

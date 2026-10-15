@@ -12,6 +12,7 @@ export function validateStudyJournal(input,owner=input?.owner) {
   if(typeof e.id!=='string'||ids.has(e.id)||!Number.isFinite(Date.parse(e.at))||new Date(e.at).toISOString()!==e.at||!['introduction','attempt','flag','state','resolution','presentation'].includes(e.type))throw Error('Invalid practice event; original retained');ids.add(e.id);
   if(e.type==='introduction'&&(!e.stepId||!Array.isArray(e.conceptIds)||!e.conceptIds.length||!Array.isArray(e.sourceIds)))throw Error('Invalid introduction record');
   if(e.scope&&(!new RegExp(UUID_PATTERN).test(e.scope.id)||!new RegExp(VERSION_PATTERN).test(e.scope.version)||e.scope.kind!=='addition'||e.type==='attempt'&&!['shared','desktop','mobile'].includes(e.scope.platform)))throw Error('Invalid supplemental attempt scope');
+  if(e.type==='attempt'&&e.scope&&e.scope.platform!=='shared'&&(!new RegExp(UUID_PATTERN).test(e.scope.variant?.id)||!new RegExp(VERSION_PATTERN).test(e.scope.variant?.version)||e.scope.variant?.challengeId!==e.item?.id))throw Error('Authored supplemental practical variant is missing or mismatched');
   if(e.type==='attempt'){
    if(typeof e.sessionId!=='string'||typeof e.assisted!=='boolean'||!e.item?.variantId||!Array.isArray(e.sourceIds)||!sameValue(answerStudyItem(e.item,e.answer,{caseId:e.caseId}),e.result))throw Error('Invalid frozen attempt result');
   }

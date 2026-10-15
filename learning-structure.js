@@ -58,10 +58,11 @@ export function sourceIndex(c={}){
  for(const s of sources)for(const ch of s.chapters)ch.lessons.sort((a,b)=>Number(Boolean(a.chapterSummary))-Number(Boolean(b.chapterSummary))||(a.curriculum.order||0)-(b.curriculum.order||0));
  return sources;
 }
-export function learningProgress(lessons,c={}){
+export function learningProgress(lessons,c={},{includePractice=false}={}){
+ const counted=includePractice?lessons:lessons.filter(l=>!l.supplemental&&!(l.studyModule&&l.kind==='recap'));
  let correct=0,incorrect=0,total=0,mastered=0;
- for(const l of lessons){const state=c.progress?.[l.id]||{},answers=state.answers||{};if(l.studyModule&&l.kind==='recap'){total+=state.checksTotal||0;correct+=Object.values(answers).filter(a=>a.correct===true).length;incorrect+=Object.values(answers).filter(a=>a.correct===false).length;if(c.hasPassed?.(l))mastered++;continue;}const practice=workshopActivityProgress(l,state);total+=l.questions.length+practice.total;correct+=practice.correct;incorrect+=practice.incorrect;for(const q of l.questions){if(answers[q.id]?.correct===true)correct++;else if(answers[q.id]?.correct===false)incorrect++;}if(c.hasPassed?.(l))mastered++;}
- return {correct,incorrect,total,unanswered:total-correct-incorrect,mastered,lessons:lessons.length,percent:total?Math.round(correct/total*100):0};
+ for(const l of counted){const state=c.progress?.[l.id]||{},answers=state.answers||{};if(l.studyModule&&l.kind==='recap'){total+=state.checksTotal||0;correct+=Object.values(answers).filter(a=>a.correct===true).length;incorrect+=Object.values(answers).filter(a=>a.correct===false).length;if(c.hasPassed?.(l))mastered++;continue;}const practice=workshopActivityProgress(l,state);total+=l.questions.length+practice.total;correct+=practice.correct;incorrect+=practice.incorrect;for(const q of l.questions){if(answers[q.id]?.correct===true)correct++;else if(answers[q.id]?.correct===false)incorrect++;}if(c.hasPassed?.(l))mastered++;}
+ return {correct,incorrect,total,unanswered:total-correct-incorrect,mastered,lessons:counted.length,percent:total?Math.round(correct/total*100):0};
 }
 export const chapterLabel=ch=>ch.label||(/^\d/.test(ch.id)?'Chapter '+ch.id:ch.id==='unassigned'?'Chapter assignment pending':ch.id);
 // References reflect supplied metadata, never a guessed book page based on the topic.

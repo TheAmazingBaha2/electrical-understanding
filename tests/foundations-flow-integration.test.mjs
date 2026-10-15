@@ -1,3 +1,6 @@
+import {learningProgress} from '../learning-structure.js';
+import {renderFlowScene} from '../study-flow-view.js';
+import {flowWorking} from '../foundation-flow-model.js';
 import test from 'node:test';import assert from 'node:assert/strict';
 import {flowFixture} from './foundations-flow-fixture.mjs';
 import {validateStudyBank,mergeStudyBanks,allStudyItems,studyLessonAssets,studyPresentation} from '../study-bank.js';
@@ -33,4 +36,12 @@ test('recap selects only introduced bank identities, freezes blocks and preserve
  const merged=mergeStudyJournals(journal,JSON.parse(JSON.stringify(journal)));assert.deepEqual(studyState(merged,lessonTarget(l)).value,s);
  for(const tab of ['overview','learn','interact','quiz','review']){const copy=structuredClone(journal);copy.events.at(-1).value.tab=tab;assert.match(renderStudyLesson(bank,l,copy),/lesson-panel/);}
  assert.notEqual(startStudyRecap(bank,l,intro,{run:2}).id,s.id);const daily=startReview(bank,intro,{id:'daily',at,limit:6});assert.ok(daily.tasks.length<=6);assert.equal(daily.tasks.filter(t=>t.item.kind==='widget_challenge').length<=1,true);
+});
+
+test('open-path explanation distinguishes source voltage from the resistor voltage and hides optional comparisons',()=>{
+ const item={widgetKey:'simple-dc-scene',config:{sourceVoltageV:3,resistanceOhm:3,initialPath:'open'}},scene=renderFlowScene(item,{phase:'revealed',working:flowWorking(item)},{compact:false,e:String,button:(action,label)=>'<button>'+label+'</button>'});assert.match(scene.observation,/Initial open path: source-terminal voltage 3 V; load voltage 0 V; load current 0 A/);assert.doesNotMatch(scene.observation,/3 V.*3 Ω = 0 A/);assert.match(scene.actions,/<details class="study-explore">/);
+});
+
+test('optional cumulative recap retains its own gauge without enlarging core progress totals',()=>{
+ const assets=studyLessonAssets(flowFixture().bank),recap=assets.at(-1),before=learningProgress(assets,{progress:{},hasPassed:()=>false}),progress={[recap.id]:{checksTotal:12,answers:{a:{correct:true},b:{correct:false}},complete:true}},context={progress,hasPassed:l=>l.id===recap.id};assert.deepEqual(learningProgress(assets,context),before);const own=learningProgress([recap],context,{includePractice:true});assert.equal(own.total,12);assert.equal(own.correct,1);assert.equal(own.incorrect,1);assert.equal(own.mastered,1);
 });
