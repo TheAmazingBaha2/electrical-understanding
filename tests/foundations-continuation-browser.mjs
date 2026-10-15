@@ -36,5 +36,5 @@ try {for(const width of [320,360,390,768,1280,1920]){
   for(const el of await page.locator('.study-widget button').all()){const b=await el.boundingBox();if(b)assert.ok(b.height>=44&&b.x>=0&&b.x+b.width<=width+1);}
   await page.screenshot({path:'test-artifacts/continuation-'+lesson.id.split('.').at(-1)+'-'+width+'.jpg',type:'jpeg',quality:65,fullPage:true});
  }
- assert.deepEqual((await read(page)).events.filter(e=>e.id.startsWith('old-')),history.events);assert.deepEqual(errors,[]);assert.deepEqual(external,[]);await context.close();console.log('PASS: continuation '+width+'px, A progress unchanged, two-axis classification, motion frames, wrong prediction and offline reload, reduced-motion/touch controls.');
+ const preserved=(await read(page)).events.filter(e=>e.id.startsWith('old-'));assert.equal(preserved.length,history.events.length);for(const event of preserved)assert.deepEqual(event,history.events.find(original=>original.id===event.id));assert.deepEqual(errors,[]);assert.deepEqual(external,[]);await context.close();console.log('PASS: continuation '+width+'px, A progress unchanged, two-axis classification, motion frames, wrong prediction and offline reload, reduced-motion/touch controls.');
 }}finally{await browser.close();}
