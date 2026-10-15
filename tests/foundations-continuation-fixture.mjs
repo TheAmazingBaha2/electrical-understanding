@@ -1,0 +1,11 @@
+import {studyFixture} from './foundations-fixture.mjs';
+import {mergeStudyBanks} from '../study-bank.js';
+export function continuationFixture() {
+ const base=studyFixture(),sources=['fixture'],policy='Synthetic first-response evidence.';
+ const concepts=['grouping','motion'].map(id=>({id,title:id,sourceIds:sources}));
+ const questions=concepts.flatMap((c,k)=>[0,1].map(n=>({...structuredClone(base.questions[n]),id:'extension.q'+k+n,lessonId:'extension.lesson'+k,primaryConceptId:c.id,requiresIntroducedConceptIds:[c.id],variantFamilyId:'extension.q'+k+n})));
+ const challenges=concepts.map((c,k)=>({id:'extension.t'+k,revision:1,lessonId:'extension.lesson'+k,kind:'widget_challenge',widgetKey:k?'particle-motion':'material-classifier',primaryConceptId:c.id,requiresIntroducedConceptIds:[c.id],sourceIds:sources,variantFamilyId:'extension.widget'+k,instruction:'Synthetic comparison: predict, act, reveal.',config:k?{statePreset:'solid',temperatureBand:'middle',seed:17,allowedActions:['step']}:{mode:'molecules',particleFormula:'O2',allowedActions:['inspect']},predictionOptions:[{label:'Prediction A',value:k?{motion:'vibration'}:{descriptionId:'molecules-one-element'}},{label:'Prediction B',value:k?{motion:'still'}:{descriptionId:'molecules-compound'}}],grading:{expectedPrediction:k?{motion:'vibration'}:{descriptionId:'molecules-one-element'}},evidencePolicy:policy,explanation:'Synthetic explanation: grouping and motion use separate bounded rules.'}));
+ const lessons=concepts.map((c,k)=>({...structuredClone(base.lessons[0]),id:'extension.lesson'+k,revision:1,title:'Synthetic '+c.id+' extension',curriculum:{...base.lessons[0].curriculum,order:5+k},requiredIds:questions.filter(q=>q.lessonId==='extension.lesson'+k).map(q=>q.id),challengeId:challenges[k].id,steps:[{id:'extension.step'+k,title:'Introduce '+c.id,text:'An original synthetic teaching step.',conceptIds:[c.id],sourceIds:sources}]}));
+ const addition={schemaVersion:1,approved:true,revision:2,concepts,questions,challenges,lessons,bridges:[{id:'fixture.bridge',fromLessonId:base.lessons[3].id,toLessonId:lessons[0].id,text:'Optional comparison; no change to completed work.'}]};
+ return {base,addition,bank:mergeStudyBanks(base,addition)};
+}

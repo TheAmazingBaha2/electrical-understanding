@@ -20,7 +20,7 @@ if(isWorkersBuild){
 const output = "dist";
 const publicFiles = [
   "index.html",
-  "study-content.js", "foundation-model.js", "study-bank.js", "review-engine.js", "study-journal.js", "study-module-view.js", "study-module-host.js",
+  "study-content.js", "foundation-model.js", "foundation-continuation-model.js", "study-continuation-view.js", "study-bank.js", "review-engine.js", "study-journal.js", "study-module-view.js", "study-module-host.js",
   "app.js", "persistence.js", "approved-lessons.js", "published-lessons.js", "lesson-package.js", "lab-modules.js", "lesson-labs.js", "widget-registry.js", "widget-improvements.js", "data-contract.js", "circuit-model.js", "project-store.js", "tutor-contract.js", "electronics-workspace.js", "desktop-lab.js", "desktop-windows.js", "mobile-lab.js", "lab-platform.js", "guided-activities.js", "lab-guidance.js", "lab-guidance-view.js", "circuit-view.js", "circuit-canvas.js", "circuit-canvas-view.js", "breadboard-model.js", "breadboard-view.js", "graphical-breadboard.js", "graphic-controls.js", "lab-graphics.js", "resistor-color.js", "component-editors.js", "instrument-graphics.js", "breadboard-overview.js", "breadboard-project.js", "shared-multimeter.js", "scope-signals.js", "scope-view.js", "project-manager.js", "ai-chat-widget.js", "generated-library.js", "generated-simulations.js", "legacy-groups.js", "math-lessons.js", "math-widgets.js", "math-track.js",
   "lessons.js",
   "course-catalog.js", "learning-structure.js", "source-navigation.js",

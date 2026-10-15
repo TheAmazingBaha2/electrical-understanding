@@ -1,8 +1,10 @@
 import {assertSerializable} from './data-contract.js';
 import {particleState,energyTransition} from './foundation-model.js';
+import {isContinuationWidget,isLegacyClassifier,validateContinuation} from './foundation-continuation-model.js';
 export const sameValue=(a,b)=>JSON.stringify(normalize(a))===JSON.stringify(normalize(b));
 const normalize=x=>Array.isArray(x)?x.map(normalize):x&&typeof x==='object'?Object.fromEntries(Object.keys(x).sort().map(k=>[k,normalize(x[k])])):x;
 export const allStudyItems=bank=>[...(bank?.questions||[]),...(bank?.variants||[]),...(bank?.challenges||[])];
+export const studyLessonRevision=(bank,lesson)=>lesson.contentRevision||lesson.revision||bank.lessonRevisions?.[lesson.id]||bank.revision||1;
 export function availableStudyItem(bank,item){return !!bank?.approved&&allStudyItems(bank).some(i=>i.id===item.id&&i.revision===item.revision&&!i.retired);}
 export function validateStudyBank(bank) {
  assertSerializable(bank);
@@ -18,13 +20,14 @@ export function validateStudyBank(bank) {
   if(item.kind==='single_choice') {
    if(typeof item.stem!=='string'||item.options?.length!==4||new Set(item.options.map(o=>o.id)).size!==4||new Set(item.options.map(o=>o.text)).size!==4||item.options.filter(o=>o.id===item.correctOptionId).length!==1||item.options.some(o=>!o.text||!o.feedback))throw Error('Invalid single-choice item');
   } else if(item.kind==='widget_challenge') {
-   if(!['atom-identity','charge-balance','shell-energy','material-classifier'].includes(item.widgetKey))throw Error('Unregistered study widget');
+   if(!['atom-identity','charge-balance','shell-energy','material-classifier','particle-motion'].includes(item.widgetKey))throw Error('Unregistered study widget');
+   if(isContinuationWidget(item))validateContinuation(item);
    if(['atom-identity','charge-balance'].includes(item.widgetKey)){
     particleState(item.config.initialCounts);if(!Array.isArray(item.config.allowedActions)||!item.config.allowedActions.length||item.config.allowedActions.some(a=>!/^(add|remove)-(proton|neutron|electron)$/.test(a)))throw Error('Invalid particle controls');
     if(item.grading.expectedCounts)particleState(item.grading.expectedCounts);
    }
    if(item.widgetKey==='shell-energy')energyTransition(item.config.fromLevel,item.config.toLevel);
-   if(item.widgetKey==='material-classifier') {if(!item.config.cases?.length||item.config.cases.some(c=>!item.config.answerOptions.includes(c.answer)))throw Error('Invalid case answer');}
+   if(isLegacyClassifier(item)) {if(!item.config.cases?.length||item.config.cases.some(c=>!item.config.answerOptions.includes(c.answer)))throw Error('Invalid case answer');}
    else if(!item.predictionOptions?.length||item.predictionOptions.filter(o=>sameValue(o.value,item.grading.expectedPrediction)).length!==1)throw Error('Invalid prediction alternatives');
   } else throw Error('Unsupported study item kind');
  }
@@ -47,12 +50,29 @@ export function presentedItem(item,seed) {
 export function studyPresentation(bank,item,seed){return {...presentedItem(item,seed),bankId:bank.id,bankRevision:bank.revision,sourceSnapshot:structuredClone(bank.sources.filter(s=>item.sourceIds.includes(s.id)))};}
 export function answerStudyItem(item,answer,{caseId=null}={}) {
  if(item.kind==='single_choice'){const option=item.options.find(o=>o.id===answer);if(!option)throw Error('Choose an available option');return {correct:answer===item.correctOptionId,feedback:option.feedback,misconception:option.misconception||null};}
- if(item.widgetKey==='material-classifier'){const c=item.config.cases.find(c=>c.id===caseId);if(!c||!item.config.answerOptions.includes(answer))throw Error('Choose an available case label');return {correct:answer===c.answer,feedback:item.explanation,misconception:answer===c.answer?null:'relationship_classification'};}
+ if(isLegacyClassifier(item)){const c=item.config.cases.find(c=>c.id===caseId);if(!c||!item.config.answerOptions.includes(answer))throw Error('Choose an available case label');return {correct:answer===c.answer,feedback:item.explanation,misconception:answer===c.answer?null:'relationship_classification'};}
  if(!item.predictionOptions.some(o=>sameValue(o.value,answer)))throw Error('Choose an available prediction');
  return {correct:sameValue(answer,item.grading.expectedPrediction),feedback:item.explanation,misconception:sameValue(answer,item.grading.expectedPrediction)?null:item.primaryConceptId+'_prediction'};
 }
 export function studyLessonAssets(bank) {
  if(!bank)return [];
- validateStudyBank(bank);return bank.lessons.map(l=>({...l,studyModule:true,contentRevision:bank.revision,seriesId:bank.id,seriesOrder:l.curriculum.order,module:bank.title,independent:true,subtrack:'private-study',sourcePages:l.sourcePages,
+ validateStudyBank(bank);return bank.lessons.map(l=>({...l,studyModule:true,contentRevision:studyLessonRevision(bank,l),seriesId:l.seriesId||bank.id,seriesOrder:l.curriculum.order,module:l.seriesTitle||bank.title,curriculum:{...l.curriculum,...(bank.chapterTitle?{chapter_title:bank.chapterTitle}:{})},independent:true,subtrack:'private-study',sourcePages:l.sourcePages,
   questions:l.requiredIds.map(id=>{const i=allStudyItems(bank).find(q=>q.id===id);return {id:i.id,prompt:i.stem,type:'choice'};})}));
+}
+// Additive developer import. Same identity with different content is a reviewable
+// revision, never a last-write-wins replacement. Unknown base fields survive.
+export function mergeStudyBanks(base,addition) {
+ validateStudyBank(base);assertSerializable(addition);
+ if(addition.schemaVersion!==1||addition.approved!==true)throw Error('Approved compatible addition required');
+ const result=structuredClone(base);
+ result.lessonRevisions={...(base.lessonRevisions||{}),...Object.fromEntries(base.lessons.map(l=>[l.id,studyLessonRevision(base,l)]))};
+ for(const key of ['sources','concepts','lessons','questions','variants','challenges','bridges','sourceUploads']) {
+  if(addition[key]===undefined)continue;
+  if(!Array.isArray(addition[key]))throw Error('Invalid content collection: '+key);
+  const values=result[key]??=[];
+  for(const value of addition[key]){if(typeof value.id!=='string'||!value.id)throw Error('Stable import identity required');const existing=values.find(v=>v.id===value.id);if(existing&&!sameValue(existing,value))throw Error('Content identity collision: '+key+'/'+value.id);if(!existing){values.push(structuredClone(value));if(key==='lessons')result.lessonRevisions[value.id]=studyLessonRevision(addition,value);}}
+ }
+ result.revision=Math.max(base.revision||1,addition.revision||1);
+ if(addition.chapterTitle)result.chapterTitle=addition.chapterTitle;
+ return validateStudyBank(result);
 }

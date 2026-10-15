@@ -1,3 +1,4 @@
+import {isLegacyClassifier} from './foundation-continuation-model.js';
 import {allStudyItems,studyPresentation,answerStudyItem} from './study-bank.js';
 export const REVIEW_POLICY=Object.freeze({id:'introduced-practice@1',intervalDays:[1,3,7,14,30],retainingSuccesses:3,defaultTasks:5,maxTasks:6});
 export const DAY_MS=86400000;
@@ -26,7 +27,7 @@ export function eligibleStudyItems(bank,events) {
 export function reviewCandidates(bank,events,{now=Date.now(),exclude=[]}={}) {
  const stats=conceptEvidence(events,{now}),flags={};for(const e of orderedEvents(events))if(e.type==='flag')flags[e.conceptId]=e.flagged;
  const previous={};for(const e of events)if(e.type==='attempt')previous[e.item.variantId]=Math.max(previous[e.item.variantId]||0,Date.parse(e.at));
- const expanded=eligibleStudyItems(bank,events).flatMap(i=>i.widgetKey==='material-classifier'?i.config.cases.map(c=>({...i,variantId:(i.variantId||i.id+'@'+i.revision)+':case='+c.id,config:{...i.config,cases:[c]}})):[i]);
+ const expanded=eligibleStudyItems(bank,events).flatMap(i=>isLegacyClassifier(i)?i.config.cases.map(c=>({...i,variantId:(i.variantId||i.id+'@'+i.revision)+':case='+c.id,config:{...i.config,cases:[c]}})):[i]);
  return expanded.filter(i=>!exclude.includes(i.variantId||i.id+'@'+i.revision)).map(i=>{
   const s=stats[i.primaryConceptId],v=i.variantId||i.id+'@'+i.revision,last=previous[v]||0;
   const reason=s.needsPractice?'recent error':s.ready?'ready for another look':flags[i.primaryConceptId]?'you flagged this':'recently introduced';

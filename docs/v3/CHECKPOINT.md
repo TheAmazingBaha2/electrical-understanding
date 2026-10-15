@@ -1,4 +1,8 @@
-# Current assignment: Foundations A and Review
+# Current assignment: Chapter continuation, prompts 1–4
+
+Read [FOUNDATIONS_B_CHECKPOINT.md](FOUNDATIONS_B_CHECKPOINT.md) first. Continue the owner's four sequential prompts; preserve A and the existing lab. Private post-commit receipts live beside the continuation bank. Do not assume later milestones are implemented from the shared eventual-series specification.
+
+# Previous assignment: Foundations A and Review
 
 Read [FOUNDATIONS_A_CHECKPOINT.md](FOUNDATIONS_A_CHECKPOINT.md) first. The lab usability sprint is preserved; priority has moved to six private source-bounded lessons and introduced-concept Review.
 

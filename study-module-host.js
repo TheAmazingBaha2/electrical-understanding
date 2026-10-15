@@ -59,5 +59,13 @@ export function attachStudyModule(root,{bank,store,lesson=null,rerender,notify,n
  action('[data-study-resolve]',async el=>{await store.resolve(el.dataset.studyTarget,el.dataset.studyResolve);rerender();});
  action('[data-study-export]',async()=>{const blob=new Blob([store.export()],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='workbench-private-practice-recovery.json';a.click();URL.revokeObjectURL(url);});
  action('[data-study-import]',async el=>{const file=el.files?.[0];if(!file)return;await store.import(JSON.parse(await file.text()));rerender();notify('Recovery merged. Conflicting working copies remain available for explicit selection.');},'change');
+ // A bounded, saved frame sequence. Navigating/rerendering detaches this anchor,
+ // cancelling its timer. Reduced-motion users retain complete one-step controls.
+ const scene=root.querySelector('[data-study-scene]');
+ const motion=lesson?state?.activity:state?.tasks?.[state.cursor]?.activity;
+ if(scene&&motion?.working?.playing&&motion.phase==='revealed'&&!globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches)setTimeout(async()=>{
+  if(!root.contains(scene)||busy)return;busy=true;
+  try{motion.working=challengeAction(challenge(),motion.working,'tick');await save();}catch(error){notify(error.message);}finally{busy=false;}
+ },700);
  return {setTab:async tab=>{if(busy||!lesson)return;busy=true;root.inert=true;try{state.tab=tab;await save();}catch(error){notify(error.message);}finally{busy=false;root.inert=false;root.querySelector('.lesson-tab.selected')?.focus();}}};
 }

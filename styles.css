@@ -1168,3 +1168,6 @@ body:has(#main>.desktop-bench) .topbar{padding:12px 18px;min-height:52px}body:ha
 .study-module .feedback{overflow-wrap:anywhere}
 @media(max-width:600px){.study-atom{grid-template-columns:1fr}.study-module .lesson-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible}.study-module .lesson-tab{min-width:0;min-height:48px;padding:.6rem .2rem}.study-module .panel{padding:1rem}.study-question legend{font-size:1rem}.study-module .actions>*{flex:1 1 130px}.study-review{padding:1rem}}
 @media(prefers-reduced-motion:reduce){.study-module *,.study-review *{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+/* Concept scenes share the lesson host; no extra workspace windows. */
+.study-concept-scene{display:block;width:100%;max-width:440px;max-height:300px;margin:8px auto;color:#8eecff}.study-scene-controls{flex-wrap:wrap}.study-scene-controls fieldset{min-width:0;flex:1 1 240px;border:1px solid #7ee3ff55;border-radius:10px;padding:10px}.study-scene-controls button{min-height:44px;margin:4px;white-space:normal}.study-axes{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}.study-axes dd{margin:0}.study-concept-scene text{font-size:18px}
