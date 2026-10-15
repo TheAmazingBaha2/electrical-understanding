@@ -1181,3 +1181,11 @@ body:has(#main>.desktop-bench) .topbar{padding:12px 18px;min-height:52px}body:ha
 @media(max-width:700px){.chapter-lesson>.study-additions{grid-column:1/-1}}
 
 .study-explore{width:100%;min-width:0}.study-explore>summary{min-height:44px;display:flex;align-items:center;cursor:pointer;overflow-wrap:anywhere}.study-explore button{max-width:100%}
+
+/* Only dedicated probe handles own gestures; the lesson/document still scrolls. */
+[data-mobile-probe]{touch-action:none;min-height:48px;min-width:48px;}
+.lab-pointer-preview{position:fixed;inset:0;pointer-events:none;z-index:1100;}
+.lab-pointer-preview svg{position:absolute;inset:0;}
+.lab-pointer-preview span{position:absolute;max-width:210px;padding:6px 8px;border-radius:8px;background:#102e38;color:#fff;font-size:13px;border:1px solid #8eecff;}
+
+[data-dc-terminal]{touch-action:none;cursor:crosshair;}

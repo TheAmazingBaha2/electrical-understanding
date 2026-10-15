@@ -1,3 +1,7 @@
+# Current Chapter 2A R2 continuation
+
+Read [CHAPTER_2A_R2_CHECKPOINT.md](CHAPTER_2A_R2_CHECKPOINT.md) for the new checkpoint00 input increment and remaining gates. Chapter1 delivery remains verified1072f30; new exact-source CI must be checked separately.
+
 # Latest owner amendment: independently tracked optional additions
 
 Read [ADDITIONS_PROGRESS_R2.md](ADDITIONS_PROGRESS_R2.md) alongside [LESSONS_AND_RECAP_CHECKPOINT.md](LESSONS_AND_RECAP_CHECKPOINT.md). Do not import old and revised Chapter 2 packs separately. Completed core and earned addition revisions remain unchanged; use existing UUIDs/aliases and one authorized journal.

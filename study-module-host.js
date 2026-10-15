@@ -1,3 +1,4 @@
+import {attachLabPointerInput,pointerPreview} from './lab-pointer-input.js';
 import {startStudyRecap,recapAction} from './study-recap.js';
 import {allStudyItems,studyPresentation,availableStudyItem} from './study-bank.js';
 import {challengeAction,challengeWorking} from './foundation-model.js';
@@ -66,11 +67,18 @@ export function attachStudyModule(root,{bank,store,lesson=null,rerender,notify,n
  action('[data-study-import]',async el=>{const file=el.files?.[0];if(!file)return;await store.import(JSON.parse(await file.text()));rerender();notify('Recovery merged. Conflicting working copies remain available for explicit selection.');},'change');
  // A bounded, saved frame sequence. Navigating/rerendering detaches this anchor,
  // cancelling its timer. Reduced-motion users retain complete one-step controls.
+ const circuitScene=root.querySelector('.study-dc-scene');
+ const detachPointer=circuitScene?attachLabPointerInput(circuitScene.parentElement,{
+  handleSelector:'[data-dc-terminal]',
+  targets:handle=>[...circuitScene.querySelectorAll('[data-dc-terminal]')].filter(el=>el!==handle).map(el=>{const r=el.getBoundingClientRect();return {id:el.dataset.dcTerminal,label:el.dataset.dcTerminal,x:r.x+r.width/2,y:r.y+r.height/2,radius:Math.min(r.width,r.height)/2};}),
+  commit:async()=>{if(busy)return;busy=true;try{const s=currentActivity();if(s.phase==='prediction')throw Error('Commit a prediction first');s.working=challengeAction(challenge(),s.working,'connect-path');await save();}catch(error){notify(error.message);}finally{busy=false;}},
+  preview:pointerPreview(circuitScene.parentElement),status:notify
+ }):()=>{};
  const scene=root.querySelector('[data-study-scene]');
  const motion=lesson?state?.activity:state?.tasks?.[state.cursor]?.activity;
  if(scene&&motion?.working?.playing&&motion.phase==='revealed'&&!globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches)setTimeout(async()=>{
   if(!root.contains(scene)||busy)return;busy=true;
   try{motion.working=challengeAction(challenge(),motion.working,'tick');await save();}catch(error){notify(error.message);}finally{busy=false;}
  },700);
- return {setTab:async tab=>{if(busy||!lesson)return;busy=true;root.inert=true;try{state.tab=tab;await save();}catch(error){notify(error.message);}finally{busy=false;root.inert=false;root.querySelector('.lesson-tab.selected')?.focus();}}};
+ return {dispose:detachPointer,setTab:async tab=>{if(busy||!lesson)return;busy=true;root.inert=true;try{state.tab=tab;await save();}catch(error){notify(error.message);}finally{busy=false;root.inert=false;root.querySelector('.lesson-tab.selected')?.focus();}}};
 }

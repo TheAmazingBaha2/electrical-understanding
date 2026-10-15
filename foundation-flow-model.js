@@ -37,7 +37,8 @@ export function flowAction(item,working,action){
   else if(action==='reset'){s.currentExcessUnits=c.initialExcessUnits;s.applied=false;}
   else throw Error('Unsupported bulk action');return s;
  }
- if(action==='open-path'){s.connection.closed=false;s.selectedEndpoint=null;s.actionCount++;}
+ if(action==='connect-path'){s.connection={from:'V1.p',to:'R1.a',closed:true};s.selectedEndpoint=null;s.actionCount++;}
+ else if(action==='open-path'){s.connection.closed=false;s.selectedEndpoint=null;s.actionCount++;}
  else if(action==='cancel-connection')s.selectedEndpoint=null;
  else if(action.startsWith('terminal:')){
   const id=action.slice(9);if(!['V1.p','R1.a'].includes(id))throw Error('Choose one of the marked actual terminals');

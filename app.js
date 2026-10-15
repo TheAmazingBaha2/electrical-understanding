@@ -225,7 +225,7 @@ function setNav(){const current=view==='generated-lesson'?(generatedLessons.get(
 }
 const dashboardPanelStates=new Map();
 let workspaceCleanup=null;
-function render(){setNav();refreshAIChatContext();const names={'generated-lesson':'Approved lesson workbench',dashboard:'Your learning dashboard',ceta:'Exam Prep',curriculum:'Legacy lessons',legacy:'Legacy lessons',lessons:'Lessons',textbooks:'Lessons',labs:'Labs',math:'Math Practice',subtrack:'Learning sub-track',lesson:'Lesson workbench',reviews:'Review',workbench:'Electronics lab',library:'Lessons','scan-inbox':'Scan Inbox',account:'Your study account','ai-lab':'Private AI model tests'};
+function render(){studyController?.dispose?.();setNav();refreshAIChatContext();const names={'generated-lesson':'Approved lesson workbench',dashboard:'Your learning dashboard',ceta:'Exam Prep',curriculum:'Legacy lessons',legacy:'Legacy lessons',lessons:'Lessons',textbooks:'Lessons',labs:'Labs',math:'Math Practice',subtrack:'Learning sub-track',lesson:'Lesson workbench',reviews:'Review',workbench:'Electronics lab',library:'Lessons','scan-inbox':'Scan Inbox',account:'Your study account','ai-lab':'Private AI model tests'};
  $('#page-title').textContent=names[view]||names.dashboard;
  const main=$('#main');
  workspaceCleanup?.();workspaceCleanup=null;
