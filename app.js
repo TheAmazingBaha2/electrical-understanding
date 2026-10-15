@@ -1,7 +1,12 @@
+import {conceptEvidence} from './review-engine.js';
+import {studyContent} from './study-content.js';
+import {studyLessonAssets} from './study-bank.js';
+import {StudyStore} from './study-journal.js';
+import {renderStudyLesson,renderStudyReview,renderLegacyReviewArchive,studyLessonProjection,studyEsc} from './study-module-view.js';
+import {attachStudyModule} from './study-module-host.js';
 import {recordLabActivity} from './lab-modules.js';
 import {attachLessonLabs} from './lesson-labs.js';
 import {renderLabPlatform,attachLabPlatform} from './lab-platform.js';
-import {renderSavedReinforcement} from './source-navigation.js';
 import {placementForLesson,sectionView,nextSourceLesson,lessonReferencePages,studySections,studyInventory,learningProgress} from './learning-structure.js';
 import { ProgressStore, cloudTransport } from './persistence.js';
 import { preservedLessons } from './approved-lessons.js';
@@ -15,7 +20,8 @@ import { bookLessons as originalBookLessons } from './book-lessons.js';
 import {geierWorkshops,reviseDmmLessons} from './geier-workshops.js';
 import {attachWorkshopWidgets} from './workshop-widgets.js';
 import {lessonRequirementsMet,workshopCheckUpdate} from './workshop-progress.js';
-const bookLessons=[...reviseDmmLessons(originalBookLessons),...geierWorkshops];
+const privateStudyLessons=studyLessonAssets(studyContent);
+const bookLessons=[...reviseDmmLessons(originalBookLessons),...geierWorkshops,...privateStudyLessons];
 import { cetaLessons } from './ceta-lessons.js';
 import {mathLessons, mathAvailability,relatedMath} from './math-lessons.js';
 import {legacyGroup,legacyReason,isArchivedLesson} from './legacy-groups.js';
@@ -42,7 +48,7 @@ const labUnlocked=l=>l?.id===labLessons[0].id || Boolean(labLessons.length && ha
 const bookUnlocked=l=>l?.independent===true || l?.id===bookLessons[0].id || Boolean(bookLessons.length && hasPassed(bookLessons[0]));
 const guideUnlocked=l=>l?.id===cetaLessons[0].id || Boolean(cetaLessons.length && hasPassed(cetaLessons[cetaLessons.findIndex(original=>original.id===l.id)-1]));
 const canOpenLesson=l=>{
- if(!l)return false;if(l.publicationPackage&&l.prerequisites.some(id=>!hasPassed(findLesson(id))))return false;if(l.generated||l.subtrack==='math')return true;
+ if(!l)return false;if(l.studyModule)return true;if(l.publicationPackage&&l.prerequisites.some(id=>!hasPassed(findLesson(id))))return false;if(l.generated||l.subtrack==='math')return true;
  const pilotIndex=lessons.findIndex(original=>original.id===l.id);
  if(pilotIndex>=0)return unlocked(pilotIndex);
  if(l.subtrack==='geier')return bookUnlocked(l);
@@ -60,21 +66,20 @@ const configured = stagingPreview && stagingBackend && Boolean(SUPABASE_PUBLISHA
 let toastTimer;
 function notify(message){const el=$('#toast');el.textContent=message;el.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>el.classList.remove('show'),4200)}
 let store = new ProgressStore(localStorage, null), storageError = null;
+let studyStore=new StudyStore(localStorage,null),studyController=null;
+function studySafe(renderView){try{return renderView(studyStore.read())}catch(error){return '<section class="panel"><h2>Practice storage needs recovery</h2><p>'+studyEsc(error.message)+'</p><p>The original journal is retained. Use your exported recovery copy; existing lesson progress is unchanged.</p><button class="outline" data-study-raw-export>Export original practice bytes and backups</button></section>'}}
 function localLoad(){
- store = new ProgressStore(localStorage, user?.id); storageError = null;
+ store = new ProgressStore(localStorage, user?.id); studyStore=new StudyStore(localStorage,user?.id); storageError = null;
  try{return store.read().progress}catch(error){storageError=error.message;notify(error.message);return {}}
 }
 function getAnonymousSnapshot(){return new ProgressStore(localStorage,null).read().progress}
-function getState(id){return progress[id] || {answers:{},complete:false,updatedAt:0}}
+function getState(id){const module=privateStudyLessons.find(l=>l.id===id);if(module){try{return studyLessonProjection(studyContent,module,studyStore.read())}catch{return {answers:{},complete:false,blocked:true}}}return progress[id] || {answers:{},complete:false,updatedAt:0}}
 function getAccuracy(lesson){const a=getState(lesson.id).answers||{};const done=lesson.questions.filter(q=>a[q.id]?.correct===true).length;return {correct:done,total:lesson.questions.length,answered:lesson.questions.filter(q=>typeof a[q.id]?.correct==='boolean').length}}
-function hasPassed(lesson){if(!lesson)return false;const state=getState(lesson.id);if(lesson.workshop||lesson.labs)return lessonRequirementsMet(lesson,state);if(state.complete===true)return true;const a=state.answers||{};const hits=lesson.questions.filter(q=>a[q.id]?.correct===true).length;
+function hasPassed(lesson){if(!lesson)return false;if(lesson.studyModule)return getState(lesson.id).complete===true;const state=getState(lesson.id);if(lesson.workshop||lesson.labs)return lessonRequirementsMet(lesson,state);if(state.complete===true)return true;const a=state.answers||{};const hits=lesson.questions.filter(q=>a[q.id]?.correct===true).length;
   return lesson.questions.every(q=>typeof a[q.id]?.correct==='boolean') && hits>=Math.ceil(.8*lesson.questions.length) && lesson.questions.filter(q=>q.safety).every(q=>a[q.id]?.correct===true);
 }
 function unlocked(index){return index===0 || hasPassed(lessons[index-1]);}
 function finishedCount(){return lessons.filter(hasPassed).length}
-function reviewQueue(){return [...allLessons,...generatedLessons.values()].flatMap((lesson,index)=>!canOpenLesson(lesson,index)?[]:lesson.questions.flatMap(q=>{
- const a=getState(lesson.id).answers?.[q.id];return a&&typeof a.correct==='boolean'&&a.reviewDue<=now()?[{lesson,q,a}]:[];
-})).sort((a,b)=>a.a.reviewDue-b.a.reviewDue)}
 function syncLabel(text,isOnline=false){$('#sync-status').textContent=text;$('#status-dot').classList.toggle('online',isOnline)}
 async function connect(){
  progress=localLoad();
@@ -198,7 +203,7 @@ function v2Context(){
  const approvedGeneratedLessons=[...generatedLessons.values()];
  const archivedGeneratedLessons=approvedGeneratedLessons.filter(l=>l.archived);
  const activeGeneratedLessons=approvedGeneratedLessons.filter(l=>!l.archived);
- return {lessons,progress,hasPassed,unlocked,reviews:reviewQueue().length,banner:cloudBanner(),
+ return {lessons,progress:{...progress,...Object.fromEntries(privateStudyLessons.map(l=>[l.id,getState(l.id)]))},hasPassed,unlocked,reviews:(()=>{try{return Object.values(conceptEvidence(studyStore.read().events)).filter(c=>c.ready||c.needsPractice).length}catch{return 0}})(),banner:cloudBanner(),
  coreRows:lessonRows(lessons),legacyRows:lessonRows(archivedPilotLessons),
  archivedPilotLessons,archivedUnreferencedLessons,archivedGeneratedLessons,activeGeneratedLessons,legacyReason,
  canOpenArchive:l=>canOpenLesson(l,allLessons.indexOf(l)),
@@ -219,7 +224,7 @@ function render(){setNav();refreshAIChatContext();const names={'generated-lesson
  const main=$('#main');
  workspaceCleanup?.();workspaceCleanup=null;
  const disclosures=new Set([...main.querySelectorAll('details[data-disclosure][open]')].map(el=>el.dataset.disclosure));
- main.innerHTML=view==='workbench'?renderLabPlatform():view==='dashboard'?renderDashboard():['lesson','generated-lesson'].includes(view)?renderLesson():view==='reviews'?'<header class="source-heading"><p class="v2-kicker">RETURN TO THE IDEAS</p><h2>Review</h2><p>Review brings ideas from your regular lessons back into practice. The broader format is still to be decided; your scheduled quiz checks remain available below.</p></header>'+renderReviews():view==='account'?renderAccount():view==='library'?renderLibrary():v2Page(view,v2Context(),activeLesson);
+ main.innerHTML=view==='workbench'?renderLabPlatform():view==='dashboard'?renderDashboard():['lesson','generated-lesson'].includes(view)?renderLesson():view==='reviews'?studySafe(doc=>renderStudyReview(studyContent,doc)):view==='review-archive'?renderLegacyReviewArchive([...allLessons.filter(l=>!l.studyModule),...generatedLessons.values()],progress):view==='account'?renderAccount():view==='library'?renderLibrary():v2Page(view,v2Context(),activeLesson);
  for(const el of main.querySelectorAll('details[data-disclosure]'))if(disclosures.has(el.dataset.disclosure))el.open=true;
  main.querySelectorAll('[data-toggle-panel]').forEach(button=>{
   const panel=document.getElementById(button.dataset.togglePanel);if(!panel)return;
@@ -228,7 +233,7 @@ function render(){setNav();refreshAIChatContext();const names={'generated-lesson
   button.addEventListener('click',()=>{const expanded=panel.hidden;dashboardPanelStates.set(button.dataset.togglePanel,expanded);apply(expanded)});
  });
  main.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>switchTo(b.dataset.goto,b.dataset.lesson||null,b.dataset.question||null)));
- main.querySelectorAll('[data-lesson-tab]').forEach(b=>b.addEventListener('click',()=>{lessonTab=b.dataset.lessonTab;render()}));
+ main.querySelectorAll('[data-lesson-tab]').forEach(b=>b.addEventListener('click',()=>{if(findLesson(activeLesson)?.studyModule&&studyController){void studyController.setTab(b.dataset.lessonTab);return;}lessonTab=b.dataset.lessonTab;render()}));
  main.querySelectorAll('[data-reveal-insight]').forEach(b=>b.addEventListener('click',()=>{const p=main.querySelector('#starting-insight');if(!p)return;p.hidden=!p.hidden;b.setAttribute('aria-expanded',String(!p.hidden));b.innerHTML=p.hidden?'Reveal the starting insight <span aria-hidden="true">⌄</span>':'Hide the starting insight <span aria-hidden="true">⌃</span>'; }));
  main.querySelectorAll('[data-activity-index]').forEach(b=>b.addEventListener('click',()=>{activityIndex=Number(b.dataset.activityIndex);render()}));
  main.querySelectorAll('[data-learn-index]').forEach(b=>b.addEventListener('click',()=>{learnIndex=Number(b.dataset.learnIndex);render()}));
@@ -247,9 +252,12 @@ function render(){setNav();refreshAIChatContext();const names={'generated-lesson
    if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;
    event.preventDefault();
    const next=event.key==='Home'?0:event.key==='End'?tabButtons.length-1:(i+(event.key==='ArrowRight'?1:tabButtons.length-1))%tabButtons.length;
-   lessonTab=tabButtons[next].dataset.lessonTab;render();main.querySelector('.lesson-tab.selected')?.focus();
+   if(findLesson(activeLesson)?.studyModule&&studyController){void studyController.setTab(tabButtons[next].dataset.lessonTab);return;}lessonTab=tabButtons[next].dataset.lessonTab;render();main.querySelector('.lesson-tab.selected')?.focus();
  }));
- if(['lesson','generated-lesson'].includes(view)){attachQuiz();if(lessonTab==='interact'){
+ main.querySelector('[data-study-raw-export]')?.addEventListener('click',()=>{const url=URL.createObjectURL(new Blob([studyStore.export()],{type:'application/json'})),a=document.createElement('a');a.href=url;a.download='practice-raw-recovery.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),1200);});
+ studyController=null;
+ if(view==='reviews'||(['lesson','generated-lesson'].includes(view)&&findLesson(activeLesson)?.studyModule)){try{studyController=attachStudyModule(main,{bank:studyContent,store:studyStore,lesson:view==='reviews'?null:findLesson(activeLesson),rerender:render,notify,navigate:switchTo});}catch(error){notify(error.message)}}
+ if(['lesson','generated-lesson'].includes(view)&&!findLesson(activeLesson)?.studyModule){attachQuiz();if(lessonTab==='interact'){
   const practical=findLesson(activeLesson);if(practical?.labs)workspaceCleanup=attachLessonLabs(main,practical,{state:getState(practical.id),saveActivity:async(platform,id,submission)=>{const currentStore=store;const doc=await currentStore.edit(practical.id,s=>{const next=recordLabActivity(practical,s,platform,id,submission,now());Object.assign(s,next);s.complete=lessonRequirementsMet(practical,s);s.updatedAt=now();});if(store!==currentStore)return null;progress=doc.progress;if(user)void loadCloud();return getState(practical.id);},onPlatformChange:async()=>{await workspaceCleanup?.();workspaceCleanup=null;render();}});else renderExperiment();attachLabWidgets();attachDmmWidgets();attachCetaWidgets();attachMathWidgets();attachGeneratedSimulations(main);
   attachGeneratedPredictions(main,notify);
 }const workshop=findLesson(activeLesson);if(workshop?.workshop)attachWorkshopWidgets(main,workshop,getState(workshop.id),(id,value,correct)=>saveWorkshopCheck(workshop.id,id,value,correct));}
@@ -265,8 +273,8 @@ function renderDashboard(){return v2Dashboard(v2Context());}
 function lessonRows(group){return group.map(l=>{const i=lessons.indexOf(l),a=getAccuracy(l),passed=hasPassed(l),lock=!unlocked(i);return `<div class="lesson-row"><div class="lesson-num">${lock?'⌁':passed?'✓':String(i+1).padStart(2,'0')}</div><div class="lesson-info"><p class="smallcaps">${esc(l.module)} · ${l.minutes} MIN</p><h3>${esc(l.title)}</h3><p>${esc(l.description)}</p><p class="lesson-page-reference"><strong>Reference pages:</strong> ${esc(lessonReferencePages(l))}</p>${a.answered?`<p class="muted sm">${a.correct}/${a.total} checks correct</p>`:''}</div><button class="${lock?'ghost':passed?'outline':'primary'} small-button" ${lock?'disabled':''} data-goto="lesson" data-lesson="${l.id}">${lock?'Locked':passed?'Revisit':'Study lesson'}</button></div>`}).join('')}
 function renderCurriculum(){return v2Page('curriculum',v2Context());}
 function renderLibrary(){return v2Page('textbooks',v2Context());}
-function renderReviews(){const queue=reviewQueue();return renderSavedReinforcement(v2Context())+`<p class="muted">Reviews are scheduled after each check: one day after a missed answer, seven days after an initial success, and 21 days after a successful retry. Open a question to answer again.</p>${cloudBanner()}<div class="panel"><h2>Scheduled quiz reviews · ${queue.length} review${queue.length===1?'':'s'} due</h2>${queue.length?queue.map(({lesson,q,a})=>`<div class="review-item"><div><b>${esc(lesson.title)}</b><p class="muted sm">${esc(q.prompt)}<br>Scheduled ${duration(a.reviewDue)}</p></div><button class="primary small-button" data-goto="${lesson.generated?'generated-lesson':'lesson'}" data-lesson="${lesson.id}" data-question="${q.id}">Review →</button></div>`).join(''):`<div class="empty"><h3>You're caught up.</h3><p>When your completed questions become due, they'll appear here.</p></div>`}</div>`}
 function renderLesson(){const lesson=findLesson(activeLesson);if(!lesson)return '<p>Lesson not found.</p>';
+ if(lesson.studyModule)return studySafe(doc=>renderStudyLesson(studyContent,lesson,doc));
  const idx=lessons.indexOf(lesson),isPilot=idx>=0;
  if(lesson.generated){
   const score=getAccuracy(lesson),passed=hasPassed(lesson);
