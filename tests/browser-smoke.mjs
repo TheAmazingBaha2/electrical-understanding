@@ -30,7 +30,7 @@ try{
   await page.locator('.lesson-tabs [data-lesson-tab="quiz"]').click();await page.locator('.quiz-card input[value="0"]').check();await page.locator('[data-submit="b101"]').click();
   await page.waitForFunction(()=>JSON.parse(localStorage.getItem('eu_progress:hkwmtjhgrskidaizamwy:anonymous')||'{}').progress?.['BDMM-01']?.answers?.b101?.correct===true);
   assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('eu_progress:hkwmtjhgrskidaizamwy:anonymous')).progress['EIM-BEC-PRELAB'].answers.p01.correct),true);
-  await page.locator('.lesson-tabs [data-lesson-tab="review"]').click();assert.match(await page.locator('#main').innerText(),/Back to your chapter/);
+  await page.locator('.lesson-tabs [data-lesson-tab="review"]').click();assert.match(await page.locator('#main').innerText(),/Back to Lessons/);
   const dims=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth}));assert.ok(dims.scroll<=dims.width+2);assert.deepEqual(errors,[]);
   await page.screenshot({path:'test-artifacts/source-workbench-'+width+'.png',fullPage:true});await page.close();
  }

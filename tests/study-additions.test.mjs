@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {additionsFixture} from './study-additions-fixture.mjs';
-import {additionAssets,additionCompletion,additionGauge,renderAdditionCards} from '../study-additions.js';
+import {additionAssets,additionCompletion,additionGauge,renderAdditionCards,renderOptionalAdditionHomes} from '../study-additions.js';
 import {initialStudyLesson,initialStudyActivity,lessonTarget,studyEsc,renderStudyLesson} from '../study-module-view.js';
 import {allStudyItems,studyPresentation,mergeStudyBanks,studyLessonAssets} from '../study-bank.js';
 import {makeStudyAttempt,lessonCompletion,introducedConcepts} from '../review-engine.js';
@@ -30,6 +30,7 @@ test('earned requirements survive new versions, and source/Math/catalog routes r
  const next=mergeStudyBanks(bank,{schemaVersion:1,approved:true,revision:3,additions:[{...addition,version:'2.0.0',requiredCheckCount:4}]});assert.deepEqual(studyState(journal,lessonTarget(l)).value.requirements,s.requirements);assert.equal(additionCompletion(l,s,events).complete,true);
  const cards=context=>renderAdditionCards(next,journal,bank.lessons[0].id,{escape:studyEsc,context}),c={bookLessons:studyLessonAssets(next),progress:{},additionCards:()=>cards('catalog'),additionContextCards:()=>cards('math')};
  for(const html of [cards('source'),cards('lesson'),renderSourceSection('lessons',c),renderChapterDashboard(c),renderMathPractice(c)]){assert.match(html,/Completed at earned revision 1.0.0/);assert.match(html,/New additions available/);assert.ok(html.includes('data-lesson="'+l.id+'" data-revision="1.0.0"'));assert.match(html,/1 \/ 1 enrolled completed/);}
+ const nextLesson=additionAssets(next).find(l=>l.contentRevision==='2.0.0'),nextState=initialStudyLesson(next,nextLesson),withSecond={...journal,events:[...journal.events,{id:'v2-state',type:'state',at,target:lessonTarget(nextLesson),parentId:null,value:nextState}]};const versionCards=renderAdditionCards(next,withSecond,bank.lessons[0].id,{escape:studyEsc});assert.match(versionCards,/Completed at earned revision 1.0.0/);assert.ok(versionCards.includes('data-revision="2.0.0"'));assert.match(versionCards,/Continue revision 2.0.0/);
  const bad=structuredClone(addition);bad.variants.mobile.id=bad.variants.desktop.id;assert.throws(()=>mergeStudyBanks(bank,{schemaVersion:1,approved:true,additions:[{...bad,version:'3.0.0'}]}),/Independent/);
 });
 test('same offline journal saves exact scope, chosen checks, assistance and task state; duplicate and conflicting imports preserve evidence',async()=>{
@@ -37,4 +38,9 @@ test('same offline journal saves exact scope, chosen checks, assistance and task
  await store.updateState(lessonTarget(l),null,s,events,{id:'first',at});const raw=store.export(),reload=new StudyStore(storage,null,locks);assert.deepEqual(studyState(reload.read(),lessonTarget(l)).value,s);await reload.import(JSON.parse(raw));assert.equal(evidenceEvents(reload.read()).filter(e=>e.type==='attempt').length,4);
  const left=await reload.updateState(lessonTarget(l),'first',{...s,tab:'learn'},[],{id:'left',at}),right=await reload.updateState(lessonTarget(l),'first',{...s,tab:'quiz'},[],{id:'right',at});assert.equal(right.conflicted,true);assert.equal(studyState(reload.read(),lessonTarget(l)).candidates.length,2);assert.ok(left.document||left);
  const conflict=structuredClone(reload.read()),a=conflict.events.find(e=>e.type==='attempt');a.assisted=!a.assisted;const merged=mergeStudyJournals(reload.read(),conflict);assert.equal(merged.conflicts.length,1);assert.equal(evidenceEvents(merged).some(e=>e.id===a.id),false);
+});
+
+test('a reviewed optional-only canonical home remains discoverable without creating a core lesson',()=>{
+ const {base,pack,addition}=additionsFixture(),home={id:'00000000-0000-4000-8000-000000000602',aliases:[],title:'Synthetic optional-only topic',optionalOnly:true},bank=mergeStudyBanks(base,{...pack,canonicalLessons:[home],additions:[{...addition,homeLessonId:home.id}]});
+ const c={bookLessons:studyLessonAssets(bank),progress:{},optionalAdditionHomes:()=>renderOptionalAdditionHomes(bank,emptyStudyJournal(),{escape:studyEsc})};assert.equal(studyLessonAssets(bank).length,base.lessons.length);assert.match(renderSourceSection('lessons',c),/Synthetic optional-only topic/);assert.match(renderSourceSection('lessons',c),/No core completion requirement/);
 });
