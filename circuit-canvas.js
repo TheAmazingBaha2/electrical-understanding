@@ -7,6 +7,8 @@ const clone=structuredClone;
 export function validateCanvasLayout(layout,circuit){
  assertSerializable(layout);if(layout?.schemaVersion!==1||!layout.positions||Array.isArray(layout.positions))throw Error('Unsupported canvas layout; original preserved');
  for(const position of Object.values(layout.positions))if(!position||!Number.isFinite(position.x)||!Number.isFinite(position.y)||position.x<90||position.x>1310||position.y<70||position.y>830)throw Error('Canvas position outside supported area');
+ if(layout.wireRoutes&&(typeof layout.wireRoutes!=='object'||Array.isArray(layout.wireRoutes)))throw Error('Invalid illustrative route map');
+ for(const route of Object.values(layout.wireRoutes||{}))if(!Array.isArray(route)||route.length>16||route.some(p=>!Number.isFinite(p.x)||!Number.isFinite(p.y)||p.x<0||p.x>canvasSize.width||p.y<0||p.y>canvasSize.height))throw Error('Invalid illustrative wire route');
  validateCircuit(circuit);return layout;
 }
 export function circuitCanvasLayout(circuit,stored){
@@ -47,6 +49,8 @@ export function editCircuitCanvas(circuit,layout,action){
  }else if(action.type==='connect'){
   if(action.from===action.to)throw Error('Choose two different terminals');terminal(action.from);terminal(action.to);
   if(c.connections.some(w=>w.id===action.id))throw Error('Wire identity exists');c.connections.push({id:action.id,from:action.from,to:action.to,closed:true});
+ }else if(action.type==='route-wire'){
+  if(!c.connections.some(w=>w.id===action.id))throw Error('Wire unavailable');l.wireRoutes??={};l.wireRoutes[action.id]=clone(action.points);
  }else if(action.type==='reroute-wire'){
   const wire=c.connections.find(w=>w.id===action.id);if(!wire)throw Error('Wire unavailable');
   const from=action.from??wire.from,to=action.to??wire.to;terminal(from);terminal(to);if(from===to)throw Error('Choose two different terminals');Object.assign(wire,{from,to});
@@ -65,7 +69,7 @@ export function editCircuitCanvas(circuit,layout,action){
   const part=c.components.find(p=>p.id===action.id),wire=c.connections.find(w=>w.id===action.id);if(typeof action.open!=='boolean'||!part&&!wire)throw Error('Path unavailable');if(part)part.state.open=action.open;else wire.closed=!action.open;
  }else if(action.type==='properties'){const part=c.components.find(p=>p.id===action.id);if(!part)throw Error('Component unavailable');validateResistorMetadata(action.properties);if(part.type==='dc-source'&&action.properties.voltageVolts<0&&part.properties.voltageVolts>=0)throw Error('Unipolar bench supply requires 0–24 V');Object.assign(part.properties,action.properties);}
  else if(action.type==='power'){if(typeof action.powered!=='boolean')throw Error('Explicit power state required');c.state.powered=action.powered;}
- else if(action.type==='clear'){return {circuit:emptyCanvasCircuit(c),layout:{...l,positions:{}}};}
+ else if(action.type==='clear'){return {circuit:emptyCanvasCircuit(c),layout:{...l,positions:{},...(l.wireRoutes?{wireRoutes:{}}:{})}};}
  else throw Error('Unsupported canvas edit');
  // Retain floating probe/reference nodes, but do not exhaust capacity with removed parts.
  const used=new Set([c.groundNode,...c.components.flatMap(p=>p.terminals.map(t=>t.nodeId)),...(c.externalTerminals||[]).map(t=>t.nodeId),...c.instruments.flatMap(i=>[i.redNode,i.blackNode])]);

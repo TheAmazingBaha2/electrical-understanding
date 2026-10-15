@@ -8,6 +8,7 @@ export function validateStudyAdditions(bank){
  const homes=new Set(),aliases=new Set();for(const l of bank.canonicalLessons||[]){if(!uuid.test(l.id)||homes.has(l.id)||!Array.isArray(l.aliases)||l.aliases.some(a=>typeof a!=='string'||aliases.has(a)))throw Error('Invalid canonical UUID/alias registry');if(l.optionalOnly&&(!l.title||bank.lessons.some(core=>l.aliases.includes(core.id))))throw Error('Optional-only home needs a title and must not duplicate an existing core home');homes.add(l.id);for(const a of l.aliases)aliases.add(a);}
  const identities=new Set();
  for(const a of bank.additions||[]){
+  if(a.requirementHash!==undefined&&!/^[a-f0-9]{64}$/.test(a.requirementHash))throw Error('Invalid immutable requirement hash');
   const key=a.id+'@'+a.version;if(!uuid.test(a.id)||!version.test(a.version)||identities.has(key)||homes.has(a.id)||bank.lessons.some(l=>l.id===a.id)||!homes.has(a.homeLessonId)||!a.title||!Array.isArray(a.importAliases)||!a.importAliases.length)throw Error('Invalid supplemental identity, version or canonical home');identities.add(key);
   if(!Array.isArray(a.sourceIds)||!a.sourceIds.length||a.sourceIds.some(id=>!bank.sources.some(s=>s.id===id)))throw Error('Unresolved addition sources');
   if(!Number.isInteger(a.requiredCheckCount)||a.requiredCheckCount<1||!Array.isArray(a.questionPoolIds)||new Set(a.questionPoolIds).size!==a.questionPoolIds.length||a.requiredCheckCount>a.questionPoolIds.length||a.questionPoolIds.some(id=>!bank.questions.some(q=>q.id===id)))throw Error('Invalid finite addition requirements');
@@ -38,7 +39,7 @@ export function renderAdditionCards(bank,journal,homeId,{escape:e,context='lesso
   const otherVersions=versions.filter(l=>l!==active).map(l=>{const saved=studyState(journal,additionTarget(l)),g=additionGauge(l,saved.value,evidenceEvents(journal));return '<p>Revision '+e(l.contentRevision)+' · '+g.done+' / '+g.total+' requirements · '+(g.complete?'Completed':saved.candidates.length?'In progress':'Not started')+'</p><button class="outline" data-goto="addition" data-lesson="'+e(l.id)+'" data-revision="'+e(l.contentRevision)+'">Continue revision '+e(l.contentRevision)+'</button>';}).join('');
   return '<article class="study-addition-card" data-addition="'+e(active.id)+'"><h5>'+e(active.title)+'</h5><p class="lesson-page-reference">Reference pages: '+active.sourceIds.map(id=>{const source=bank.sources.find(s=>s.id===id);return e(source.book)+' · printed p. '+e(source.printedPage)+(source.pageStatus?' · '+e(source.pageStatus):'');}).join('; ')+'</p><p>'+g.done+' / '+g.total+' requirements · '+(g.complete?'Completed at earned revision '+e(active.contentRevision):saved.candidates.length?'In progress':'Not started')+'</p><progress max="'+g.total+'" value="'+g.done+'" aria-label="Addition completion"></progress><button class="outline" data-goto="addition" data-lesson="'+e(active.id)+'" data-revision="'+e(active.contentRevision)+'">Continue addition</button>'+(newer?'<p>New additions available · earned completion is retained.</p><button class="outline" data-goto="addition" data-lesson="'+e(versions.at(-1).id)+'" data-revision="'+e(versions.at(-1).contentRevision)+'">Explore new optional revision</button>':'')+(otherVersions?'<details><summary>Other optional requirement revisions</summary>'+otherVersions+'</details>':'')+'<details><summary>Practice results and platform activity</summary><p>'+g.correct+' correct independent checks · '+g.misses+' misses · '+g.assisted+' assisted responses.</p><p>Desktop '+(g.platform.desktop.complete?'attempted':'unfinished')+' · Mobile '+(g.platform.mobile.complete?'attempted':'unfinished')+'. Either-platform credit never fills the other variant.</p>'+['desktop','mobile'].map(p=>{const attempts=g.platform[p].attempts;return '<p>'+e(p)+': '+attempts.filter(a=>a.result.correct&&!a.assisted).length+' correct independent / '+attempts.length+' submitted predictions; '+attempts.filter(a=>a.assisted).length+' assisted.</p>';}).join('')+'</details></article>';
  }).join('');
- return '<details class="study-additions" data-entry-context="'+e(context)+'"><summary>Additions · '+enrolledDone+' / '+enrolledTotal+' enrolled completed · '+inProgress+' in progress · '+newUnits+' new</summary><p>Optional work has separate requirements and results. It contributes nothing to core progress.</p>'+cards+'</details>';
+ return '<details class="study-additions" data-disclosure="additions:'+e(context)+':'+e(home.id)+'" data-entry-context="'+e(context)+'"><summary>Additions · '+enrolledDone+' / '+enrolledTotal+' enrolled completed · '+inProgress+' in progress · '+newUnits+' new</summary><p>Optional work has separate requirements and results. It contributes nothing to core progress.</p>'+cards+'</details>';
 }
 export function renderOptionalAdditionHomes(bank,journal,{escape:e}={}){
  return (bank?.canonicalLessons||[]).filter(h=>h.optionalOnly&&(bank.additions||[]).some(a=>a.homeLessonId===h.id)).map(h=>'<section class="panel" data-optional-topic-home="'+e(h.id)+'"><p class="v2-kicker">OPTIONAL TOPIC EXPANSION</p><h3>'+e(h.title)+'</h3><p>No core completion requirement. All practice is tracked in its own additions.</p>'+renderAdditionCards(bank,journal,h.id,{escape:e,context:'lessons'})+'</section>').join('');
@@ -60,4 +61,18 @@ export function renderAdditionReadingLists(bank,journal,{escape:e}={}){
 export function renderStudyContentStatus(bank,{escape:e}={}){
  if(!bank)return '<aside class="study-content-status" role="status">Private lesson content is not installed in this public build. Use the matching private preview package; clearing progress cannot install lessons.</aside>';
  return '<aside class="study-content-status" role="status">Installed content: '+e(bank.title)+' · revision '+e(bank.revision)+' · '+bank.lessons.filter(l=>l.kind!=='recap').length+' teaching lessons · '+new Set((bank.additions||[]).map(a=>a.id)).size+' optional additions. Content identity: '+e(bank.id)+'.</aside>';
+}
+
+export function additionRouteHash(id,revision){
+ if(!uuid.test(id)||!version.test(revision))throw Error('Invalid addition route identity');return '#addition='+id+'@'+revision;
+}
+export function parseAdditionRoute(hash){
+ const match=String(hash).match(/^#addition=([^@]+)@(.+)$/);return match&&uuid.test(match[1])&&version.test(match[2])?{id:match[1],version:match[2]}:null;
+}
+
+export function additionRequirementDescriptor(a){
+ return {schemaVersion:1,id:a.id,version:a.version,creditScope:'supplemental',countsTowardCore:false,countsTowardRequiredDashboard:false,
+  questionPoolIds:[...a.questionPoolIds],selectedCheckIds:a.questionPoolIds.slice(0,a.requiredCheckCount),
+  completionUnits:[{kind:'guided-activity',id:a.id+':guided'},...a.questionPoolIds.slice(0,a.requiredCheckCount).map(id=>({kind:'question-check',id}))],
+  stepIds:a.teaching.steps.filter(s=>!s.optional).map(s=>s.id),variants:structuredClone(a.variants),completionPolicy:a.completionPolicy};
 }

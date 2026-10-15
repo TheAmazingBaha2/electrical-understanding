@@ -78,3 +78,11 @@ test('pointer coordinates follow measured stage scaling, borders and scroll rath
   const p=desktopPointerPoint({clientX:73+402*scale,clientY:-120+202*scale},geometry);assert.ok(Math.abs(p.x-461)<1e-9);assert.ok(Math.abs(p.y-229)<1e-9);
  }
 });
+
+test('illustrative wire routes preserve exact topology, readings, physical properties and reversible project history',()=>{
+ const original=dividerCircuit(),layout=circuitCanvasLayout(original),wired=editCircuitCanvas(original,layout,{type:'connect',id:'route-test',from:'V1.p',to:'R1.a'}),before=structuredClone(wired.circuit),reading=sharedMeterReading(before,{mode:'voltage',jack:'VΩ'});
+ const routed=canvasHistoryEdit(wired.circuit,wired.layout,null,{type:'route-wire',id:'route-test',points:[{x:240,y:370}]});assert.deepEqual(routed.circuit,before);assert.deepEqual(sharedMeterReading(routed.circuit,{mode:'voltage',jack:'VΩ'}),reading);assert.match(renderCircuitCanvas(routed.circuit,routed.layout,{selectedWire:'route-test'}),/L240 370/);assert.match(renderCircuitCanvas(routed.circuit,routed.layout,{selectedWire:'route-test'}),/data-canvas-bend="route-test"/);
+ const undo=canvasHistoryRestore(routed.circuit,routed.layout,routed.history,'undo');assert.deepEqual(undo.layout,wired.layout);assert.deepEqual(canvasHistoryRestore(undo.circuit,undo.layout,undo.history,'redo').layout,routed.layout);
+ const p=newProject('route-project');p.circuit=routed.circuit;p.experimentState.canvasLayout=routed.layout;validateProject(p);const copy=JSON.parse(JSON.stringify(p));validateProject(copy);assert.deepEqual(copy.experimentState.canvasLayout,routed.layout);
+ assert.throws(()=>editCircuitCanvas(before,wired.layout,{type:'route-wire',id:'absent',points:[]}));assert.throws(()=>editCircuitCanvas(before,wired.layout,{type:'route-wire',id:'route-test',points:[{x:Infinity,y:2}]}));assert.deepEqual(wired.circuit,before);
+});

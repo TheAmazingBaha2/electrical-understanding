@@ -1,4 +1,4 @@
-import {additionAssets,renderAdditionCards,renderOptionalAdditionHomes,renderAdditionReadingLists,renderStudyContentStatus} from './study-additions.js';
+import {additionAssets,renderAdditionCards,renderOptionalAdditionHomes,renderAdditionReadingLists,renderStudyContentStatus,additionRouteHash,parseAdditionRoute} from './study-additions.js';
 import {catalogSection} from './lesson-catalog.js';
 import {conceptEvidence} from './review-engine.js';
 import {studyContent} from './study-content.js';
@@ -87,7 +87,7 @@ function finishedCount(){return lessons.filter(hasPassed).length}
 function syncLabel(text,isOnline=false){$('#sync-status').textContent=text;$('#status-dot').classList.toggle('online',isOnline)}
 async function connect(){
  progress=localLoad();
- if(!configured){syncLabel('V3 development · local practice');render();return}
+ if(!configured){syncLabel('V3 development · local practice');const route=parseAdditionRoute(location.hash);if(route&&privateStudyAdditions.some(l=>l.id===route.id&&l.contentRevision===route.version)){activeAdditionRevision=route.version;activeLesson=route.id;view='lesson';}else if(route){view='lessons';notify('This addition revision is not installed; saved progress is retained.');}render();return}
  try {
    const pkg=await import('https://esm.sh/@supabase/supabase-js@2.57.4');
    supabase=pkg.createClient(SUPABASE_URL,SUPABASE_PUBLISHABLE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
@@ -100,6 +100,15 @@ async function connect(){
  }catch(err){syncLabel('Cloud connection unavailable');notify('Cloud unavailable. Local progress remains on this device.');console.error(err)}
  render();
 }
+window.addEventListener('popstate',async event=>{
+ const route=parseAdditionRoute(location.hash);
+ if(route){await switchTo('addition',route.id,route.version,{restore:true});return;}
+ const saved=event.state?.euStudyReturn;
+ if(saved?.owner!==(user?.id||'anonymous'))return;
+ await switchTo(saved.revision?'addition':saved.view,saved.id,saved.revision||saved.qid,{restore:true});
+ for(const el of document.querySelectorAll('#main details[data-disclosure]'))el.open=saved.disclosures.includes(el.dataset.disclosure);
+ window.scrollTo({top:saved.scrollY||0,behavior:'instant'});
+});
 async function loadApprovedInventory(){
  // Repository-owned approved artifacts are already registered. No authoring database needed.
  return preservedLessons;
@@ -145,7 +154,15 @@ async function saveAnswer(lessonId,qid,update){
  }catch(error){notify('Answer not saved: '+error.message);syncLabel('Storage blocked · export your progress')}
  finally{busy=false;if(saved)render()}
 }
-async function switchTo(next,id=null,qid=null){
+async function switchTo(next,id=null,qid=null,{restore=false}={}){
+ const enteringAddition=next==='addition';
+ if(enteringAddition&&!privateStudyAdditions.some(l=>l.id===id&&l.contentRevision===qid)){notify('This addition revision is not installed; saved progress is retained.');return;}
+ if(enteringAddition&&!restore){
+  const disclosures=[...document.querySelectorAll('#main details[open]')].map(el=>el.dataset.disclosure).filter(Boolean);
+  history.replaceState({...history.state,euStudyReturn:{owner:user?.id||'anonymous',view,id:activeLesson,qid:focusQuestion,revision:activeAdditionRevision,disclosures,scrollY}},'',location.href);
+  history.pushState({euStudyAddition:{owner:user?.id||'anonymous',id,version:qid}},'',location.pathname+location.search+additionRouteHash(id,qid));
+ }else if(activeAdditionRevision&&!restore)history.replaceState(null,'',location.pathname+location.search);
+
  await workspaceCleanup?.();workspaceCleanup=null;
  if(next==='addition'){if(!privateStudyAdditions.some(l=>l.id===id&&l.contentRevision===qid)){notify('This addition revision is not installed; saved progress is retained.');return;}activeAdditionRevision=qid;next='lesson';qid=null;}else activeAdditionRevision=null;
  if(['textbooks','library'].includes(next))next='lessons';

@@ -3,12 +3,14 @@
 import {readFile,readdir,mkdir,copyFile,writeFile,realpath} from 'node:fs/promises';
 import {resolve,relative,join} from 'node:path';
 import {createHash} from 'node:crypto';
+import {verifyStudyAdditionRequirements} from './study-addition-requirements.mjs';
 import {validateStudyBank} from '../../study-bank.js';
 export async function privateStudyPreview(input,output,{root=process.cwd()}={}) {
  root=await realpath(root);const source=await realpath(input),out=resolve(output);
  const inside=p=>{const r=relative(root,p);return !r.startsWith('..')&&!r.startsWith('/');};
  if(inside(source)||inside(out))throw Error('Private study input and output must remain outside the public repository');
  const bank=validateStudyBank(JSON.parse(await readFile(source,'utf8')));
+ await verifyStudyAdditionRequirements(bank);
  await mkdir(out,{mode:0o700}); // Exclusive: never replace a previous preview/recovery artifact.
  for(const name of await readdir(join(root,'dist'))){if(!/^[A-Za-z0-9._-]+$/.test(name))throw Error('Unexpected public asset path');await copyFile(join(root,'dist',name),join(out,name));}
  await writeFile(join(out,'study-content.js'),'// Private owner-supplied, validated study artifact. Never publish this file.\nexport const studyContent = '+JSON.stringify(bank)+';\n',{mode:0o600});

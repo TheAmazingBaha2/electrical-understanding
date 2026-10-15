@@ -1,6 +1,8 @@
+import {artifactHash} from '../modular/repositories.js';
+import {verifyStudyAdditionRequirements} from '../scripts/content/study-addition-requirements.mjs';
 import test from 'node:test';import assert from 'node:assert/strict';
 import {additionsFixture} from './study-additions-fixture.mjs';
-import {additionAssets,additionCompletion,additionGauge,renderAdditionCards,renderOptionalAdditionHomes,renderAdditionReadingLists,additionActivityComplete,renderStudyContentStatus} from '../study-additions.js';
+import {additionAssets,additionCompletion,additionGauge,renderAdditionCards,renderOptionalAdditionHomes,renderAdditionReadingLists,additionActivityComplete,renderStudyContentStatus,additionRouteHash,parseAdditionRoute,additionRequirementDescriptor} from '../study-additions.js';
 import {initialStudyLesson,initialStudyActivity,lessonTarget,studyEsc,renderStudyLesson} from '../study-module-view.js';
 import {allStudyItems,studyPresentation,mergeStudyBanks,studyLessonAssets} from '../study-bank.js';
 import {makeStudyAttempt,lessonCompletion,introducedConcepts} from '../review-engine.js';
@@ -60,4 +62,14 @@ test('legacy case-sorter supplement completion requires every scoped authored ca
 
 test('content indicator distinguishes the missing public shell from an installed real-count bank',()=>{
  assert.match(renderStudyContentStatus(null,{escape:studyEsc}),/not installed/);const {bank}=additionsFixture();const text=renderStudyContentStatus(bank,{escape:studyEsc});assert.match(text,/1 optional additions/);assert.ok(text.includes(bank.lessons.length+' teaching lessons'));assert.ok(text.includes(bank.id));
+});
+
+test('deep links pin UUID and immutable revision without accepting arbitrary URLs',()=>{
+ const {addition}=additionsFixture();assert.deepEqual(parseAdditionRoute(additionRouteHash(addition.id,addition.version)),{id:addition.id,version:addition.version});for(const value of ['#addition=old-alias@1','#addition=javascript:alert(1)@1.0.0','#addition=','','#other'])assert.equal(parseAdditionRoute(value),null);assert.throws(()=>additionRouteHash('bad','1'));
+});
+
+test('private publication pins a SHA256 finite requirement manifest and rejects changed or missing hashes',async()=>{
+ const {bank}=additionsFixture();await assert.rejects(()=>verifyStudyAdditionRequirements(bank),/requirement hash/);const addition=bank.additions[0];addition.requirementHash=await artifactHash(additionRequirementDescriptor(addition));await verifyStudyAdditionRequirements(bank);
+ const lesson=additionAssets(bank)[0],state=initialStudyLesson(bank,lesson);assert.equal(state.requirements.hash,addition.requirementHash);assert.equal(state.requirementHash,addition.requirementHash);const manifest=additionRequirementDescriptor(addition);assert.equal(manifest.completionUnits.length,4);assert.equal(manifest.countsTowardCore,false);
+ const changed=structuredClone(bank);changed.additions[0].requiredCheckCount=4;await assert.rejects(()=>verifyStudyAdditionRequirements(changed),/requirement hash/);assert.equal(state.requirements.selectedCheckIds.length,3);assert.equal(state.requirements.hash,addition.requirementHash);
 });
