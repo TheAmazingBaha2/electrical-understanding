@@ -1,3 +1,4 @@
+import {additionActivityAttemptSuffix} from './study-additions.js';
 import {attachLabPointerInput,pointerPreview} from './lab-pointer-input.js';
 import {startStudyRecap,recapAction} from './study-recap.js';
 import {allStudyItems,studyPresentation,availableStudyItem} from './study-bank.js';
@@ -19,7 +20,7 @@ export function attachStudyModule(root,{bank,store,lesson=null,rerender,notify,n
  function requireIntroduced(item){if(!availableStudyItem(bank,item))throw Error('Reinstall the matching approved lesson bank before continuing this saved assessment. History is retained.');const introduced=introducedConcepts(events());if(!item.requiresIntroducedConceptIds.every(c=>introduced.has(c)))throw Error('Introduce the required teaching steps before this check');}
  function attempt(item,answer,{caseId=null,working=null}={}) {
   if(lesson?.supplemental&&item.kind==='widget_challenge'&&!state.platform)throw Error('Choose the authored activity variant before submitting');
-  requireIntroduced(item);const task=lesson?null:state.tasks[state.cursor],id=(lesson?state.id+'/item/'+item.id:state.id+'/task/'+task.id)+(caseId?'/case/'+caseId:'');
+  requireIntroduced(item);const task=lesson?null:state.tasks[state.cursor],id=(lesson?state.id+(item.kind==='widget_challenge'?additionActivityAttemptSuffix(lesson,state.platform):'')+'/item/'+item.id:state.id+'/task/'+task.id)+(caseId?'/case/'+caseId:'');
   if(store.read().events.some(e=>e.id===id))throw Error('The first response is already saved; it cannot be replaced. Export recovery if saved copies disagree.');
   return {...makeStudyAttempt({id,sessionId:state.id,item:item.sourceSnapshot?item:studyPresentation(bank,item,lesson?state.id:task.id),answer,at:now(),assisted:lesson?!!state.hints?.includes(item.id):task.assisted,parentAttemptId:task?.parentAttemptId||null,caseId,working}),taskId:task?.id||null,...(lesson?.supplemental?{scope:{...state.scope,platform:item.kind==='single_choice'?'shared':state.platform,variant:item.kind==='widget_challenge'?structuredClone(lesson.addition.variants[state.platform]):null}}:{})};
  }

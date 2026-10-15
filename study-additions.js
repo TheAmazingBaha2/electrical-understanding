@@ -6,14 +6,14 @@ const uuid=new RegExp(UUID_PATTERN),version=new RegExp(VERSION_PATTERN);
 export function canonicalHome(bank,id){return (bank.canonicalLessons||[]).find(l=>l.id===id||l.aliases.includes(id));}
 export function validateStudyAdditions(bank){
  const homes=new Set(),aliases=new Set();for(const l of bank.canonicalLessons||[]){if(!uuid.test(l.id)||homes.has(l.id)||!Array.isArray(l.aliases)||l.aliases.some(a=>typeof a!=='string'||aliases.has(a)))throw Error('Invalid canonical UUID/alias registry');if(l.optionalOnly&&(!l.title||bank.lessons.some(core=>l.aliases.includes(core.id))))throw Error('Optional-only home needs a title and must not duplicate an existing core home');homes.add(l.id);for(const a of l.aliases)aliases.add(a);}
- const identities=new Set();
+ const identities=new Set(),unitAliases=new Map();
  for(const a of bank.additions||[]){
   if(a.requirementHash!==undefined&&!/^[a-f0-9]{64}$/.test(a.requirementHash))throw Error('Invalid immutable requirement hash');
   const key=a.id+'@'+a.version;if(!uuid.test(a.id)||!version.test(a.version)||identities.has(key)||homes.has(a.id)||bank.lessons.some(l=>l.id===a.id)||!homes.has(a.homeLessonId)||!a.title||!Array.isArray(a.importAliases)||!a.importAliases.length)throw Error('Invalid supplemental identity, version or canonical home');identities.add(key);
+  for(const alias of a.importAliases){if(typeof alias!=='string'||!alias||unitAliases.has(alias)&&unitAliases.get(alias)!==a.id)throw Error('Supplement alias has more than one completion owner');unitAliases.set(alias,a.id);}
   if(!Array.isArray(a.sourceIds)||!a.sourceIds.length||a.sourceIds.some(id=>!bank.sources.some(s=>s.id===id)))throw Error('Unresolved addition sources');
   if(!Number.isInteger(a.requiredCheckCount)||a.requiredCheckCount<1||!Array.isArray(a.questionPoolIds)||new Set(a.questionPoolIds).size!==a.questionPoolIds.length||a.requiredCheckCount>a.questionPoolIds.length||a.questionPoolIds.some(id=>!bank.questions.some(q=>q.id===id)))throw Error('Invalid finite addition requirements');
   if(!['either-platform','both-platforms'].includes(a.completionPolicy)||!a.variants||!a.teaching?.steps?.length)throw Error('Authored addition teaching and practical variants required');
-  if(a.variants.desktop?.challengeId===a.variants.mobile?.challengeId)throw Error('Platform variants need independent authored challenge identities');
   const activityIds=new Set();for(const p of ['desktop','mobile']){const v=a.variants[p];if(!v||!uuid.test(v.id)||!version.test(v.version)||activityIds.has(v.id)||!bank.challenges.some(c=>c.id===v.challengeId))throw Error('Independent authored platform activity required');activityIds.add(v.id);}
  }
 }
@@ -75,4 +75,11 @@ export function additionRequirementDescriptor(a){
   questionPoolIds:[...a.questionPoolIds],selectedCheckIds:a.questionPoolIds.slice(0,a.requiredCheckCount),
   completionUnits:[{kind:'guided-activity',id:a.id+':guided'},...a.questionPoolIds.slice(0,a.requiredCheckCount).map(id=>({kind:'question-check',id}))],
   stepIds:a.teaching.steps.filter(s=>!s.optional).map(s=>s.id),variants:structuredClone(a.variants),completionPolicy:a.completionPolicy};
+}
+
+// Old distinct-template attempt IDs remain unchanged. A shared reusable template
+// needs authored-activity identity in the event key to keep platform attempts apart.
+export function additionActivityAttemptSuffix(lesson,platform){
+ if(!lesson?.supplemental||lesson.addition.variants.desktop.challengeId!==lesson.addition.variants.mobile.challengeId)return '';
+ const v=lesson.addition.variants[platform];if(!v)throw Error('Choose the authored activity variant');return '/activity/'+v.id+'@'+v.version;
 }

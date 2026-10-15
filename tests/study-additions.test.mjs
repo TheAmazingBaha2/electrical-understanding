@@ -2,7 +2,7 @@ import {artifactHash} from '../modular/repositories.js';
 import {verifyStudyAdditionRequirements} from '../scripts/content/study-addition-requirements.mjs';
 import test from 'node:test';import assert from 'node:assert/strict';
 import {additionsFixture} from './study-additions-fixture.mjs';
-import {additionAssets,additionCompletion,additionGauge,renderAdditionCards,renderOptionalAdditionHomes,renderAdditionReadingLists,additionActivityComplete,renderStudyContentStatus,additionRouteHash,parseAdditionRoute,additionRequirementDescriptor} from '../study-additions.js';
+import {additionAssets,additionCompletion,additionGauge,renderAdditionCards,renderOptionalAdditionHomes,renderAdditionReadingLists,additionActivityComplete,renderStudyContentStatus,additionRouteHash,parseAdditionRoute,additionRequirementDescriptor,additionActivityAttemptSuffix} from '../study-additions.js';
 import {initialStudyLesson,initialStudyActivity,lessonTarget,studyEsc,renderStudyLesson} from '../study-module-view.js';
 import {allStudyItems,studyPresentation,mergeStudyBanks,studyLessonAssets} from '../study-bank.js';
 import {makeStudyAttempt,lessonCompletion,introducedConcepts} from '../review-engine.js';
@@ -72,4 +72,25 @@ test('private publication pins a SHA256 finite requirement manifest and rejects 
  const {bank}=additionsFixture();await assert.rejects(()=>verifyStudyAdditionRequirements(bank),/requirement hash/);const addition=bank.additions[0];addition.requirementHash=await artifactHash(additionRequirementDescriptor(addition));await verifyStudyAdditionRequirements(bank);
  const lesson=additionAssets(bank)[0],state=initialStudyLesson(bank,lesson);assert.equal(state.requirements.hash,addition.requirementHash);assert.equal(state.requirementHash,addition.requirementHash);const manifest=additionRequirementDescriptor(addition);assert.equal(manifest.completionUnits.length,4);assert.equal(manifest.countsTowardCore,false);
  const changed=structuredClone(bank);changed.additions[0].requiredCheckCount=4;await assert.rejects(()=>verifyStudyAdditionRequirements(changed),/requirement hash/);assert.equal(state.requirements.selectedCheckIds.length,3);assert.equal(state.requirements.hash,addition.requirementHash);
+});
+
+test('an authoring alias has one completion owner, while immutable revisions retain that owner',()=>{
+ const {bank,addition}=additionsFixture();assert.throws(()=>mergeStudyBanks(bank,{schemaVersion:1,approved:true,additions:[{...addition,id:'00000000-0000-4000-8000-000000000999'}]}),/one completion owner/);assert.doesNotThrow(()=>mergeStudyBanks(bank,{schemaVersion:1,approved:true,additions:[{...addition,version:'2.0.0'}]}));
+});
+
+test('two authored platform activities can reuse one template without duplicate educational definitions or shared attempt identity',()=>{
+ const {base,pack,addition}=additionsFixture(),shared=structuredClone(addition);shared.variants.mobile.challengeId=shared.variants.desktop.challengeId;const bank=mergeStudyBanks(base,{...pack,additions:[shared]}),l=additionAssets(bank)[0];assert.notEqual(additionActivityAttemptSuffix(l,'desktop'),additionActivityAttemptSuffix(l,'mobile'));assert.equal(additionActivityAttemptSuffix(additionAssets(mergeStudyBanks(base,pack))[0],'desktop'),'');assert.equal(bank.challenges.length,base.challenges.length+pack.challenges.length);assert.notEqual(l.addition.variants.desktop.id,l.addition.variants.mobile.id);
+});
+
+test('eleven optional units leave partly and fully completed core denominators, grades and review dates identical',()=>{
+ const {base,pack,addition}=additionsFixture(),id=n=>'00000000-0000-4000-8000-'+String(n).padStart(12,'0'),units=[],questions=[],challenges=[];
+ for(let i=0;i<11;i++){const a=structuredClone(addition),alias='synthetic-batch-'+i;a.id=id(2000+i);a.importAliases=[alias];a.questionPoolIds=[];a.requiredCheckCount=i%2?4:3;
+  for(let j=0;j<5;j++){const q={...structuredClone(pack.questions[j]),id:id(2100+i*10+j),lessonId:alias};questions.push(q);a.questionPoolIds.push(q.id);}
+  for(const [n,p] of ['desktop','mobile'].entries()){const c={...structuredClone(pack.challenges[n]),id:id(2300+i*2+n),lessonId:alias};challenges.push(c);a.variants[p]={id:id(2400+i*2+n),version:'1.0.0',challengeId:c.id};}units.push(a);
+ }
+ const bank=mergeStudyBanks(base,{...pack,questions,challenges,additions:units});assert.equal(additionAssets(bank).length,11);const core=studyLessonAssets(base),after=studyLessonAssets(bank);assert.deepEqual(after.map(l=>l.questions),core.map(l=>l.questions));
+ for(const complete of [false,true]){const progress=Object.fromEntries(core.map(l=>[l.id,{complete,answers:Object.fromEntries(l.questions.slice(0,complete?undefined:1).map(q=>[q.id,{correct:true,reviewDue:12345}]))}])),c={progress,hasPassed:l=>progress[l.id].complete},before=structuredClone(progress),gauge=learningProgress(core,c);
+  for(const l of additionAssets(bank)){const {s,events}=exercise(bank,l);assert.equal(additionCompletion(l,s,events).complete,true);assert.equal(additionGauge(l,s,events).correct,0);}
+  assert.deepEqual(progress,before);assert.deepEqual(learningProgress(after,c),gauge);
+ }
 });
