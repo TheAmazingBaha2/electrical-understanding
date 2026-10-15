@@ -1,7 +1,7 @@
 import {conceptEvidence} from './review-engine.js';
 import {studyContent} from './study-content.js';
 import {studyLessonAssets} from './study-bank.js';
-import {StudyStore} from './study-journal.js';
+import {StudyStore,evidenceEvents} from './study-journal.js';
 import {renderStudyLesson,renderStudyReview,renderLegacyReviewArchive,studyLessonProjection,studyEsc} from './study-module-view.js';
 import {attachStudyModule} from './study-module-host.js';
 import {recordLabActivity} from './lab-modules.js';
@@ -203,7 +203,7 @@ function v2Context(){
  const approvedGeneratedLessons=[...generatedLessons.values()];
  const archivedGeneratedLessons=approvedGeneratedLessons.filter(l=>l.archived);
  const activeGeneratedLessons=approvedGeneratedLessons.filter(l=>!l.archived);
- return {lessons,progress:{...progress,...Object.fromEntries(privateStudyLessons.map(l=>[l.id,getState(l.id)]))},hasPassed,unlocked,reviews:(()=>{try{return Object.values(conceptEvidence(studyStore.read().events)).filter(c=>c.ready||c.needsPractice).length}catch{return 0}})(),banner:cloudBanner(),
+ return {lessons,progress:{...progress,...Object.fromEntries(privateStudyLessons.map(l=>[l.id,getState(l.id)]))},hasPassed,unlocked,reviews:(()=>{try{return Object.values(conceptEvidence(evidenceEvents(studyStore.read()))).filter(c=>c.ready||c.needsPractice).length}catch{return 0}})(),banner:cloudBanner(),
  coreRows:lessonRows(lessons),legacyRows:lessonRows(archivedPilotLessons),
  archivedPilotLessons,archivedUnreferencedLessons,archivedGeneratedLessons,activeGeneratedLessons,legacyReason,
  canOpenArchive:l=>canOpenLesson(l,allLessons.indexOf(l)),

@@ -26,7 +26,8 @@ export function eligibleStudyItems(bank,events) {
 export function reviewCandidates(bank,events,{now=Date.now(),exclude=[]}={}) {
  const stats=conceptEvidence(events,{now}),flags={};for(const e of orderedEvents(events))if(e.type==='flag')flags[e.conceptId]=e.flagged;
  const previous={};for(const e of events)if(e.type==='attempt')previous[e.item.variantId]=Math.max(previous[e.item.variantId]||0,Date.parse(e.at));
- return eligibleStudyItems(bank,events).filter(i=>!exclude.includes(i.variantId||i.id+'@'+i.revision)).map(i=>{
+ const expanded=eligibleStudyItems(bank,events).flatMap(i=>i.widgetKey==='material-classifier'?i.config.cases.map(c=>({...i,variantId:(i.variantId||i.id+'@'+i.revision)+':case='+c.id,config:{...i.config,cases:[c]}})):[i]);
+ return expanded.filter(i=>!exclude.includes(i.variantId||i.id+'@'+i.revision)).map(i=>{
   const s=stats[i.primaryConceptId],v=i.variantId||i.id+'@'+i.revision,last=previous[v]||0;
   const reason=s.needsPractice?'recent error':s.ready?'ready for another look':flags[i.primaryConceptId]?'you flagged this':'recently introduced';
   return {item:i,last,reason:reason+(last&&now-last<DAY_MS?' · repeated item, same-day practice cannot advance spacing':''),priority:s.needsPractice?0:s.ready?1:flags[i.primaryConceptId]?2:3};
@@ -45,7 +46,8 @@ export function startReview(bank,events,{id,at,limit=5,interactive=false}={}) {
 }
 export function makeStudyAttempt({id,sessionId,item,answer,at,assisted=false,parentAttemptId=null,caseId=null,working=null}) {
  if(!id||!sessionId||!Number.isFinite(Date.parse(at)))throw Error('Attempt identity/time required');
- return {id,type:'attempt',at,sessionId,item:structuredClone(item),answer:structuredClone(answer),result:answerStudyItem(item,answer,{caseId}),assisted:!!assisted,parentAttemptId,caseId,working:working?structuredClone(working):null,sourceIds:[...item.sourceIds]};
+ const frozen=structuredClone(item);if(caseId&&!frozen.variantId?.endsWith(':case='+caseId))frozen.variantId=(frozen.variantId||frozen.id+'@'+frozen.revision)+':case='+caseId;
+ return {id,type:'attempt',at,sessionId,item:frozen,answer:structuredClone(answer),result:answerStudyItem(frozen,answer,{caseId}),assisted:!!assisted,parentAttemptId,caseId,working:working?structuredClone(working):null,sourceIds:[...item.sourceIds]};
 }
 export function repairReview(bank,events,session,attempt) {
  const next=structuredClone(session),task=next.tasks[next.cursor];if(!task||task.id!==attempt.taskId)throw Error('Attempt does not target the current review task');

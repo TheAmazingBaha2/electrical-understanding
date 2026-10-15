@@ -31,6 +31,7 @@ try{for(const width of [320,360,390,768,1280,1920]){
  await choose(page,'input[name="study-prediction"][value="1"]');await click(page,'[data-study-predict]');
  await page.reload({waitUntil:'networkidle'});await open(page,bank.lessons[0]);await page.locator('[data-study-action]').waitFor();assert.equal(await page.locator('[data-study-predict]').count(),0);
  await click(page,'[data-study-action]');await click(page,'[data-study-reveal]');assert.match(await page.locator('.study-widget').innerText(),/First prediction saved/);
+ const atomImage=await page.screenshot({path:'test-artifacts/foundations-atom-'+width+'.jpg',type:'jpeg',quality:65,fullPage:true});if([390,1920].includes(width))console.log('FOUNDATIONS_QA_IMAGE:'+width+':'+atomImage.toString('base64'));
  await tab(page,'quiz');const order=await page.locator('input[name="study-answer"]').evaluateAll(xs=>xs.map(x=>x.value));
  await choose(page,'input[name="study-answer"][value="no"]');await click(page,'[data-study-submit]');
  await page.reload({waitUntil:'networkidle'});await open(page,bank.lessons[0]);

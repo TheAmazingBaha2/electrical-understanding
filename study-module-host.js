@@ -17,7 +17,7 @@ export function attachStudyModule(root,{bank,store,lesson=null,rerender,notify,n
  function requireIntroduced(item){const introduced=introducedConcepts(events());if(!item.requiresIntroducedConceptIds.every(c=>introduced.has(c)))throw Error('Introduce the required teaching steps before this check');}
  function attempt(item,answer,{caseId=null,working=null}={}) {
   requireIntroduced(item);const task=lesson?null:state.tasks[state.cursor],id=(lesson?state.id+'/item/'+item.id:state.id+'/task/'+task.id)+(caseId?'/case/'+caseId:'');
-  if(events().some(e=>e.id===id))throw Error('The first response is already saved; it cannot be replaced');
+  if(store.read().events.some(e=>e.id===id))throw Error('The first response is already saved; it cannot be replaced. Export recovery if saved copies disagree.');
   return {...makeStudyAttempt({id,sessionId:state.id,item:item.sourceSnapshot?item:studyPresentation(bank,item,lesson?state.id:task.id),answer,at:now(),assisted:lesson?!!state.hints?.includes(item.id):task.assisted,parentAttemptId:task?.parentAttemptId||null,caseId,working}),taskId:task?.id||null};
  }
  function feedbackReview(a) {if(!lesson)state=repairReview(bank,[...events(),a],state,a);}

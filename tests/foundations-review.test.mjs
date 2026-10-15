@@ -5,7 +5,7 @@ import {countProperties,particleState,changeParticle,compareCounts,energyTransit
 import {validateStudyBank,presentedItem,answerStudyItem} from '../study-bank.js';
 import {conceptEvidence,eligibleStudyItems,startReview,repairReview,makeStudyAttempt,lessonCompletion,DAY_MS} from '../review-engine.js';
 import {emptyStudyJournal,mergeStudyJournals,evidenceEvents,studyState,StudyStore} from '../study-journal.js';
-import {initialStudyLesson,renderStudyWidget,renderLegacyReviewArchive,renderStudyReview} from '../study-module-view.js';
+import {initialStudyLesson,initialStudyActivity,renderStudyWidget,renderLegacyReviewArchive,renderStudyReview} from '../study-module-view.js';
 import {studyFixture} from './foundations-fixture.mjs';
 const at=day=>new Date(Date.UTC(2026,0,1)+day*DAY_MS).toISOString();
 const intro=(concepts=['count','balance','energy','case'])=>({id:'intro',type:'introduction',at:at(0),stepId:'fixture.step',conceptIds:concepts,sourceIds:['fixture']});
@@ -65,7 +65,7 @@ test('default review caps compact tasks, budgets repairs, and retains exact sour
   const a={...attempt(task.item,0,'no',task.assisted,'bounded'+cursor),taskId:task.id};events.push(a);s=repairReview(bank,events,s,a);assert.ok(s.tasks.length<=4);
  }
  assert.ok(Object.values(s.repairs).every(n=>n===1));
- const compact=initialStudyLesson(bank,bank.lessons[3]);compact.activity.caseCount=1;assert.equal(compact.activity.caseCount,1);
+ const compact=initialStudyActivity(bank.challenges[3],{compact:true});assert.equal(compact.caseCount,1);const cases=bank.challenges[3].config.cases;const one=makeStudyAttempt({id:'case-one',sessionId:'cases',item:bank.challenges[3],answer:'element',caseId:cases[0].id,at:at(0)}),two=makeStudyAttempt({id:'case-two',sessionId:'cases',item:bank.challenges[3],answer:'mixture',caseId:cases[1].id,at:at(0)});assert.notEqual(one.item.variantId,two.item.variantId);
 });
 test('many local saves deduplicate presentations, retain all working revisions and bound redundant backups',async()=>{
  const map=new Map(),storage={getItem:k=>map.get(k)??null,setItem:(k,v)=>{const total=[...map.entries()].reduce((n,[key,value])=>n+(key===k?0:value.length),0)+v.length;if(total>4000000)throw Error('quota');map.set(k,v)},removeItem:k=>map.delete(k),key:i=>[...map.keys()][i],get length(){return map.size}},locks={request:async(k,fn)=>fn()},store=new StudyStore(storage,null,locks),bank=studyFixture(),state=initialStudyLesson(bank,bank.lessons[0]);

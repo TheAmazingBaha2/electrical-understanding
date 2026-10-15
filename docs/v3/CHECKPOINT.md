@@ -1,3 +1,7 @@
+# Current assignment: Foundations A and Review
+
+Read [FOUNDATIONS_A_CHECKPOINT.md](FOUNDATIONS_A_CHECKPOINT.md) first. The lab usability sprint is preserved; priority has moved to six private source-bounded lessons and introduced-concept Review.
+
 # Current direction: portable modular lessons
 
 Read [MODULAR_LESSON_CHECKPOINT.md](MODULAR_LESSON_CHECKPOINT.md) first. The next assignment creates independent Schema V3 sources/evidence/topics/compositions/assessments/presentation/progress contracts and a gated legacy migration. Private Windows and Android portability is required; GitHub must not become a runtime dependency. Existing desktop/mobile prototypes and all legacy content/progress remain intact until migration gates pass.
