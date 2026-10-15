@@ -1,3 +1,7 @@
+# Current usability sprint
+
+Read [LAB_USABILITY_CHECKPOINT.md](LAB_USABILITY_CHECKPOINT.md) first for measured desktop findings, current work and the owner’s subsequent grading/deletion authorization. The approval statements below are historical.
+
 # Modular lessons — authoritative resumption checkpoint
 
 **Active continuation:** read [MODULAR_CONTINUATION_REPORT.md](MODULAR_CONTINUATION_REPORT.md) and [PRIVATE_LEARNING_WORKFLOW.md](PRIVATE_LEARNING_WORKFLOW.md) first. Last fully verified implementation is **a17880cde38264602a7532e05c6587b3d30e5766**: CI **38645270574**, 293 tests/19 browser suites/both Windows prototypes; read-back **38645270474**, job **116130442864**, all 73 hashes at **2026-10-14 22:11:48 UTC**. A following touch-target/fixture/documentation commit cannot self-name; inspect actual HEAD, exact-SHA checks and `/workspace/electrical-workbench-pilot-review/verification.json` before assuming its deployment or the final private archive completed. Historical notes below are preserved, not the current stopping point.

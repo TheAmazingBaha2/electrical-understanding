@@ -54,3 +54,27 @@ test('physical probe endpoints stay on the selected terminal, and clearing/remov
 });
 
 test('geometric edits and clear/undo preserve inventory annotations and unknown unlinked stock',()=>{const p=newProject();p.componentInventory[0].annotation={keep:'source calibration note'};p.componentInventory.push({futureStock:'keep',quantity:15});const original=structuredClone(p.componentInventory),layout=circuitCanvasLayout(p.circuit);const moved=editCircuitCanvas(p.circuit,layout,{type:'move',id:'R1',position:{x:800,y:600}});assert.deepEqual(inventoryForCircuit(moved.circuit,p.componentInventory),original);const cleared=canvasHistoryEdit(p.circuit,layout,null,{type:'clear'},p.componentInventory),active=inventoryForCircuit(cleared.circuit,p.componentInventory);assert.deepEqual(active,[{futureStock:'keep',quantity:15}]);const undo=canvasHistoryRestore(cleared.circuit,cleared.layout,cleared.history,'undo',active);assert.deepEqual(undo.componentInventory,original);assert.deepEqual(canvasHistoryRestore(undo.circuit,undo.layout,undo.history,'redo',undo.componentInventory).componentInventory,active);});
+
+test('measured workspaces have no legacy 1800px cap and all resize edges remain bounded',async()=>{
+ const {presentDesktopLayout}=await import('../desktop-windows.js'),state=defaultDesktopLayout();
+ for(const width of [280,768,1280,1440,1650,1920,2560,3440]){
+  const area={width,height:900},projected=presentDesktopLayout(state,area);
+  assert.equal(projected.meter.x+projected.meter.width,width);
+  assert.equal(projected.circuit.height,900);assert.equal(projected.scope.visible,false);assert.equal(projected.project.visible,false);
+  assert.equal(dockDesktopWindow(state.windows.circuit,'max',area).width,width);
+  for(const w of Object.values(projected))for(const edge of ['n','s','e','w','ne','nw','se','sw'])for(const delta of [-10000,10000]){
+   const r=resizeDesktopWindow(w,edge,delta,delta,area);assert.ok(r.x>=0&&r.y>=0);assert.ok(r.width>0&&r.height>0);assert.ok(r.x+r.width<=width&&r.y+r.height<=900);
+  }
+ }
+});
+test('temporary viewport fitting is a projection and preserves saved free layouts for enlargement',async()=>{
+ const {presentDesktopLayout}=await import('../desktop-windows.js'),state=defaultDesktopLayout();state.windows.meter={...state.windows.meter,x:2700,y:1200,width:600,height:800,dock:'free'};validateDesktopLayout(state);
+ const original=structuredClone(state),small=presentDesktopLayout(state,{width:700,height:500});assert.equal(small.meter.x,100);assert.equal(small.meter.y,0);assert.deepEqual(state,original);
+ const restored=presentDesktopLayout(state,{width:3440,height:2200});assert.equal(restored.meter.x,2700);assert.equal(restored.meter.y,1200);assert.deepEqual(state,original);
+});
+test('pointer coordinates follow measured stage scaling, borders and scroll rather than screen pixels',async()=>{
+ const {desktopPointerPoint}=await import('../desktop-windows.js');
+ for(const scale of [.67,.8,1,1.25,2]){const geometry={left:73,top:-120,width:1200*scale,height:800*scale,offsetWidth:1200,offsetHeight:800,clientLeft:2,clientTop:2,scrollLeft:61,scrollTop:29};
+  const p=desktopPointerPoint({clientX:73+402*scale,clientY:-120+202*scale},geometry);assert.ok(Math.abs(p.x-461)<1e-9);assert.ok(Math.abs(p.y-229)<1e-9);
+ }
+});
