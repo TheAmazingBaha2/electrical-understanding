@@ -1195,3 +1195,6 @@ body:has(#main>.desktop-bench) .topbar{padding:12px 18px;min-height:52px}body:ha
 [data-canvas-bend]{touch-action:none;cursor:move;}
 
 .canvas-palette-item{display:inline-flex;align-items:stretch;gap:2px;}.canvas-palette-handle{touch-action:none;min-width:44px;min-height:48px;cursor:grab;border:1px solid #8ab8c1;border-radius:8px;background:#183944;color:#e5ffff;}
+
+/* Keep phone probe handles and contacts together in short landscape views. */
+@media(max-height:500px){.mobile-circuit-graphic{max-height:280px;}}
