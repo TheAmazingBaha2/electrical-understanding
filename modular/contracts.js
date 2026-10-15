@@ -1,8 +1,9 @@
+import {UUID_PATTERN,VERSION_PATTERN} from '../data-contract.js';
 // Portable domain contracts. No DOM, filesystem, network, database or native-shell API.
 export const DOMAIN_SCHEMA_VERSION = 3;
 const str = {type:'string',minLength:1,pattern:'\\S'};
-const uuid = {type:'string',pattern:'^[0-9a-f]{8}-[0-9a-f]{4}-[457][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$'};
-const semver = {type:'string',pattern:'^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$'};
+const uuid = {type:'string',pattern:UUID_PATTERN};
+const semver = {type:'string',pattern:VERSION_PATTERN};
 const hash = {type:'string',pattern:'^[0-9a-f]{64}$'};
 const number = {type:'number'};
 const bool = {type:'boolean'};

@@ -15,7 +15,7 @@ function lessonRows(lessons,c){
  return lessons.map(l=>{const p=learningProgress([l],c),ready=available(l,c);
  const copy='<div class="chapter-lesson-copy">'+(l.chapterSummary?'<span class="v2-kicker">CHAPTER WRAP-UP</span>':l.workshop?'<span class="v2-kicker">WORKSHOP · SELF-PACED</span>':'')+'<h4>'+esc(l.title)+'</h4><p>'+esc(l.description)+'</p><p class="lesson-page-reference"><strong>Reference pages:</strong> '+esc(lessonReferencePages(l))+'</p>'+progressBar(p,l.title)+'<small>'+p.correct+' / '+p.total+' correct · '+(p.total-p.unanswered)+' attempted'+(p.mastered?(l.studyModule?' · Completed':' · Mastered'):'')+'</small></div>';
  const action='<button type="button" class="'+(p.mastered?'outline':'primary')+' small-button" '+(ready?openLesson(l):'disabled')+'>'+(p.mastered?'Review':ready?(l.workshop?'Open workshop':'Study'):'Previous lesson required')+' →</button>';
- return '<article class="chapter-lesson" data-content-lesson="'+esc(l.id)+'"><span class="chapter-lesson-number">'+esc(l.curriculum?.order?String(l.curriculum.order).padStart(2,'0'):'•')+'</span>'+copy+action+'</article>';
+ return '<article class="chapter-lesson" data-content-lesson="'+esc(l.id)+'"><span class="chapter-lesson-number">'+esc(l.curriculum?.order?String(l.curriculum.order).padStart(2,'0'):'•')+'</span>'+copy+action+(c.additionCards?.(l.id,'catalog')||'')+'</article>';
  }).join('');
 }
 function chapterMenu(source,ch,c,selected){
@@ -29,7 +29,7 @@ export function renderSourceSection(view,c={},selected=''){
 }
 export function renderMathPractice(c={}){
  const lessons=studyInventory(c).filter(l=>l.curriculum.section==='math');
- return '<header class="source-heading"><p class="v2-kicker">KEEP THE FOUNDATIONS FRESH</p><h2>Math Practice</h2><p>Periodic refreshers on the mathematics behind electricity. These stand on their own, without requiring a book.</p></header><section class="source-book">'+(lessons.length?lessonRows(lessons,c):'<div class="chapter-empty"><h3>A place for your math refreshers</h3><p>Chapter 3’s full lessons are in Exam Prep → Associate CET. Refresher lessons will appear here as we add them.</p><button class="outline small-button" data-goto="ceta" data-lesson="associate-cet:3">Open Associate CET · Chapter 3 →</button></div>')+'</section>';
+ return '<header class="source-heading"><p class="v2-kicker">KEEP THE FOUNDATIONS FRESH</p><h2>Math Practice</h2><p>Periodic refreshers on the mathematics behind electricity. These stand on their own, without requiring a book.</p></header><section class="source-book">'+(lessons.length?lessonRows(lessons,c):'<div class="chapter-empty"><h3>A place for your math refreshers</h3><p>Chapter 3’s full lessons are in Exam Prep → Associate CET. Refresher lessons will appear here as we add them.</p><button class="outline small-button" data-goto="ceta" data-lesson="associate-cet:3">Open Associate CET · Chapter 3 →</button></div>')+'</section>'+(c.additionContextCards?.('math')||'');
 }
 export function renderSavedReinforcement(c={}){
  const lessons=studyInventory(c).filter(l=>l.curriculum.section==='reviews');

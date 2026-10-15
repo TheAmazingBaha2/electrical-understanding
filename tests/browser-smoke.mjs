@@ -22,7 +22,7 @@ try{
   await page.locator('.lesson-tabs [data-lesson-tab="quiz"]').click();assert.equal(await page.locator('.quiz-card').count(),1);assert.equal(await page.locator('.quiz-step').count(),10);await page.locator('.quiz-card input[value="1"]').check();await page.locator('[data-submit="p01"]').click();
   await page.waitForFunction(()=>JSON.parse(localStorage.getItem('eu_progress:hkwmtjhgrskidaizamwy:anonymous')||'{}').progress?.['EIM-BEC-PRELAB']?.answers?.p01?.correct===true);
   await page.locator('.lesson-tabs [data-lesson-tab="review"]').click();assert.equal(await page.locator('.lesson-review-item').count(),10);
-  await go(page,'textbooks');assert.equal(await page.locator('.source-book').count(),1);await page.locator('[data-disclosure="contents:geier:6"] > summary').click();
+  await go(page,'textbooks');assert.equal(await page.locator('.source-book').count(),1);await page.locator('[data-disclosure="contents:practical-electronics:measurement"] > summary').click();
   assert.equal(await page.locator('[data-goto="lesson"][data-lesson="BDMM-02"]').count(),1);await page.locator('[data-lesson="BDMM-01"]').click();assert.match(await page.locator('.lesson-overview').innerText(),/5.04 V/);
   await page.locator('.lesson-tabs [data-lesson-tab="interact"]').click();assert.equal(await page.locator('.activity-step').count(),3);
   await page.locator('[data-workshop-field="digits"]').selectOption('3');await page.locator('[data-workshop-field="error"]').selectOption('0.04');assert.match(await page.locator('.workshop-reading').innerText(),/0.040 V/);

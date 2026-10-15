@@ -14,21 +14,23 @@ export function attachStudyModule(root,{bank,store,lesson=null,rerender,notify,n
  function action(selector,fn,event='click') {root.querySelectorAll(selector).forEach(el=>el.addEventListener(event,async ev=>{if(busy)return;busy=true;root.inert=true;try{await fn(el,ev);}catch(error){notify(error.message);}finally{busy=false;root.inert=false;}}));}
  function currentItem(){return lesson?state.requiredItems[state.quizIndex]:state.tasks[state.cursor].item;}
  function currentActivity(){return lesson?state.activity:(state.tasks[state.cursor].activity??=initialStudyActivity(currentItem(),{compact:true}));}
- function challenge(){return lesson?allStudyItems(bank).find(i=>i.id===lesson.challengeId):currentItem();}
+ function challenge(){return lesson?allStudyItems(bank).find(i=>i.id===(lesson.supplemental&&state.platform?lesson.addition.variants[state.platform].challengeId:lesson.challengeId)):currentItem();}
  function requireIntroduced(item){if(!availableStudyItem(bank,item))throw Error('Reinstall the matching approved lesson bank before continuing this saved assessment. History is retained.');const introduced=introducedConcepts(events());if(!item.requiresIntroducedConceptIds.every(c=>introduced.has(c)))throw Error('Introduce the required teaching steps before this check');}
  function attempt(item,answer,{caseId=null,working=null}={}) {
+  if(lesson?.supplemental&&item.kind==='widget_challenge'&&!state.platform)throw Error('Choose the authored activity variant before submitting');
   requireIntroduced(item);const task=lesson?null:state.tasks[state.cursor],id=(lesson?state.id+'/item/'+item.id:state.id+'/task/'+task.id)+(caseId?'/case/'+caseId:'');
   if(store.read().events.some(e=>e.id===id))throw Error('The first response is already saved; it cannot be replaced. Export recovery if saved copies disagree.');
-  return {...makeStudyAttempt({id,sessionId:state.id,item:item.sourceSnapshot?item:studyPresentation(bank,item,lesson?state.id:task.id),answer,at:now(),assisted:lesson?!!state.hints?.includes(item.id):task.assisted,parentAttemptId:task?.parentAttemptId||null,caseId,working}),taskId:task?.id||null};
+  return {...makeStudyAttempt({id,sessionId:state.id,item:item.sourceSnapshot?item:studyPresentation(bank,item,lesson?state.id:task.id),answer,at:now(),assisted:lesson?!!state.hints?.includes(item.id):task.assisted,parentAttemptId:task?.parentAttemptId||null,caseId,working}),taskId:task?.id||null,...(lesson?.supplemental?{scope:{...state.scope,platform:item.kind==='single_choice'?'shared':state.platform,variant:item.kind==='widget_challenge'?structuredClone(lesson.addition.variants[state.platform]):null}}:{})};
  }
  function feedbackReview(a) {if(!lesson)state=repairReview(bank,[...events(),a],state,a);}
  action('[data-study-recap-start]',async()=>{if(state.started&&!confirm('Start another recap? All earlier attempts remain saved.'))return;state=startStudyRecap(bank,lesson,events(),{limit:Number(root.querySelector('[data-study-recap-size]')?.value||12),run:(state.run||0)+1});await save();});
  action('[data-study-recap-action]',async el=>{state=recapAction(state,el.dataset.studyRecapAction);await save();});
+ action('[data-study-platform]',async el=>{const p=el.dataset.studyPlatform;if(!lesson?.supplemental||!['desktop','mobile'].includes(p))throw Error('Choose an authored platform variant');if(state.platform)state.practical[state.platform]=structuredClone(state.activity);state.platform=p;state.activity=state.practical[p]||initialStudyActivity(challenge());await save();});
  action('[data-study-tab]',async el=>{state.tab=el.dataset.studyTab;await save();});
  action('[data-study-step]',async el=>{state.step=Number(el.dataset.studyStep);await save();});
  action('[data-study-continue]',async()=>{
   const steps=[...(lesson.preparation||[]),...lesson.steps],step=steps[state.step],id='intro:'+state.id+':'+step.id;
-  state.acknowledged=[...new Set([...state.acknowledged,step.id])];const extra=events().some(e=>e.id===id)?[]:[{id,type:'introduction',at:now(),stepId:step.id,conceptIds:step.conceptIds,sourceIds:step.sourceIds}];
+  state.acknowledged=[...new Set([...state.acknowledged,step.id])];const extra=events().some(e=>e.id===id)?[]:[{id,type:'introduction',at:now(),stepId:step.id,conceptIds:step.conceptIds,sourceIds:step.sourceIds,...(lesson.supplemental?{scope:state.scope}:{})}];
   if(state.step+1<steps.length)state.step++;else state.tab='interact';await save(extra);
  });
  action('[data-study-quiz]',async el=>{state.quizIndex=Number(el.dataset.studyQuiz);await save();});

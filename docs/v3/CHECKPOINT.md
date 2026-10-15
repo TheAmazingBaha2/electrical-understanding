@@ -1,3 +1,7 @@
+# Latest owner amendment: independently tracked optional additions
+
+Read [ADDITIONS_PROGRESS_R2.md](ADDITIONS_PROGRESS_R2.md) alongside [LESSONS_AND_RECAP_CHECKPOINT.md](LESSONS_AND_RECAP_CHECKPOINT.md). Do not import old and revised Chapter 2 packs separately. Completed core and earned addition revisions remain unchanged; use existing UUIDs/aliases and one authorized journal.
+
 # Active: Lessons catalog and completed Prompt 3/4 implementation
 
 Read [LESSONS_AND_RECAP_CHECKPOINT.md](LESSONS_AND_RECAP_CHECKPOINT.md) first. Topic-based Lessons supersedes the previous book-companion navigation. Actual new lesson banks remain private; a public null-bank build is never evidence of learner access.

@@ -1,3 +1,4 @@
+import {additionAssets,renderAdditionCards} from './study-additions.js';
 import {catalogSection} from './lesson-catalog.js';
 import {conceptEvidence} from './review-engine.js';
 import {studyContent} from './study-content.js';
@@ -22,6 +23,7 @@ import {geierWorkshops,reviseDmmLessons} from './geier-workshops.js';
 import {attachWorkshopWidgets} from './workshop-widgets.js';
 import {lessonRequirementsMet,workshopCheckUpdate} from './workshop-progress.js';
 const privateStudyLessons=studyLessonAssets(studyContent);
+const privateStudyAdditions=additionAssets(studyContent);
 const bookLessons=[...reviseDmmLessons(originalBookLessons),...geierWorkshops,...privateStudyLessons];
 import { cetaLessons } from './ceta-lessons.js';
 import {mathLessons, mathAvailability,relatedMath} from './math-lessons.js';
@@ -40,11 +42,11 @@ const duration = ms => new Date(ms).toLocaleDateString(undefined,{month:'short',
 const now = () => Date.now();
 const DAY = 24*60*60*1000;
 const sourceLessons=[...lessons,...labLessons,...bookLessons,...cetaLessons];
-const allLessons=[...sourceLessons,...mathLessons];
+const allLessons=[...sourceLessons,...mathLessons,...privateStudyAdditions];
 // Previously approved lessons use repository assets, independent of retired authoring.
 // Their IDs and existing graded answers are never rewritten on library refresh.
 const generatedLessons=new Map([...preservedLessons,...publishedLessons].map(lesson=>[lesson.id,lesson]));
-const findLesson=id=>allLessons.find(l=>l.id===id)||generatedLessons.get(id);
+const findLesson=id=>privateStudyAdditions.find(l=>l.id===id&&l.contentRevision===activeAdditionRevision)||allLessons.find(l=>l.id===id)||generatedLessons.get(id);
 const labUnlocked=l=>l?.id===labLessons[0].id || Boolean(labLessons.length && hasPassed(labLessons[0]));
 const bookUnlocked=l=>l?.independent===true || l?.id===bookLessons[0].id || Boolean(bookLessons.length && hasPassed(bookLessons[0]));
 const guideUnlocked=l=>l?.id===cetaLessons[0].id || Boolean(cetaLessons.length && hasPassed(cetaLessons[cetaLessons.findIndex(original=>original.id===l.id)-1]));
@@ -56,6 +58,7 @@ const canOpenLesson=l=>{
  if(l.subtrack==='guide')return guideUnlocked(l);
  return labLessons.some(original=>original.id===l.id)&&labUnlocked(l);
 };
+let activeAdditionRevision=null;
 let supabase=null, user=null, view='dashboard', activeLesson=null, focusQuestion=null, progress={}, busy=false;
 let lessonTab='overview', activityIndex=0, quizIndex=0, learnIndex=0;
 // Only Cloudflare preview hosts may connect to the isolated staging project.
@@ -74,7 +77,7 @@ function localLoad(){
  try{return store.read().progress}catch(error){storageError=error.message;notify(error.message);return {}}
 }
 function getAnonymousSnapshot(){return new ProgressStore(localStorage,null).read().progress}
-function getState(id){const module=privateStudyLessons.find(l=>l.id===id);if(module){try{return studyLessonProjection(studyContent,module,studyStore.read())}catch{return {answers:{},complete:false,blocked:true}}}return progress[id] || {answers:{},complete:false,updatedAt:0}}
+function getState(id){const module=privateStudyLessons.find(l=>l.id===id)||privateStudyAdditions.find(l=>l.id===id&&l.contentRevision===activeAdditionRevision)||privateStudyAdditions.find(l=>l.id===id);if(module){try{return studyLessonProjection(studyContent,module,studyStore.read())}catch{return {answers:{},complete:false,blocked:true}}}return progress[id] || {answers:{},complete:false,updatedAt:0}}
 function getAccuracy(lesson){const a=getState(lesson.id).answers||{};const done=lesson.questions.filter(q=>a[q.id]?.correct===true).length;return {correct:done,total:lesson.questions.length,answered:lesson.questions.filter(q=>typeof a[q.id]?.correct==='boolean').length}}
 function hasPassed(lesson){if(!lesson)return false;if(lesson.studyModule)return getState(lesson.id).complete===true;const state=getState(lesson.id);if(lesson.workshop||lesson.labs)return lessonRequirementsMet(lesson,state);if(state.complete===true)return true;const a=state.answers||{};const hits=lesson.questions.filter(q=>a[q.id]?.correct===true).length;
   return lesson.questions.every(q=>typeof a[q.id]?.correct==='boolean') && hits>=Math.ceil(.8*lesson.questions.length) && lesson.questions.filter(q=>q.safety).every(q=>a[q.id]?.correct===true);
@@ -144,6 +147,7 @@ async function saveAnswer(lessonId,qid,update){
 }
 async function switchTo(next,id=null,qid=null){
  await workspaceCleanup?.();workspaceCleanup=null;
+ if(next==='addition'){if(!privateStudyAdditions.some(l=>l.id===id&&l.contentRevision===qid)){notify('This addition revision is not installed; saved progress is retained.');return;}activeAdditionRevision=qid;next='lesson';qid=null;}else activeAdditionRevision=null;
  if(['textbooks','library'].includes(next))next='lessons';
  if(['scan-inbox','ai-lab'].includes(next))next='account';
  const startingLesson=['lesson','generated-lesson'].includes(next)&&(view!==next||activeLesson!==id);
@@ -205,7 +209,7 @@ function v2Context(){
  const approvedGeneratedLessons=[...generatedLessons.values()];
  const archivedGeneratedLessons=approvedGeneratedLessons.filter(l=>l.archived);
  const activeGeneratedLessons=approvedGeneratedLessons.filter(l=>!l.archived);
- return {lessons,progress:{...progress,...Object.fromEntries(privateStudyLessons.map(l=>[l.id,getState(l.id)]))},hasPassed,unlocked,reviews:(()=>{try{return Object.values(conceptEvidence(evidenceEvents(studyStore.read()))).filter(c=>c.ready||c.needsPractice).length}catch{return 0}})(),banner:cloudBanner(),
+ return {additionCards:(id,context='lesson')=>studySafe(doc=>renderAdditionCards(studyContent,doc,id,{escape:studyEsc,context})),additionContextCards:context=>(studyContent?.canonicalLessons||[]).filter(h=>studyContent.additions?.some(a=>a.homeLessonId===h.id&&a.entryContexts?.includes(context))).map(h=>studySafe(doc=>renderAdditionCards(studyContent,doc,h.id,{escape:studyEsc,context}))).join(''),lessons,progress:{...progress,...Object.fromEntries(privateStudyLessons.map(l=>[l.id,getState(l.id)]))},hasPassed,unlocked,reviews:(()=>{try{return Object.values(conceptEvidence(evidenceEvents(studyStore.read()))).filter(c=>c.ready||c.needsPractice).length}catch{return 0}})(),banner:cloudBanner(),
  coreRows:lessonRows(lessons),legacyRows:lessonRows(archivedPilotLessons),
  archivedPilotLessons,archivedUnreferencedLessons,archivedGeneratedLessons,activeGeneratedLessons,legacyReason,
  canOpenArchive:l=>canOpenLesson(l,allLessons.indexOf(l)),
@@ -214,7 +218,7 @@ function v2Context(){
  sourceLessons,mathIsAvailable:l=>canOpenLesson(l,allLessons.indexOf(l)),
  sourceIsAvailable:l=>canOpenLesson(l,sourceLessons.indexOf(l))};
 }
-function setNav(){const current=view==='generated-lesson'?(generatedLessons.get(activeLesson)?.archived?'account':sectionView(placementForLesson(generatedLessons.get(activeLesson)||{}).section)):view==='lesson'?(isArchivedLesson(activeLesson)?'account':mathLessons.some(l=>l.id===activeLesson)?'math':lessons.some(l=>l.id===activeLesson)?'ceta':bookLessons.some(l=>l.id===activeLesson)?'lessons':cetaLessons.some(l=>l.id===activeLesson)?'ceta':'labs'):(view==='legacy'||view==='curriculum')?'account':view==='subtrack'?(activeLesson==='core'||['guide','exam'].includes(activeLesson)?'ceta':['geier','teach','principles','cabling'].includes(activeLesson)?'lessons':'labs'):view;
+function setNav(){const current=view==='generated-lesson'?(generatedLessons.get(activeLesson)?.archived?'account':sectionView(placementForLesson(generatedLessons.get(activeLesson)||{}).section)):view==='lesson'?(isArchivedLesson(activeLesson)?'account':mathLessons.some(l=>l.id===activeLesson)?'math':lessons.some(l=>l.id===activeLesson)?'ceta':(bookLessons.some(l=>l.id===activeLesson)||findLesson(activeLesson)?.supplemental)?'lessons':cetaLessons.some(l=>l.id===activeLesson)?'ceta':'labs'):(view==='legacy'||view==='curriculum')?'account':view==='subtrack'?(activeLesson==='core'||['guide','exam'].includes(activeLesson)?'ceta':['geier','teach','principles','cabling'].includes(activeLesson)?'lessons':'labs'):view;
  document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',current===b.dataset.view));
  const context=v2Context(),inventory=studyInventory(context);
  for(const section of studySections){const status=$('[data-nav-status="'+section.id+'"]');if(status){const graded=learningProgress(inventory.filter(l=>catalogSection(l.curriculum.section)===section.section),context).total;status.textContent=graded||(section.id==='reviews'&&context.reviews)?'':'TBD'}}
@@ -227,6 +231,7 @@ function render(){setNav();refreshAIChatContext();const names={'generated-lesson
  workspaceCleanup?.();workspaceCleanup=null;
  const disclosures=new Set([...main.querySelectorAll('details[data-disclosure][open]')].map(el=>el.dataset.disclosure));
  main.innerHTML=view==='workbench'?renderLabPlatform():view==='dashboard'?renderDashboard():['lesson','generated-lesson'].includes(view)?renderLesson():view==='reviews'?studySafe(doc=>renderStudyReview(studyContent,doc)):view==='review-archive'?renderLegacyReviewArchive([...allLessons.filter(l=>!l.studyModule),...generatedLessons.values()],progress):view==='account'?renderAccount():view==='library'?renderLibrary():v2Page(view,v2Context(),activeLesson);
+ if(['lesson','generated-lesson'].includes(view)&&!findLesson(activeLesson)?.supplemental)main.insertAdjacentHTML('beforeend',studySafe(doc=>renderAdditionCards(studyContent,doc,activeLesson,{escape:studyEsc})));
  for(const el of main.querySelectorAll('details[data-disclosure]'))if(disclosures.has(el.dataset.disclosure))el.open=true;
  main.querySelectorAll('[data-toggle-panel]').forEach(button=>{
   const panel=document.getElementById(button.dataset.togglePanel);if(!panel)return;
@@ -234,7 +239,7 @@ function render(){setNav();refreshAIChatContext();const names={'generated-lesson
   apply(dashboardPanelStates.get(button.dataset.togglePanel)??true);
   button.addEventListener('click',()=>{const expanded=panel.hidden;dashboardPanelStates.set(button.dataset.togglePanel,expanded);apply(expanded)});
  });
- main.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>switchTo(b.dataset.goto,b.dataset.lesson||null,b.dataset.question||null)));
+ main.querySelectorAll('[data-goto]').forEach(b=>b.addEventListener('click',()=>switchTo(b.dataset.goto,b.dataset.lesson||null,b.dataset.question||b.dataset.revision||null)));
  main.querySelectorAll('[data-lesson-tab]').forEach(b=>b.addEventListener('click',()=>{if(findLesson(activeLesson)?.studyModule&&studyController){void studyController.setTab(b.dataset.lessonTab);return;}lessonTab=b.dataset.lessonTab;render()}));
  main.querySelectorAll('[data-reveal-insight]').forEach(b=>b.addEventListener('click',()=>{const p=main.querySelector('#starting-insight');if(!p)return;p.hidden=!p.hidden;b.setAttribute('aria-expanded',String(!p.hidden));b.innerHTML=p.hidden?'Reveal the starting insight <span aria-hidden="true">⌄</span>':'Hide the starting insight <span aria-hidden="true">⌃</span>'; }));
  main.querySelectorAll('[data-activity-index]').forEach(b=>b.addEventListener('click',()=>{activityIndex=Number(b.dataset.activityIndex);render()}));

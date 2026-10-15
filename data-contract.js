@@ -1,3 +1,7 @@
+// Shared by canonical Schema V3 and its private study-bank adapter.
+export const UUID_PATTERN='^[0-9a-f]{8}-[0-9a-f]{4}-[457][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$';
+export const VERSION_PATTERN='^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$';
+
 // Shared JSON safety contract; independent of lesson and instrument rendering.
 function object(v,label){if(!v||typeof v!=='object'||Array.isArray(v)||Object.getPrototypeOf(v)!==Object.prototype)throw Error(label+' must be a plain object');}
 export function assertSerializable(value){

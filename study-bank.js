@@ -1,3 +1,4 @@
+import {validateStudyAdditions,additionAssets} from './study-additions.js';
 import {validateLessonReferences} from './lesson-catalog.js';
 import {assertSerializable} from './data-contract.js';
 import {particleState,energyTransition} from './foundation-model.js';
@@ -10,6 +11,7 @@ export function availableStudyItem(bank,item){return !!bank?.approved&&allStudyI
 export function validateStudyBank(bank) {
  assertSerializable(bank);
  if(bank?.schemaVersion!==1||typeof bank.id!=='string'||bank.approved!==true||!Array.isArray(bank.lessons)||!bank.lessons.length)throw Error('Unsupported or unapproved study bank');
+ validateStudyAdditions(bank);
  const sources=new Set(bank.sources.map(s=>s.id)),concepts=new Set(bank.concepts.map(c=>c.id)),lessons=new Set(bank.lessons.map(l=>l.id));
  if(sources.size!==bank.sources.length||concepts.size!==bank.concepts.length||lessons.size!==bank.lessons.length)throw Error('Duplicate study identity');
  for(const source of bank.sources)if(source.kind==='external-clarification'&&!/^https:\/\//.test(source.url||''))throw Error('External clarification requires an HTTPS reference');
@@ -17,7 +19,7 @@ export function validateStudyBank(bank) {
  for(const c of bank.concepts)refs(c.sourceIds,sources,'concept source');
  const ids=new Set();
  for(const item of allStudyItems(bank)) {
-  if(ids.has(item.id)||!Number.isInteger(item.revision)||item.revision<1||!lessons.has(item.lessonId)||!concepts.has(item.primaryConceptId)||!item.variantFamilyId||!item.evidencePolicy)throw Error('Invalid study item identity');ids.add(item.id);
+  if(ids.has(item.id)||!Number.isInteger(item.revision)||item.revision<1||!lessons.has(item.lessonId)&&!(bank.additions||[]).some(a=>a.id===item.lessonId||a.importAliases.includes(item.lessonId))||!concepts.has(item.primaryConceptId)||!item.variantFamilyId||!item.evidencePolicy)throw Error('Invalid study item identity');ids.add(item.id);
   refs(item.requiresIntroducedConceptIds,concepts,'required concept');refs(item.sourceIds,sources,'item source');if(!item.requiresIntroducedConceptIds.includes(item.primaryConceptId))throw Error('Primary concept must be explicitly introduced');
   if(item.kind==='single_choice') {
    if(typeof item.stem!=='string'||item.options?.length!==4||new Set(item.options.map(o=>o.id)).size!==4||new Set(item.options.map(o=>o.text)).size!==4||item.options.filter(o=>o.id===item.correctOptionId).length!==1||item.options.some(o=>!o.text||!o.feedback))throw Error('Invalid single-choice item');
@@ -35,14 +37,14 @@ export function validateStudyBank(bank) {
  }
  const annotations=new Set((bank.annotations||[]).map(a=>a.id));
  for(const note of bank.annotations||[]){if(note.assessed!==false||!note.title||!note.text)throw Error('Clarifications must remain explicitly ungraded');refs(note.sourceIds,sources,'clarification source');}
- for(const lesson of bank.lessons) {
+ for(const lesson of [...bank.lessons,...additionAssets(bank)]) {
   if(lesson.annotationIds?.length)refs(lesson.annotationIds,annotations,'clarification');
   refs(lesson.sourceIds,sources,'lesson source');
   if(lesson.kind==='recap'){if(lesson.newTeaching!==false||!lesson.coverageGroups||Object.values(lesson.coverageGroups).some(g=>!Array.isArray(g)||!g.length||g.some(c=>!concepts.has(c))))throw Error('Invalid recap coverage');continue;}
   refs(lesson.requiredIds,ids,'lesson check');
   if(!ids.has(lesson.challengeId)||!lesson.steps?.length||lesson.objectives?.length>2||!lesson.recap||!lesson.confusion)throw Error('Incomplete lesson');
   for(const step of [...lesson.steps,...(lesson.preparation||[])]){refs(step.conceptIds,concepts,'step concept');refs(step.sourceIds,sources,'step source');if(!step.text||!step.title)throw Error('Empty teaching step');}
-  if(lesson.requiredIds.some(id=>allStudyItems(bank).find(i=>i.id===id)?.lessonId!==lesson.id))throw Error('Lesson check belongs to another lesson');
+  if(lesson.requiredIds.some(id=>allStudyItems(bank).find(i=>i.id===id)?.lessonId!==lesson.id&&!lesson.addition?.importAliases.includes(allStudyItems(bank).find(i=>i.id===id)?.lessonId)))throw Error('Lesson check belongs to another lesson');
  }
  for(const c of bank.concepts){const families=new Set(allStudyItems(bank).filter(i=>i.primaryConceptId===c.id).map(i=>i.variantFamilyId));if(families.size<2)throw Error('Each assessed concept needs two distinct practice variants: '+c.id);}
  if(/<\s*script|javascript:|sb_secret_|service_role/i.test(JSON.stringify(bank)))throw Error('Unsafe study content');
@@ -73,11 +75,11 @@ export function mergeStudyBanks(base,addition) {
  if(addition.schemaVersion!==1||addition.approved!==true)throw Error('Approved compatible addition required');
  const result=structuredClone(base);
  result.lessonRevisions={...(base.lessonRevisions||{}),...Object.fromEntries(base.lessons.map(l=>[l.id,studyLessonRevision(base,l)]))};
- for(const key of ['sources','concepts','lessons','questions','variants','challenges','bridges','sourceUploads','annotations','lessonReferences']) {
+ for(const key of ['sources','concepts','lessons','questions','variants','challenges','bridges','sourceUploads','annotations','lessonReferences','canonicalLessons','additions']) {
   if(addition[key]===undefined)continue;
   if(!Array.isArray(addition[key]))throw Error('Invalid content collection: '+key);
   const values=result[key]??=[];
-  for(const value of addition[key]){if(typeof value.id!=='string'||!value.id)throw Error('Stable import identity required');const existing=values.find(v=>v.id===value.id);if(existing&&!sameValue(existing,value))throw Error('Content identity collision: '+key+'/'+value.id);if(!existing){values.push(structuredClone(value));if(key==='lessons')result.lessonRevisions[value.id]=studyLessonRevision(addition,value);}}
+  for(const value of addition[key]){if(typeof value.id!=='string'||!value.id)throw Error('Stable import identity required');const existing=values.find(v=>v.id===value.id&&(key!=='additions'||v.version===value.version));if(existing&&!sameValue(existing,value))throw Error('Content identity collision: '+key+'/'+value.id);if(!existing){values.push(structuredClone(value));if(key==='lessons')result.lessonRevisions[value.id]=studyLessonRevision(addition,value);}}
  }
  result.revision=Math.max(base.revision||1,addition.revision||1);
  if(addition.chapterTitle)result.chapterTitle=addition.chapterTitle;

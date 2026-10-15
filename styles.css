@@ -1171,3 +1171,11 @@ body:has(#main>.desktop-bench) .topbar{padding:12px 18px;min-height:52px}body:ha
 
 /* Concept scenes share the lesson host; no extra workspace windows. */
 .study-concept-scene{display:block;width:100%;max-width:440px;max-height:300px;margin:8px auto;color:#8eecff}.study-scene-controls{flex-wrap:wrap}.study-scene-controls fieldset{min-width:0;flex:1 1 240px;border:1px solid #7ee3ff55;border-radius:10px;padding:10px}.study-scene-controls button{min-height:44px;margin:4px;white-space:normal}.study-axes{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}.study-axes dd{margin:0}.study-concept-scene text{font-size:18px}
+
+/* Optional lesson additions share cards, routes and journal; never core gauges. */
+.study-additions{grid-column:2/-1;margin-top:10px;min-width:0;border-top:1px solid var(--line,#44616c);padding:8px 0}
+.study-additions>summary,.study-addition-card summary{min-height:44px;display:flex;align-items:center;cursor:pointer}
+.study-addition-card{padding:10px 0;border-top:1px solid #ffffff20;overflow-wrap:anywhere}
+.study-addition-card h5{font-size:1rem;margin:6px 0}.study-addition-card progress{display:block;width:100%;height:12px;margin:8px 0;accent-color:#8eecff}
+.study-addition-card button{min-height:44px;max-width:100%;white-space:normal}
+@media(max-width:700px){.chapter-lesson>.study-additions{grid-column:1/-1}}

@@ -1,3 +1,4 @@
+import {additionCompletion} from './study-additions.js';
 import {isLegacyClassifier} from './foundation-continuation-model.js';
 import {allStudyItems,studyPresentation,answerStudyItem} from './study-bank.js';
 export const REVIEW_POLICY=Object.freeze({id:'introduced-practice@1',intervalDays:[1,3,7,14,30],retainingSuccesses:3,defaultTasks:5,maxTasks:6});
@@ -61,6 +62,7 @@ export function repairReview(bank,events,session,attempt) {
  return next;
 }
 export function lessonCompletion(lesson,state,events) {
+ if(lesson.supplemental)return additionCompletion(lesson,state,events);
  const acknowledged=new Set(state?.acknowledged||[]),requiredSteps=[...(lesson.preparation||[]),...lesson.steps].filter(s=>!s.optional);
  const attempts=events.filter(e=>e.type==='attempt'&&e.sessionId===state?.id),checks=state?.requiredItems?.map(i=>i.id)||lesson.requiredIds;
  if(lesson.kind==='recap')return {complete:!!state?.started&&checks.length>0&&checks.every(id=>attempts.some(a=>a.item.id===id)),stepsDone:0,stepsTotal:0,checksDone:checks.filter(id=>attempts.some(a=>a.item.id===id)).length,checksTotal:checks.length,activityAttempted:false};
