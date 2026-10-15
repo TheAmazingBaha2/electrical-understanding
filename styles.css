@@ -1133,3 +1133,8 @@ body:has(#main>.desktop-bench) .topbar{padding:12px 18px;min-height:52px}body:ha
 .desktop-workspace-expanded>[data-lab-guide]{max-height:25dvh;overflow:auto;flex-shrink:0}.desktop-workspace-expanded>[data-project-status]{margin:2px 0;max-height:3em;overflow:auto}.desktop-workspace-expanded>details{margin-top:4px;padding:4px 12px}
 .desktop-window-title>strong{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.desktop-window-title .window-actions{flex-shrink:0}
 .window-resize-n,.window-resize-ne,.window-resize-nw{top:0}.window-resize-s,.window-resize-se,.window-resize-sw{bottom:0}.window-resize-e,.window-resize-ne,.window-resize-se{right:0}.window-resize-w,.window-resize-nw,.window-resize-sw{left:0}
+
+/* Pending contacts are previews; solid leads are committed shared-model state. */
+.circuit-canvas-world[data-connection-state="pending"] .canvas-probe>path,.circuit-canvas-world[data-connection-state="pending"] .canvas-wire{stroke-dasharray:7 5}
+.contact-snap-target .terminal-target{fill:#f8e57e55;stroke:#ffe269;stroke-width:5}.direct-hole.contact-snap-target{outline:3px solid #e8bf32}
+[data-canvas-wire-end]{cursor:crosshair;touch-action:none}.mobile-part-open{opacity:.45}.mobile-lead[data-contact-state="legacy-node"]{stroke-dasharray:5 3}

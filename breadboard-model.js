@@ -13,7 +13,7 @@ const label=node=>node.startsWith('bb.row.')?(node.includes('.left.')?'Left A–
 export function emptyBreadboard(){return {schemaVersion:1,rows:12,railSplitAfter:6,placements:[],wires:[],probes:{red:'F1',black:'LN1'},groundHole:'LN1',powered:true};}
 export function validateBreadboard(s){
  assertSerializable(s);if(s?.schemaVersion!==1||s.rows!==12||s.railSplitAfter!==6||!Array.isArray(s.placements)||!Array.isArray(s.wires)||typeof s.powered!=='boolean')throw Error('Unsupported breadboard layout');
- holeNode(s.groundHole);holeNode(s.probes?.red);holeNode(s.probes?.black);
+ holeNode(s.groundHole);holeNode(s.probes?.red);holeNode(s.probes?.black);if(s.probeConnected!==undefined&&(!s.probeConnected||typeof s.probeConnected!=='object'||['red','black'].some(color=>s.probeConnected[color]!==undefined&&typeof s.probeConnected[color]!=='boolean')))throw Error('Unsupported probe attachment state');
  const ids=new Set(),occupied=new Set();for(const p of s.placements){
   if(!p.id||ids.has(p.id)||!['resistor','dc-source'].includes(p.type)||!Array.isArray(p.holes)||p.holes.length!==2)throw Error('Invalid component placement');ids.add(p.id);
   for(const hole of p.holes){holeNode(hole);if(occupied.has(hole))throw Error('A component terminal already occupies this hole');occupied.add(hole);}
@@ -26,7 +26,7 @@ export function compileBreadboard(s){
  const c={schemaVersion:1,analysisMode:'dc',groundNode:holeNode(s.groundHole),nodes:[...new Set(breadboardHoles.map(holeNode))].map(id=>({id,label:label(id),used:used.has(id)})),
   externalTerminals:breadboardHoles.map(hole=>({id:'BB.'+hole,nodeId:holeNode(hole)})),
   components:s.placements.map(p=>({id:p.id,label:p.label||p.id,type:p.type,terminals:p.holes.map((hole,i)=>({id:p.id+'.'+(i?'b':'a'),nodeId:holeNode(hole)})),properties:structuredClone(p.properties),state:structuredClone(p.state)})),
-  connections:s.wires.map(w=>({id:w.id,from:'BB.'+w.fromHole,to:'BB.'+w.toHole,closed:w.closed})),instruments:[{id:'DMM1',type:'dmm',mode:'dc-voltage',redNode:holeNode(s.probes.red),blackNode:holeNode(s.probes.black)}],state:{powered:s.powered}};
+  connections:s.wires.map(w=>({id:w.id,from:'BB.'+w.fromHole,to:'BB.'+w.toHole,closed:w.closed})),instruments:[{id:'DMM1',type:'dmm',mode:'dc-voltage',redNode:holeNode(s.probes.red),blackNode:holeNode(s.probes.black),contactContractVersion:1,...Object.fromEntries(['red','black'].flatMap(color=>[[color+'Connected',s.probeConnected?.[color]!==false],...(s.probeConnected?.[color]===false?[]:[[color+'TerminalId','BB.'+s.probes[color]]])]))}],state:{powered:s.powered}};
  validateCircuit(c);return c;
 }
 export function dividerBreadboard(){
@@ -41,7 +41,8 @@ export function editBreadboard(s,action){
  else if(action.type==='connect')next.wires.push(structuredClone(action.wire));
  else if(action.type==='remove-wire'){if(!w)throw Error('Wire not found');next.wires=next.wires.filter(w=>w.id!==action.id);}
  else if(action.type==='reroute-wire'){if(!w)throw Error('Wire not found');w.fromHole=action.fromHole;w.toHole=action.toHole;}
- else if(action.type==='probe'){if(!['red','black'].includes(action.probe))throw Error('Unknown probe');next.probes[action.probe]=action.hole;}
+ else if(action.type==='detach-probe'){if(!['red','black'].includes(action.probe))throw Error('Unknown probe');next.probeConnected={...next.probeConnected,[action.probe]:false};}
+ else if(action.type==='probe'){if(!['red','black'].includes(action.probe))throw Error('Unknown probe');next.probes[action.probe]=action.hole;next.probeConnected={...next.probeConnected,[action.probe]:true};}
  else if(action.type==='reference'){holeNode(action.hole);next.groundHole=action.hole;}
  else if(action.type==='power')next.powered=action.powered;
  else if(action.type==='open'){if(p)p.state.open=action.open;else if(w)w.closed=!action.open;else throw Error('Path not found');}

@@ -50,7 +50,7 @@ jobs:
       - name: Run real desktop and mobile smoke tests
         run: |
           result=0
-          for suite in sidebar-browser dashboard-browser source-browser workshops-browser browser-smoke persistence-browser v3-browser lab-guidance-browser breadboard-browser shared-meter-browser scope-browser graphical-lab-browser project-manager-browser math-browser adaptive-browser desktop-lab-browser desktop-workspace-browser mobile-lab-browser dual-lab-browser modular-browser; do
+          for suite in sidebar-browser dashboard-browser source-browser workshops-browser browser-smoke persistence-browser v3-browser lab-guidance-browser breadboard-browser shared-meter-browser scope-browser graphical-lab-browser project-manager-browser math-browser adaptive-browser desktop-lab-browser desktop-workspace-browser contact-browser mobile-lab-browser dual-lab-browser modular-browser; do
             timeout 180s node "tests/$suite.mjs" || result=1
           done
           exit "$result"
@@ -78,7 +78,7 @@ jobs:
       - name: Build isolated public assets
         run: npm run build
       - name: Verify private file persistence on Windows
-        run: node --test tests/modular-storage.test.mjs tests/modular-learning.test.mjs tests/modular-portability.test.mjs
+        run: node --test tests/modular-storage.test.mjs tests/modular-learning.test.mjs tests/modular-portability.test.mjs tests/circuit-contacts.test.mjs tests/desktop-lab.test.mjs
       - name: Exercise Windows Electron desktop UI
         run: node tests/electron-windows.mjs
       - uses: actions/upload-artifact@v4

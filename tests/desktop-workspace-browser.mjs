@@ -42,6 +42,7 @@ export async function workspaceAcceptance(page,{resize,reload,prefix='workspace'
  if(resize){await resize({width:768,height:720});await page.waitForTimeout(150);assert.equal(await page.evaluate(()=>localStorage.getItem('eu_desktop_windows_v1')),saved);await resize({width:2560,height:1080});}
  if(reload){await reload();await page.locator('.desktop-window-stage').waitFor();assert.equal(await page.locator('[data-expand-desktop-workspace]').getAttribute('aria-pressed'),'true');assert.equal(await page.evaluate(()=>localStorage.getItem('eu_desktop_windows_v1')),saved);}
  await mkdir('test-artifacts',{recursive:true});await writeFile('test-artifacts/'+prefix+'-geometry.json',JSON.stringify(observations,null,2));
+ await page.locator('[data-window-dock="right"][data-window-id="meter"]').click();
  const shot=await page.screenshot({path:'test-artifacts/'+prefix+'-wide.jpg',type:'jpeg',quality:60});console.log('DESKTOP_QA_IMAGE:'+prefix+'-wide:'+shot.toString('base64'));
  await page.locator('[data-reset-desktop-layout]').click();await page.locator('[data-expand-desktop-workspace]').click();assert.equal(await page.locator('[data-expand-desktop-workspace]').getAttribute('aria-pressed'),'false');
  console.log('PASS: measured full-width workspace, right/bottom drag, resize, keyboard, dock, minimize/reopen, transform/zoom and preferred-layout recovery.');

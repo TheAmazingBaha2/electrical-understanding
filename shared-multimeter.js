@@ -1,5 +1,5 @@
 // Reusable ideal instrument adapter. Every number derives from the shared graph/solver.
-import {solveDC,measureVoltage,circuitNodeMap,validateCircuit} from './circuit-model.js';
+import {solveDC,measureVoltage,circuitNodeMap,validateCircuit,probeContact} from './circuit-model.js';
 export const circuitEnergized=c=>c.state.powered&&c.components.some(p=>p.type==='dc-source'&&!p.state.open);
 export function resistanceReading(c,redNode,blackNode){
  validateCircuit(c);if(circuitEnergized(c))return {status:'blocked',value:null,unit:'Ω',reason:'Disconnect modeled sources before resistance or continuity measurement. Actual equipment also requires stored-energy verification.'};
@@ -24,7 +24,9 @@ export function sharedMeterReading(c,settings={}){
  if(jack!==(mode==='current'?'A':'VΩ'))return {status:'blocked',value:null,unit:'',reason:'Use '+(mode==='current'?'A':'VΩ')+' for red and COM for black. No unsafe connection was energized.'};
  // Optional physical contact flags are additive for the desktop canvas. Legacy
  // projects retain their logical-node attachment; no existing graded scenario changes.
+ if(probe.contactContractVersion!==undefined&&probe.contactContractVersion!==1)return {mode,status:'unsupported',value:null,unit:'',reason:'Unsupported physical contact contract; saved state retained.'};
  if(mode!=='current'){
+  if(probe.contactContractVersion===1){const invalid=['red','black'].map(color=>probeContact(c,color)).find(p=>p.state==='invalid');if(invalid)return {mode,status:'blocked',value:null,unit:'',reason:invalid.reason};}
   if(['red','black'].some(color=>probe[color+'Connected']!==undefined&&typeof probe[color+'Connected']!=='boolean'))return {mode,status:'unsupported',value:null,unit:'',reason:'Unsupported saved probe connection state; original retained.'};
   if(probe.redConnected===false||probe.blackConnected===false)return {mode,status:'blocked',value:null,unit:'',reason:'Connect both meter probes to actual circuit terminals. An unattached probe has no measurement.'};
  }

@@ -25,6 +25,27 @@ export function validateCircuit(c){
  for(const instrument of c.instruments)if(instrument.type!=='dmm'||instrument.mode!=='dc-voltage'||!nodes.has(instrument.redNode)||!nodes.has(instrument.blackNode))throw Error('Unsupported instrument or probe');
  return c;
 }
+// Presentation-neutral physical contact contract. Legacy node-only records are
+// readable; an explicit contact never falls back to a different equivalent pin.
+export function probeContact(circuit,color){
+ if(!['red','black'].includes(color))throw Error('Unsupported probe');
+ const meter=circuit.instruments[0];if(!meter)return {state:'unattached',reason:'Meter unavailable'};
+ const nodeId=meter[color==='red'?'redNode':'blackNode'],id=meter[color+'TerminalId'];
+ if(meter[color+'Connected']===false)return {state:'unattached',nodeId,reason:color+' probe is detached'};
+ if(id!==undefined){
+  const terminal=[...(circuit.externalTerminals||[]),...circuit.components.flatMap(p=>p.terminals)].find(t=>t.id===id);
+  if(!terminal||terminal.nodeId!==nodeId)return {state:'invalid',id,nodeId,reason:color+' contact is missing or disagrees with its saved electrical node'};
+  return {state:'connected',id,nodeId};
+ }
+ return {state:'legacy-node',nodeId,reason:'Historical node connection; a physical contact was not recorded'};
+}
+export function withProbeContact(circuit,color,terminalId){
+ validateCircuit(circuit);if(!['red','black'].includes(color))throw Error('Unsupported probe');
+ const next=structuredClone(circuit),meter=next.instruments[0];if(!meter)throw Error('Meter unavailable');
+ if(terminalId===null){meter[color+'Connected']=false;delete meter[color+'TerminalId'];}
+ else{const t=[...(next.externalTerminals||[]),...next.components.flatMap(p=>p.terminals)].find(t=>t.id===terminalId);if(!t)throw Error('Choose an existing physical contact');meter[color==='red'?'redNode':'blackNode']=t.nodeId;meter[color+'TerminalId']=t.id;meter[color+'Connected']=true;}
+ meter.contactContractVersion=1;return next;
+}
 function linearSolve(matrix,rhs){
  const a=matrix.map((row,i)=>[...row,rhs[i]]),n=a.length;
  for(let col=0;col<n;col++){

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {dividerCircuit} from '../circuit-model.js';
+import {dividerCircuit,withProbeContact} from '../circuit-model.js';
 import {resistanceReading,sharedMeterReading,prepareCurrentConnection,formatMeterReading} from '../shared-multimeter.js';
 import {dividerBreadboard,compileBreadboard,holeNode} from '../breadboard-model.js';
 test('equivalent resistance comes from the shared resistor network and rejects live sources',()=>{
@@ -9,9 +9,9 @@ test('equivalent resistance comes from the shared resistor network and rejects l
  c.components[1].state.open=true;assert.equal(resistanceReading(c,'source','common').status,'open-circuit');assert.equal(resistanceReading(c,'common','common').value,0);
 });
 test('continuity uses actual strips/wires and explicitly modeled threshold',()=>{
- const s=dividerBreadboard();s.powered=false;const c=compileBreadboard(s);c.instruments[0].redNode=holeNode('A1');c.instruments[0].blackNode=holeNode('E1');
+ const s=dividerBreadboard();s.powered=false;let c=withProbeContact(withProbeContact(compileBreadboard(s),'red','BB.A1'),'black','BB.E1');
  let r=sharedMeterReading(c,{mode:'continuity',jack:'VΩ'});assert.equal(r.continuity,true);assert.equal(r.value,0);assert.equal(r.thresholdOhms,30);
- c.instruments[0].blackNode=holeNode('F1');r=sharedMeterReading(c,{mode:'continuity',jack:'VΩ'});assert.equal(r.continuity,false);assert.ok(Math.abs(r.value-1000)<1e-9);
+ c=withProbeContact(c,'black','BB.F1');r=sharedMeterReading(c,{mode:'continuity',jack:'VΩ'});assert.equal(r.continuity,false);assert.ok(Math.abs(r.value-1000)<1e-9);
 });
 test('current connection requires off-power preparation and reads actual branch/polarity/open state',()=>{
  const c=dividerCircuit();assert.throws(()=>prepareCurrentConnection(c,'R1'),/power off/);assert.equal(sharedMeterReading(c,{mode:'current',jack:'A'}).status,'blocked');

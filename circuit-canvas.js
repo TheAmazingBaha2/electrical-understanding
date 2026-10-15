@@ -1,5 +1,5 @@
 // Editing adapter for the existing graph. There is no electrical solver here.
-import {validateCircuit} from './circuit-model.js';
+import {validateCircuit,withProbeContact,probeContact} from './circuit-model.js';
 import {assertSerializable} from './data-contract.js';
 import {validateResistorMetadata} from './resistor-color.js';
 export const canvasSize={width:1400,height:900};
@@ -22,7 +22,8 @@ export function snapCanvasTerminal(circuit,layout,point,radius=28){
 export function canvasProbeTerminal(circuit,layout,color){
  const meter=circuit.instruments[0];if(!meter||meter[color+'Connected']===false)return null;
  const terminals=canvasTerminals(circuit,layout),node=meter[color==='red'?'redNode':'blackNode'];
- return terminals.find(t=>t.id===meter[color+'TerminalId']&&t.nodeId===node)||terminals.find(t=>t.nodeId===node)||null;
+ if(probeContact(circuit,color).state==='invalid')return null;
+ return meter[color+'TerminalId']!==undefined?terminals.find(t=>t.id===meter[color+'TerminalId']&&t.nodeId===node)||null:terminals.find(t=>t.nodeId===node)||null;
 }
 export function emptyCanvasCircuit(circuit){
  const next=clone(circuit);next.components=[];next.connections=[];next.externalTerminals=[];next.state.powered=false;
@@ -46,6 +47,9 @@ export function editCircuitCanvas(circuit,layout,action){
  }else if(action.type==='connect'){
   if(action.from===action.to)throw Error('Choose two different terminals');terminal(action.from);terminal(action.to);
   if(c.connections.some(w=>w.id===action.id))throw Error('Wire identity exists');c.connections.push({id:action.id,from:action.from,to:action.to,closed:true});
+ }else if(action.type==='reroute-wire'){
+  const wire=c.connections.find(w=>w.id===action.id);if(!wire)throw Error('Wire unavailable');
+  const from=action.from??wire.from,to=action.to??wire.to;terminal(from);terminal(to);if(from===to)throw Error('Choose two different terminals');Object.assign(wire,{from,to});
  }else if(action.type==='remove-component'){
   const p=c.components.find(p=>p.id===action.id);if(!p)throw Error('Component unavailable');const ids=p.terminals.map(t=>t.id);
   c.connections=c.connections.filter(w=>!ids.includes(w.from)&&!ids.includes(w.to));c.components=c.components.filter(p=>p.id!==action.id);delete l.positions[action.id];
@@ -54,7 +58,9 @@ export function editCircuitCanvas(circuit,layout,action){
   if(!c.connections.some(w=>w.id===action.id))throw Error('Wire unavailable');c.connections=c.connections.filter(w=>w.id!==action.id);
  }else if(action.type==='reference')c.groundNode=terminal(action.terminal).nodeId;
  else if(action.type==='probe'){
-  if(!['red','black'].includes(action.probe))throw Error('Unsupported probe');const t=terminal(action.terminal),meter=c.instruments[0];meter[action.probe==='red'?'redNode':'blackNode']=t.nodeId;meter[action.probe+'TerminalId']=t.id;meter[action.probe+'Connected']=true;
+  terminal(action.terminal);Object.assign(c,withProbeContact(c,action.probe,action.terminal));
+ }else if(action.type==='detach-probe'){
+  Object.assign(c,withProbeContact(c,action.probe,null));
  }else if(action.type==='open'){
   const part=c.components.find(p=>p.id===action.id),wire=c.connections.find(w=>w.id===action.id);if(typeof action.open!=='boolean'||!part&&!wire)throw Error('Path unavailable');if(part)part.state.open=action.open;else wire.closed=!action.open;
  }else if(action.type==='properties'){const part=c.components.find(p=>p.id===action.id);if(!part)throw Error('Component unavailable');validateResistorMetadata(action.properties);if(part.type==='dc-source'&&action.properties.voltageVolts<0&&part.properties.voltageVolts>=0)throw Error('Unipolar bench supply requires 0–24 V');Object.assign(part.properties,action.properties);}
