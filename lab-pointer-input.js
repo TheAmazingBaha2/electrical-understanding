@@ -26,6 +26,7 @@ export function attachLabPointerInput(root,{handleSelector,targets,commit,previe
  }
  function down(e){
   if(active){finish(null,true);suppressUntil=Date.now()+500;return;}
+  suppressUntil=0; // A new deliberate gesture is never the trailing compatibility click.
   const handle=e.target.closest(handleSelector);if(!handle||!root.contains(handle)||e.button!==0||e.isPrimary===false)return;
   e.stopPropagation();active={handle,pointerId:e.pointerId,start:position(e),dragged:false};handle.setPointerCapture(e.pointerId);
  }

@@ -19,7 +19,7 @@ function harness(){
  return {root,view,fire,commits,previews,statuses,detach,paint:()=>frame?.(),get captured(){return captured;}};
 }
 test('one successful drag commits once; its compatibility click is suppressed but a tap remains a tap',()=>{
- const h=harness();h.fire('pointerdown');h.fire('pointermove',{clientX:100});h.paint();assert.equal(h.previews.at(-1).target.id,'b');h.fire('pointerup',{clientX:100});assert.deepEqual(h.commits,['b']);assert.equal(h.captured,false);assert.equal(h.fire('click').defaultPrevented,true);h.fire('pointerup',{clientX:100});assert.equal(h.commits.length,1);h.detach();
+ const h=harness();h.fire('pointerdown');h.fire('pointermove',{clientX:100});h.paint();assert.equal(h.previews.at(-1).target.id,'b');h.fire('pointerup',{clientX:100});assert.deepEqual(h.commits,['b']);assert.equal(h.captured,false);assert.equal(h.fire('click').defaultPrevented,true);h.fire('pointerup',{clientX:100});assert.equal(h.commits.length,1);h.fire('pointerdown');h.fire('pointerup');assert.equal(h.fire('click').defaultPrevented,false);h.detach();
  const tap=harness();tap.fire('pointerdown');tap.fire('pointerup');assert.deepEqual(tap.commits,[]);assert.equal(tap.fire('click').defaultPrevented,false);tap.detach();
 });
 for(const interruption of ['pointercancel','lostpointercapture','blur','orientationchange','pagehide','escape','second-pointer','unmount','invalid-drop'])test('draft cancellation preserves committed state: '+interruption,()=>{
