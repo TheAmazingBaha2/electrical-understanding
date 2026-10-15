@@ -1678,6 +1678,40 @@
                     "additionalProperties": false
                   }
                 ]
+              },
+              "experiment": {
+                "type": "object",
+                "properties": {
+                  "version": {
+                    "const": "1.0.0"
+                  },
+                  "start": {
+                    "enum": [
+                      "blank",
+                      "minimal",
+                      "guided",
+                      "completed-example",
+                      "resume"
+                    ]
+                  },
+                  "template": {
+                    "enum": [
+                      "divider-construction@1",
+                      "meter-connections@1",
+                      "resistor-bands@1"
+                    ]
+                  },
+                  "allowExample": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "version",
+                  "start",
+                  "template",
+                  "allowExample"
+                ],
+                "additionalProperties": false
               }
             },
             "required": [

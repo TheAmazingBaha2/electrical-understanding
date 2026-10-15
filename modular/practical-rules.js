@@ -7,6 +7,12 @@ export function assertPracticalDefinition(definition){
  const ids=definition.activities.map(a=>a.id);if(new Set(ids).size!==ids.length)throw Error('Duplicate practical activity');
  if(!definition.activities.some(a=>a.required))throw Error('Practical module needs a required outcome');
  for(const a of definition.activities){const r=a.rubric;
+  if(a.experiment){
+   const expected={'divider-construction@1':'divider-voltage@1','meter-connections@1':'meter-state@1','resistor-bands@1':'resistor-bands@1'}[a.experiment.template];
+   if(expected!==r.kind)throw Error('Activity preset and electrical rubric are incompatible');
+   if(definition.platform==='mobile'&&a.experiment.start==='blank')throw Error('Phone preset has a purpose-built fixture; blank construction requires desktop');
+   if(a.required&&a.experiment.start==='completed-example')throw Error('Required activity must start with learner work; completed examples are optional');
+  }
   if(r.kind==='divider-voltage@1'&&r.sourceVolts>24)throw Error('Practical source exceeds educational bench limit');
   if(r.kind==='divider-voltage@1'){
    const c=dividerCircuit();c.components[0].properties.voltageVolts=r.sourceVolts;c.components.find(p=>p.id==='R1').properties.resistanceOhms=r.upperOhms;c.components.find(p=>p.id==='R2').properties.resistanceOhms=r.lowerOhms;

@@ -96,6 +96,27 @@
         "Exact instance and circuit-state restoration",
         "All existing lessons and both platform regressions"
       ]
+    },
+    {
+      "id": "V3-GUIDED-PILOT-REFINEMENT",
+      "widgetId": "circuit-dc",
+      "widgetVersion": "1.0.0",
+      "suggestion": "Owner requested clear construction and truthful contacts across independent desktop/phone labs. Four guided first activities now use the shared adapters.",
+      "priority": "normal",
+      "affectedLessons": [
+        "Private Resistors/DMM 2.2.0 drafts; original approved lessons unchanged"
+      ],
+      "affectedProjects": [
+        "Versioned activity projects and desktop layouts"
+      ],
+      "proposedChange": "Batch the remaining 12 activity starts, contextual hints, label collision avoidance and a reviewed circuit-view fit/zoom control after owner testing.",
+      "compatibilityRequirements": "Keep all older entity revisions/results and 2.1.0 approval evidence; no physics/grading reinterpretation, personal project reset or automatic legacy credit.",
+      "testingRequirements": [
+        "Owner Windows/phone usability",
+        "Exact physical contact and state restoration",
+        "Classic/linear content identity and separate grades",
+        "Named recovery snapshots, private export/import and conflicts"
+      ]
     }
   ]
 }

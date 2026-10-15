@@ -1138,3 +1138,5 @@ body:has(#main>.desktop-bench) .topbar{padding:12px 18px;min-height:52px}body:ha
 .circuit-canvas-world[data-connection-state="pending"] .canvas-probe>path,.circuit-canvas-world[data-connection-state="pending"] .canvas-wire{stroke-dasharray:7 5}
 .contact-snap-target .terminal-target{fill:#f8e57e55;stroke:#ffe269;stroke-width:5}.direct-hole.contact-snap-target{outline:3px solid #e8bf32}
 [data-canvas-wire-end]{cursor:crosshair;touch-action:none}.mobile-part-open{opacity:.45}.mobile-lead[data-contact-state="legacy-node"]{stroke-dasharray:5 3}
+
+.canvas-contact-label{pointer-events:none}.canvas-probe>text{pointer-events:none;fill:#c3e0e6}

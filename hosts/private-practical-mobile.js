@@ -6,9 +6,10 @@ import {renderGraphicMeter} from '../instrument-graphics.js';
 import {graphicButton,attachGraphicControls,powerSwitch} from '../graphic-controls.js';
 import {decodeBands,encodeResistance} from '../resistor-color.js';
 import {sharedMeterReading,formatMeterReading,prepareCurrentConnection} from '../shared-multimeter.js';
-import {ProjectStore,newProject} from '../project-store.js';
-export function attachPrivateMobilePractical(root,{storage,bandActivity=false,onExperiment}={}){
+import {ProjectStore,newProject,addSnapshot,restoreSnapshot,validateProject} from '../project-store.js';
+export function attachPrivateMobilePractical(root,{storage,bandActivity=false,onExperiment,initialProject,activityProjectId}={}){
  const store=new ProjectStore(storage,'private-phone');let project=newProject(bandActivity?'private-bands-practical':'private-meter-practical'),revision=0,probe='red',selectedBand=0,timer,queue=Promise.resolve(),blocked=false;
+ if(activityProjectId)project=structuredClone(initialProject);
  const saved=store.read(project.id);if(saved){project=saved.project;revision=saved.revision;blocked=!!saved.conflicts.length;}
  const settings=()=>{const s=project.instrumentSettings.DMM1||(project.instrumentSettings.DMM1={});s.mode??='voltage';s.jack??='VΩ';return s;},part=()=>project.circuit.components.find(p=>p.id==='R1');
  let message='';
@@ -32,5 +33,6 @@ export function attachPrivateMobilePractical(root,{storage,bandActivity=false,on
  const key=e=>{if(e.target.matches('[data-mobile-contact]')&&['Enter',' '].includes(e.key)){e.preventDefault();e.target.dispatchEvent(new MouseEvent('click',{bubbles:true}));}};
  const precision=e=>{try{const p=part().properties;if(blocked)throw Error('Saving paused');if(e.target.matches('[data-precision-resistance]')){const v=Number(e.target.value);if(!Number.isFinite(v)||v<.001||v>1e9)throw Error('Use .001 Ω to 1 GΩ');p.resistanceOhms=v;}else if(e.target.matches('[data-precision-tolerance]')){const v=Number(e.target.value);if(!Number.isFinite(v)||v<=0||v>20)throw Error('Use >0 to 20% tolerance');p.tolerancePercent=v;}else return;changed();}catch(e){message=e.message;draw();}};
  root.addEventListener('click',click);root.addEventListener('keydown',key);root.addEventListener('change',precision);window.addEventListener('pagehide',save);draw();
- return async()=>{clearTimeout(timer);graphics();root.removeEventListener('click',click);root.removeEventListener('keydown',key);root.removeEventListener('change',precision);window.removeEventListener('pagehide',save);await save();};
+ const close=async()=>{clearTimeout(timer);graphics();root.removeEventListener('click',click);root.removeEventListener('keydown',key);root.removeEventListener('change',precision);window.removeEventListener('pagehide',save);await save();};
+ close.activity={read:()=>structuredClone(project),restore:id=>{if(blocked||project.id!==activityProjectId)throw Error('Resolve saved copies before recovery');project=restoreSnapshot(addSnapshot(project,'Before activity recovery','activity-'+crypto.randomUUID()),id);changed();},session:value=>{if(blocked)throw Error('Resolve saved copies before changing activity');const next=structuredClone(project);next.experimentState.activitySession=structuredClone(value);validateProject(next);project=next;changed();},replace:(next,label)=>{if(blocked||project.id!==activityProjectId||next.id!==project.id)throw Error('Activity recovery is blocked; preserve saved copies');validateProject(next);project=addSnapshot(project,label,'activity-'+crypto.randomUUID());project.circuit=structuredClone(next.circuit);project.instrumentSettings=structuredClone(next.instrumentSettings);project.experimentState={...project.experimentState,...structuredClone(next.experimentState)};changed();}};return close;
 }

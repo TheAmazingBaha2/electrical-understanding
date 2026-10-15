@@ -1,3 +1,7 @@
+# Newer usability continuation
+
+Read [LAB_USABILITY_REPORT.md](LAB_USABILITY_REPORT.md) and [LAB_USABILITY_CHECKPOINT.md](LAB_USABILITY_CHECKPOINT.md) first. They include the latest UI work and the subsequent direct owner grading/deletion instruction; approval statements in this historical report describe its earlier stopping point.
+
 # Modular learning continuation — 2026-10-14
 
 Branch: `draft/v2-dmm-companion`. Last fully verified implementation: **a17880cde38264602a7532e05c6587b3d30e5766**. Primary CI **38645270574** passed **293 deterministic tests, all 19 Chromium suites and both real Windows Electron/Tauri prototype jobs**, including private file persistence and domain portability. Read-back **38645270474**, job **116130442864**, verified build-info and all **73 served asset hashes** at **2026-10-14 22:11:48 UTC**. This following documentation/touch-target/fixture increment must pass its own exact-head checks; inspect HEAD and the private verification sidecar rather than inferring its deployment from the earlier pass.
