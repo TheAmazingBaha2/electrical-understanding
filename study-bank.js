@@ -11,6 +11,7 @@ export function validateStudyBank(bank) {
  if(bank?.schemaVersion!==1||typeof bank.id!=='string'||bank.approved!==true||!Array.isArray(bank.lessons)||!bank.lessons.length)throw Error('Unsupported or unapproved study bank');
  const sources=new Set(bank.sources.map(s=>s.id)),concepts=new Set(bank.concepts.map(c=>c.id)),lessons=new Set(bank.lessons.map(l=>l.id));
  if(sources.size!==bank.sources.length||concepts.size!==bank.concepts.length||lessons.size!==bank.lessons.length)throw Error('Duplicate study identity');
+ for(const source of bank.sources)if(source.kind==='external-clarification'&&!/^https:\/\//.test(source.url||''))throw Error('External clarification requires an HTTPS reference');
  const refs=(ids,pool,label)=>{if(!Array.isArray(ids)||!ids.length||ids.some(id=>!pool.has(id)))throw Error('Unresolved '+label);};
  for(const c of bank.concepts)refs(c.sourceIds,sources,'concept source');
  const ids=new Set();
@@ -20,7 +21,7 @@ export function validateStudyBank(bank) {
   if(item.kind==='single_choice') {
    if(typeof item.stem!=='string'||item.options?.length!==4||new Set(item.options.map(o=>o.id)).size!==4||new Set(item.options.map(o=>o.text)).size!==4||item.options.filter(o=>o.id===item.correctOptionId).length!==1||item.options.some(o=>!o.text||!o.feedback))throw Error('Invalid single-choice item');
   } else if(item.kind==='widget_challenge') {
-   if(!['atom-identity','charge-balance','shell-energy','material-classifier','particle-motion'].includes(item.widgetKey))throw Error('Unregistered study widget');
+   if(!['atom-identity','charge-balance','shell-energy','material-classifier','particle-motion','material-response','carrier-vacancy'].includes(item.widgetKey))throw Error('Unregistered study widget');
    if(isContinuationWidget(item))validateContinuation(item);
    if(['atom-identity','charge-balance'].includes(item.widgetKey)){
     particleState(item.config.initialCounts);if(!Array.isArray(item.config.allowedActions)||!item.config.allowedActions.length||item.config.allowedActions.some(a=>!/^(add|remove)-(proton|neutron|electron)$/.test(a)))throw Error('Invalid particle controls');
@@ -31,7 +32,10 @@ export function validateStudyBank(bank) {
    else if(!item.predictionOptions?.length||item.predictionOptions.filter(o=>sameValue(o.value,item.grading.expectedPrediction)).length!==1)throw Error('Invalid prediction alternatives');
   } else throw Error('Unsupported study item kind');
  }
+ const annotations=new Set((bank.annotations||[]).map(a=>a.id));
+ for(const note of bank.annotations||[]){if(note.assessed!==false||!note.title||!note.text)throw Error('Clarifications must remain explicitly ungraded');refs(note.sourceIds,sources,'clarification source');}
  for(const lesson of bank.lessons) {
+  if(lesson.annotationIds?.length)refs(lesson.annotationIds,annotations,'clarification');
   refs(lesson.sourceIds,sources,'lesson source');refs(lesson.requiredIds,ids,'lesson check');
   if(!ids.has(lesson.challengeId)||!lesson.steps?.length||lesson.objectives?.length>2||!lesson.recap||!lesson.confusion)throw Error('Incomplete lesson');
   for(const step of [...lesson.steps,...(lesson.preparation||[])]){refs(step.conceptIds,concepts,'step concept');refs(step.sourceIds,sources,'step source');if(!step.text||!step.title)throw Error('Empty teaching step');}
@@ -66,7 +70,7 @@ export function mergeStudyBanks(base,addition) {
  if(addition.schemaVersion!==1||addition.approved!==true)throw Error('Approved compatible addition required');
  const result=structuredClone(base);
  result.lessonRevisions={...(base.lessonRevisions||{}),...Object.fromEntries(base.lessons.map(l=>[l.id,studyLessonRevision(base,l)]))};
- for(const key of ['sources','concepts','lessons','questions','variants','challenges','bridges','sourceUploads']) {
+ for(const key of ['sources','concepts','lessons','questions','variants','challenges','bridges','sourceUploads','annotations']) {
   if(addition[key]===undefined)continue;
   if(!Array.isArray(addition[key]))throw Error('Invalid content collection: '+key);
   const values=result[key]??=[];

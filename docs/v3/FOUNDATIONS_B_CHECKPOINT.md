@@ -1,5 +1,19 @@
 # Chapter continuation: sequential prompts 1–4
 
+## Current continuation and private handoff
+
+Prompt 1 is verified at **56b4425cfddf62fe8ab53d8fd91e13eb2cd2a11f**, primary **38776321573**: 321 deterministic tests, all 24 browser suites and both Windows prototypes passed. The follow-up corrects the B series heading and compares preserved journal events by identity instead of incidental array ordering. Original records remain unchanged.
+
+Owner paused expansion to request real learner access. Existing private-preview tooling produced an actual eight-lesson bank preview from that exact source; actual-bank Node checks covered normal dashboard/chapter links, all five tabs, activities/quizzes and same-bank Review/recovery. The new private ZIP and fresh extraction/hash receipt are outside the public repository in the private continuation folder. The download was provided in chat. It is **desktop local only**, with a loopback-only Python launcher. Sandbox IPC/socket restrictions prevented an actual private-content browser or HTTP launch, and owner launch/phone access are unconfirmed. Authenticated HTTPS hosting is a separate authorization/configuration step; no private bank was published to staging. Read `HANDOFF_CHECKPOINT.md` and its receipts in the private folder. Earlier ZIPs/previews remain intact.
+
+Resumed Prompt 2: one progressive Material Response Bench (conductors/insulators/resistance/semiconductor conditions), bounded Carrier Vacancy Stepper, separate majority/minority cards, optional ungraded external clarification notes and optional A-ion onward link. Reuses the existing study host, immutable attempts, journal, classifier assets and Review engine. Material conditions are authored qualitative cards; only metal uses the electron-transfer schematic. No numerical conductivity, breakdown voltage, device, thermal or bulk-charge engine is claimed. Registered capability total is 74; old entries and instruments are unchanged.
+
+Private content verification now also passes for five additional lessons, 25 supplied questions and five activities: 13 cumulative lessons / 65 seeds / 13 challenges / three ungraded annotations. All previous eight lessons/items/sources stay identical. Source pages include the resistance/heating references on both cited pages. `checkpoint-02.verified.bank.json` is **content-verified against the working tree**, not an owner-accepted or independently browser-verified delivery; it is excluded from the eight-lesson handoff package. The 13-lesson source increment still requires its own exact-commit CI and preview.
+
+Local Prompt-2 checks: 327 deterministic tests, 22 focused tests, private all-tabs/all-wrong-completion/idempotency/source checks, syntax/build and 84-asset allowlist pass. A new six-width material browser suite is added (now 25 suites); it has not yet run on this increment. Next: commit/publish this tested increment; inspect its CI and correct failures, then proceed to Prompt 3 with the existing shared circuit engine. Do not regenerate content or overwrite the immutable handoff ZIP. Source hashes remain owner-manifest claims; raw scans are unavailable. No production/paid/backend changes occurred.
+
+## Historical Prompt 1 implementation note
+
 Starting verified development commit: e78ce60108316e30acd72df8e454b9226d6a83a9, identical source to 9583a59. Original A preview/ZIP and its receipts remain immutable. Do not repeat the previous lab or A implementation.
 
 Current milestone: prompt 1, two additional private lessons and conceptual widgets. Prompt 2 covers materials/carriers; prompt 3 covers current/static/voltage and the bounded shared DC scene; prompt 4 covers energy and the chapter recap. Shared contract requirements for all four are not claims that later milestones are already implemented.

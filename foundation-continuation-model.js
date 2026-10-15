@@ -1,3 +1,4 @@
+import {isMaterialWidget,validateMaterialWidget,materialWorking,materialAction,materialObservation} from './foundation-material-model.js';
 // Reviewed conceptual scenes. No chemistry inference, circuit solver or thermal physics.
 const formulas = {
  O:{elements:['O'],bonds:[]},
@@ -10,7 +11,7 @@ export function moleculeCase(formula) {
  const atoms=spec.elements.map((element,index)=>({id:'atom-'+index,element,groupId:'particle-1'}));
  return {formula,atoms,bonds:spec.bonds.map(([a,b])=>({from:atoms[a].id,to:atoms[b].id})),counts:{H:spec.elements.filter(e=>e==='H').length,O:spec.elements.filter(e=>e==='O').length,total:atoms.length},particle:atoms.length===1?'atom':'molecule',composition:new Set(spec.elements).size===1?'one element':'compound',pure:true};
 }
-export const isContinuationWidget=item=>item?.widgetKey==='particle-motion'||(item?.widgetKey==='material-classifier'&&item.config?.mode==='molecules');
+export const isContinuationWidget=item=>isMaterialWidget(item)||item?.widgetKey==='particle-motion'||(item?.widgetKey==='material-classifier'&&item.config?.mode==='molecules');
 export const isLegacyClassifier=item=>item?.widgetKey==='material-classifier'&&!isContinuationWidget(item);
 export function motionState({seed=1,statePreset='solid',temperatureBand='middle',frame=0,playing=false,remaining=0}={}) {
  if(!Number.isInteger(seed)||seed<0||seed>4294967295||!['solid','liquid','gas'].includes(statePreset)||!['cooler','middle','warmer'].includes(temperatureBand)||!Number.isSafeInteger(frame)||frame<0||!Number.isInteger(remaining)||remaining<0||remaining>20||typeof playing!=='boolean')throw Error('Invalid qualitative motion state');
@@ -26,7 +27,8 @@ export function motionFrame(input) {
  });
 }
 export function validateContinuation(item) {
- if(item.widgetKey==='particle-motion'){
+ if(isMaterialWidget(item))validateMaterialWidget(item);
+ else if(item.widgetKey==='particle-motion'){
   const s=motionState(item.config),expected={solid:'vibration',liquid:'rearrangement',gas:'wide-separation'}[s.statePreset];
   if(item.grading?.expectedPrediction?.motion!==expected)throw Error('Motion key contradicts the authored preset');
  } else if(item.config.mode==='molecules'){
@@ -39,9 +41,11 @@ export function validateContinuation(item) {
 }
 export function continuationWorking(item) {
  validateContinuation(item);
+ if(isMaterialWidget(item))return materialWorking(item);
  return item.widgetKey==='particle-motion'?{...motionState(item.config),actionCount:0}:{formula:item.config.particleFormula,inspectedAtomIds:[],actionCount:0};
 }
 export function continuationAction(item,working,action) {
+ if(isMaterialWidget(item))return materialAction(item,working,action);
  const next=structuredClone(working);
  if(item.widgetKey==='material-classifier') {
   if(action==='inspect')next.inspectedAtomIds=moleculeCase(next.formula).atoms.map(a=>a.id);
@@ -62,5 +66,6 @@ export function continuationAction(item,working,action) {
  next.actionCount+=Number(['step','tick','inspect'].includes(action)||action.startsWith('atom:'));return next;
 }
 export function continuationObservation(item,working) {
+ if(isMaterialWidget(item))return materialObservation(item,working);
  return item.widgetKey==='material-classifier'?moleculeCase(working.formula):{...motionState(working),particleCount:9,motion:{solid:'vibration about fixed positions',liquid:'rearrangement',gas:'widely separated motion'}[working.statePreset],positions:motionFrame(working)};
 }
