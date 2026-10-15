@@ -1,4 +1,4 @@
-import {additionAssets,renderAdditionCards,renderOptionalAdditionHomes} from './study-additions.js';
+import {additionAssets,renderAdditionCards,renderOptionalAdditionHomes,renderAdditionReadingLists,renderStudyContentStatus} from './study-additions.js';
 import {catalogSection} from './lesson-catalog.js';
 import {conceptEvidence} from './review-engine.js';
 import {studyContent} from './study-content.js';
@@ -209,7 +209,7 @@ function v2Context(){
  const approvedGeneratedLessons=[...generatedLessons.values()];
  const archivedGeneratedLessons=approvedGeneratedLessons.filter(l=>l.archived);
  const activeGeneratedLessons=approvedGeneratedLessons.filter(l=>!l.archived);
- return {optionalAdditionHomes:()=>studySafe(doc=>renderOptionalAdditionHomes(studyContent,doc,{escape:studyEsc})),additionCards:(id,context='lesson')=>studySafe(doc=>renderAdditionCards(studyContent,doc,id,{escape:studyEsc,context})),additionContextCards:context=>(studyContent?.canonicalLessons||[]).filter(h=>studyContent.additions?.some(a=>a.homeLessonId===h.id&&a.entryContexts?.includes(context))).map(h=>studySafe(doc=>renderAdditionCards(studyContent,doc,h.id,{escape:studyEsc,context}))).join(''),lessons,progress:{...progress,...Object.fromEntries(privateStudyLessons.map(l=>[l.id,getState(l.id)]))},hasPassed,unlocked,reviews:(()=>{try{return Object.values(conceptEvidence(evidenceEvents(studyStore.read()))).filter(c=>c.ready||c.needsPractice).length}catch{return 0}})(),banner:cloudBanner(),
+ return {studyContentStatus:()=>renderStudyContentStatus(studyContent,{escape:studyEsc}),additionReadingLists:()=>studySafe(doc=>renderAdditionReadingLists(studyContent,doc,{escape:studyEsc})),optionalAdditionHomes:()=>studySafe(doc=>renderOptionalAdditionHomes(studyContent,doc,{escape:studyEsc})),additionCards:(id,context='lesson')=>studySafe(doc=>renderAdditionCards(studyContent,doc,id,{escape:studyEsc,context})),additionContextCards:context=>(studyContent?.canonicalLessons||[]).filter(h=>studyContent.additions?.some(a=>a.homeLessonId===h.id&&a.entryContexts?.includes(context))).map(h=>studySafe(doc=>renderAdditionCards(studyContent,doc,h.id,{escape:studyEsc,context}))).join(''),lessons,progress:{...progress,...Object.fromEntries(privateStudyLessons.map(l=>[l.id,getState(l.id)]))},hasPassed,unlocked,reviews:(()=>{try{return Object.values(conceptEvidence(evidenceEvents(studyStore.read()))).filter(c=>c.ready||c.needsPractice).length}catch{return 0}})(),banner:cloudBanner(),
  coreRows:lessonRows(lessons),legacyRows:lessonRows(archivedPilotLessons),
  archivedPilotLessons,archivedUnreferencedLessons,archivedGeneratedLessons,activeGeneratedLessons,legacyReason,
  canOpenArchive:l=>canOpenLesson(l,allLessons.indexOf(l)),

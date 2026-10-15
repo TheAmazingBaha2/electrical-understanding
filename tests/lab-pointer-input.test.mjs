@@ -12,7 +12,7 @@ test('CSS-space targeting rejects ambiguity, preserves threshold and excludes di
 });
 function harness(){
  const view=new EventTarget();let frame;view.requestAnimationFrame=fn=>{frame=fn;return 1;};view.cancelAnimationFrame=()=>{frame=null;};
- const root=new EventTarget(),handle={closest:()=>handle};root.ownerDocument={defaultView:view};root.contains=h=>h===handle;let captured=false;root.setPointerCapture=()=>{captured=true;};root.hasPointerCapture=()=>captured;root.releasePointerCapture=()=>{captured=false;};
+ const root=new EventTarget(),handle={closest:()=>handle};root.ownerDocument={defaultView:view};root.contains=h=>h===handle;let captured=false;handle.setPointerCapture=()=>{captured=true;};handle.hasPointerCapture=()=>captured;handle.releasePointerCapture=()=>{captured=false;};
  const commits=[],previews=[],statuses=[];
  const detach=attachLabPointerInput(root,{handleSelector:'x',targets:()=>[{id:'b',x:100,y:20,label:'B'}],commit:(h,t)=>commits.push(t.id),preview:d=>previews.push(d),status:m=>statuses.push(m)});
  const fire=(name,props={})=>{const event=new Event(name,{cancelable:true});Object.defineProperties(event,Object.fromEntries(Object.entries({pointerId:1,clientX:10,clientY:20,button:0,isPrimary:true,...props}).map(([k,value])=>[k,{value}])));Object.defineProperty(event,'target',{value:handle});root.dispatchEvent(event);return event;};

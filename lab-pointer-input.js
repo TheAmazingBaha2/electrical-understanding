@@ -19,7 +19,7 @@ export function attachLabPointerInput(root,{handleSelector,targets,commit,previe
   if(previous.dragged)suppressUntil=Date.now()+500;
   const hit=!canceled&&event?resolvePointerTarget(position(event),targets(previous.handle)):null;
   // Release before a host redraw removes the captured node.
-  if(root.hasPointerCapture?.(previous.pointerId))root.releasePointerCapture(previous.pointerId);
+  if(previous.handle.hasPointerCapture?.(previous.pointerId))previous.handle.releasePointerCapture(previous.pointerId);
   clear();
   if(previous.dragged&&!canceled&&hit?.target){try{commit(previous.handle,hit.target);}catch(error){status(error.message);}}
   else if(previous.dragged)status(hit?.ambiguous?'Several terminals are nearby. Use the named tap controls.':'Movement canceled; the previous connection is unchanged.');
@@ -27,7 +27,7 @@ export function attachLabPointerInput(root,{handleSelector,targets,commit,previe
  function down(e){
   if(active){finish(null,true);suppressUntil=Date.now()+500;return;}
   const handle=e.target.closest(handleSelector);if(!handle||!root.contains(handle)||e.button!==0||e.isPrimary===false)return;
-  e.stopPropagation();active={handle,pointerId:e.pointerId,start:position(e),dragged:false};root.setPointerCapture(e.pointerId);
+  e.stopPropagation();active={handle,pointerId:e.pointerId,start:position(e),dragged:false};handle.setPointerCapture(e.pointerId);
  }
  function move(e){if(!active||active.pointerId!==e.pointerId)return;const p=position(e);active.dragged ||= pointerDraft(active.start,p,{threshold}).dragged;if(!active.dragged)return;e.preventDefault();e.stopPropagation();pending=p;if(frame===null)frame=view.requestAnimationFrame(paint);}
  const up=e=>finish(e),cancel=()=>finish(null,true),lost=e=>{if(active?.pointerId===e.pointerId)finish(null,true);};

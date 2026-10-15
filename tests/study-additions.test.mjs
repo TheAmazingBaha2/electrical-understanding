@@ -1,6 +1,6 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {additionsFixture} from './study-additions-fixture.mjs';
-import {additionAssets,additionCompletion,additionGauge,renderAdditionCards,renderOptionalAdditionHomes} from '../study-additions.js';
+import {additionAssets,additionCompletion,additionGauge,renderAdditionCards,renderOptionalAdditionHomes,renderAdditionReadingLists,additionActivityComplete,renderStudyContentStatus} from '../study-additions.js';
 import {initialStudyLesson,initialStudyActivity,lessonTarget,studyEsc,renderStudyLesson} from '../study-module-view.js';
 import {allStudyItems,studyPresentation,mergeStudyBanks,studyLessonAssets} from '../study-bank.js';
 import {makeStudyAttempt,lessonCompletion,introducedConcepts} from '../review-engine.js';
@@ -43,4 +43,21 @@ test('same offline journal saves exact scope, chosen checks, assistance and task
 test('a reviewed optional-only canonical home remains discoverable without creating a core lesson',()=>{
  const {base,pack,addition}=additionsFixture(),home={id:'00000000-0000-4000-8000-000000000602',aliases:[],title:'Synthetic optional-only topic',optionalOnly:true},bank=mergeStudyBanks(base,{...pack,canonicalLessons:[home],additions:[{...addition,homeLessonId:home.id}]});
  const c={bookLessons:studyLessonAssets(bank),progress:{},optionalAdditionHomes:()=>renderOptionalAdditionHomes(bank,emptyStudyJournal(),{escape:studyEsc})};assert.equal(studyLessonAssets(bank).length,base.lessons.length);assert.match(renderSourceSection('lessons',c),/Synthetic optional-only topic/);assert.match(renderSourceSection('lessons',c),/No core completion requirement/);
+});
+
+test('source-contribution reading view uses the same canonical addition/revision, source labels and gauge',()=>{
+ const {bank}=additionsFixture(),l=additionAssets(bank)[0],{s,events}=exercise(bank,l),journal={...emptyStudyJournal(),events:[...events,{id:'source-state',type:'state',at,target:lessonTarget(l),parentId:null,value:s}]};
+ const reading=renderAdditionReadingLists(bank,journal,{escape:studyEsc});
+ assert.match(reading,/Source contributions/);assert.match(reading,/Reference pages:/);assert.match(reading,/4 \/ 4 requirements/);assert.match(reading,/1 \/ 1 enrolled completed/);assert.ok(reading.includes('data-lesson="'+l.id+'" data-revision="1.0.0"'));
+ assert.equal((reading.match(/data-addition=/g)||[]).length,1);
+ const c={bookLessons:studyLessonAssets(bank),progress:{},additionReadingLists:()=>reading};for(const html of [renderSourceSection('lessons',c),renderChapterDashboard(c)])assert.ok(html.includes(reading));
+ assert.equal(renderAdditionReadingLists(null,journal,{escape:studyEsc}),'');
+});
+test('legacy case-sorter supplement completion requires every scoped authored case attempt',()=>{
+ const activity={comparisonAttempted:true,caseCount:2,caseAnswers:[{attemptId:'a'},{attemptId:'b'}]},attempts=[{id:'a',item:{id:'challenge'}},{id:'b',item:{id:'challenge'}}];
+ assert.equal(additionActivityComplete(activity,attempts,'challenge'),true);assert.equal(additionActivityComplete(activity,attempts.slice(0,1),'challenge'),false);assert.equal(additionActivityComplete({...activity,caseAnswers:[]},attempts,'challenge'),false);assert.equal(additionActivityComplete(activity,attempts,'another-platform'),false);
+});
+
+test('content indicator distinguishes the missing public shell from an installed real-count bank',()=>{
+ assert.match(renderStudyContentStatus(null,{escape:studyEsc}),/not installed/);const {bank}=additionsFixture();const text=renderStudyContentStatus(bank,{escape:studyEsc});assert.match(text,/1 optional additions/);assert.ok(text.includes(bank.lessons.length+' teaching lessons'));assert.ok(text.includes(bank.id));
 });

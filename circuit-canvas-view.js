@@ -1,3 +1,4 @@
+import {resolvePointerTarget,pointerDraft} from './lab-pointer-input.js';
 import {probeContact} from './circuit-model.js';
 import {canvasSize,canvasTerminals,canvasProbeTerminal,circuitCanvasLayout} from './circuit-canvas.js';
 import {resistorBody,sourceBody,partIcon,escapeGraphic as esc} from './lab-graphics.js';
@@ -26,24 +27,28 @@ export function attachCircuitCanvasPointers(root,getState,onAction,onFeedback){
  function candidates(state,kind){return kind==='board-probe'?breadboardHoles.map(id=>({id,...boardPoint(id)})):canvasTerminals(state.circuit,state.layout);}
  function snap(svg,state,kind,endpoint,pointer){
   const matrix=svg.getScreenCTM();if(!matrix)return null;
-  const nearest=(p,radius=24)=>{const screen=new DOMPoint(p.x,p.y).matrixTransform(matrix);return candidates(state,kind).map(t=>{const q=new DOMPoint(t.x,t.y).matrixTransform(matrix);return {...t,distance:Math.hypot(q.x-screen.x,q.y-screen.y)};}).filter(t=>t.distance<=radius).sort((a,b)=>a.distance-b.distance)[0]||null;};
-  // A physical tip is authoritative; accepting a handle dropped directly on a
-  // contact is a forgiving alternative. Preview shows exactly which will commit.
-  return nearest(pointer,8)||nearest(endpoint)||nearest(pointer);
+  const screenTargets=candidates(state,kind).map(t=>{const p=new DOMPoint(t.x,t.y).matrixTransform(matrix);return {...t,screenX:p.x,screenY:p.y};});
+  const nearest=(p,radius)=>{const screen=new DOMPoint(p.x,p.y).matrixTransform(matrix);return resolvePointerTarget(screen,screenTargets.map(t=>({...t,x:t.screenX,y:t.screenY})),{radius});};
+  // Never pick the closest arbitrary neighbor in a dense contact field.
+  const direct=nearest(pointer,8);if(direct.ambiguous)return null;
+  if(direct.target)return candidates(state,kind).find(t=>t.id===direct.target.id);
+  const tip=nearest(endpoint,24);if(tip.ambiguous)return null;
+  if(tip.target)return candidates(state,kind).find(t=>t.id===tip.target.id);
+  const fallback=nearest(pointer,24);return fallback.ambiguous?null:candidates(state,kind).find(t=>t.id===fallback.target?.id)||null;
  }
  function restore(d){d.target.setAttribute('transform',d.originalTransform);for(const [p,path] of d.paths)p.setAttribute('d',path);delete d.svg.dataset.snapContact;delete d.svg.dataset.connectionState;for(const e of root.querySelectorAll('.contact-snap-target'))e.classList.remove('contact-snap-target');}
  function down(e){
-  if(e.button!==0)return;const svg=e.target.closest('[data-canvas-world],.direct-board-svg');if(!svg)return;
+  if(drag){finish({pointerId:drag.pointerId},true);return;}if(e.button!==0||e.isPrimary===false)return;const svg=e.target.closest('[data-canvas-world],.direct-board-svg');if(!svg)return;
   const boardProbe=e.target.closest('[data-board-probe-draggable]'),probe=e.target.closest('[data-canvas-probe]')||boardProbe,part=e.target.closest('[data-canvas-part]'),wireEnd=e.target.closest('[data-canvas-wire-end]');if(!probe&&!part&&!wireEnd)return;
   const state=getState();if(state.locked||!probe&&!wireEnd&&state.ui.tool!=='inspect')return;
   const id=probe?.dataset.canvasProbe||probe?.dataset.boardProbe||wireEnd?.dataset.canvasWireId||part.dataset.canvasPart,wire=wireEnd&&state.circuit.connections.find(w=>w.id===id),end=wireEnd?.dataset.canvasWireEnd;
   const position=part?state.layout.positions[id]:boardProbe?(state.board.probeConnected?.[id]===false?{x:750,y:id==='red'?500:560}:boardPoint(state.board.probes[id])):wireEnd?canvasTerminals(state.circuit,state.layout).find(t=>t.id===wire[end]):canvasProbeTerminal(state.circuit,state.layout,id)||{x:1040,y:id==='red'?180:330};
   const target=probe||wireEnd||part,paths=wireEnd?[...svg.querySelector('[data-canvas-wire="'+id+'"]').querySelectorAll('path')]:[...svg.querySelectorAll('[data-canvas-probe-wire="'+id+'"],[data-board-probe-wire="'+id+'"]')];
-  drag={svg,target,id,end,wire,kind:boardProbe?'board-probe':probe?'probe':wireEnd?'wire-end':'part',start:point(e,svg),position,moved:false,pointerId:e.pointerId,projectId:state.projectId,originalTransform:target.getAttribute('transform'),paths:paths.map(p=>[p,p.getAttribute('d')])};
-  svg.setPointerCapture(e.pointerId);e.preventDefault();
+  drag={svg,target,id,end,wire,kind:boardProbe?'board-probe':probe?'probe':wireEnd?'wire-end':'part',start:point(e,svg),screenStart:{x:e.clientX,y:e.clientY},position,moved:false,pointerId:e.pointerId,projectId:state.projectId,originalTransform:target.getAttribute('transform'),paths:paths.map(p=>[p,p.getAttribute('d')])};
+  svg.setPointerCapture(e.pointerId);e.stopPropagation();e.preventDefault();
  }
  function move(e){
-  if(!drag||drag.pointerId!==e.pointerId)return;const d=drag,p=point(e,d.svg);if(Math.hypot(p.x-d.start.x,p.y-d.start.y)>5)d.moved=true;if(!d.moved)return;
+  if(!drag||drag.pointerId!==e.pointerId)return;const d=drag,p=point(e,d.svg);if(pointerDraft(d.screenStart,{x:e.clientX,y:e.clientY}).dragged)d.moved=true;if(!d.moved)return;e.stopPropagation();
   const endpoint={x:d.position.x+p.x-d.start.x,y:d.position.y+p.y-d.start.y},target=d.kind==='part'?null:snap(d.svg,getState(),d.kind,endpoint,p),pos=d.kind==='part'?limit(endpoint):target||endpoint;
   d.snap=target;d.lastPoint=p;d.target.setAttribute('transform','translate('+pos.x+' '+pos.y+')');d.svg.dataset.connectionState='pending';
   for(const el of root.querySelectorAll('.contact-snap-target'))el.classList.remove('contact-snap-target');
@@ -67,13 +72,14 @@ export function attachCircuitCanvasPointers(root,getState,onAction,onFeedback){
   try{if(cancel)throw Error('Move canceled; previous connection retained');const state=getState();if(state.projectId!==d.projectId)throw Error('The project changed; previous drag canceled');if(state.locked)throw Error('Editing paused during project transfer or conflict');
    const p=point(e,d.svg),endpoint={x:d.position.x+p.x-d.start.x,y:d.position.y+p.y-d.start.y};
    if(d.kind==='part'){onAction({type:'move',id:d.id,position:limit(endpoint)});return;}
-   const target=snap(d.svg,state,d.kind,endpoint,p);if(!target)throw Error('No contact snapped; previous connection retained. Use Detach to unplug a probe.');
+   const target=snap(d.svg,state,d.kind,endpoint,p);if(!target)throw Error('No unique contact snapped; previous connection retained. Use named tap controls for dense contacts, or Detach to unplug.');
    if(d.kind==='board-probe')onAction({type:'board-probe',probe:d.id,hole:target.id});
    else if(d.kind==='wire-end')onAction({type:'reroute-wire',id:d.id,[d.end]:target.id});
    else onAction({type:'probe',probe:d.id,terminal:target.id});
   }catch(error){onFeedback(error.message);}
  }
+ const view=root.ownerDocument.defaultView,interrupt=()=>{if(drag)finish({pointerId:drag.pointerId},true);},lost=e=>{if(drag?.pointerId===e.pointerId)interrupt();};
  const up=e=>finish(e),cancel=e=>finish(e,true),key=e=>{if(e.key==='Escape'&&drag){e.preventDefault();finish({pointerId:drag.pointerId},true);}},click=e=>{if(suppressClick){e.stopImmediatePropagation();e.preventDefault();suppressClick=false;}};
- root.addEventListener('pointerdown',down);root.addEventListener('pointermove',move);root.addEventListener('pointerup',up);root.addEventListener('pointercancel',cancel);root.addEventListener('keydown',key,true);root.addEventListener('click',click,true);
- return ()=>{if(drag){restore(drag);if(drag.svg.hasPointerCapture(drag.pointerId))drag.svg.releasePointerCapture(drag.pointerId);drag=null;}root.removeEventListener('pointerdown',down);root.removeEventListener('pointermove',move);root.removeEventListener('pointerup',up);root.removeEventListener('pointercancel',cancel);root.removeEventListener('keydown',key,true);root.removeEventListener('click',click,true);};
+ root.addEventListener('pointerdown',down);root.addEventListener('pointermove',move);root.addEventListener('pointerup',up);root.addEventListener('pointercancel',cancel);root.addEventListener('lostpointercapture',lost);for(const event of ['blur','orientationchange','pagehide'])view.addEventListener(event,interrupt);root.addEventListener('keydown',key,true);root.addEventListener('click',click,true);
+ return ()=>{interrupt();for(const event of ['blur','orientationchange','pagehide'])view.removeEventListener(event,interrupt);root.removeEventListener('lostpointercapture',lost);root.removeEventListener('pointerdown',down);root.removeEventListener('pointermove',move);root.removeEventListener('pointerup',up);root.removeEventListener('pointercancel',cancel);root.removeEventListener('keydown',key,true);root.removeEventListener('click',click,true);};
 }

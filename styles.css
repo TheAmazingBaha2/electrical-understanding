@@ -1189,3 +1189,5 @@ body:has(#main>.desktop-bench) .topbar{padding:12px 18px;min-height:52px}body:ha
 .lab-pointer-preview span{position:absolute;max-width:210px;padding:6px 8px;border-radius:8px;background:#102e38;color:#fff;font-size:13px;border:1px solid #8eecff;}
 
 [data-dc-terminal]{touch-action:none;cursor:crosshair;}
+
+.study-content-status{font-size:.85rem;padding:10px 12px;border:1px solid #608b96;border-radius:10px;margin-bottom:14px;overflow-wrap:anywhere;}
