@@ -3,6 +3,7 @@ import {particleState,energyTransition} from './foundation-model.js';
 export const sameValue=(a,b)=>JSON.stringify(normalize(a))===JSON.stringify(normalize(b));
 const normalize=x=>Array.isArray(x)?x.map(normalize):x&&typeof x==='object'?Object.fromEntries(Object.keys(x).sort().map(k=>[k,normalize(x[k])])):x;
 export const allStudyItems=bank=>[...(bank?.questions||[]),...(bank?.variants||[]),...(bank?.challenges||[])];
+export function availableStudyItem(bank,item){return !!bank?.approved&&allStudyItems(bank).some(i=>i.id===item.id&&i.revision===item.revision&&!i.retired);}
 export function validateStudyBank(bank) {
  assertSerializable(bank);
  if(bank?.schemaVersion!==1||typeof bank.id!=='string'||bank.approved!==true||!Array.isArray(bank.lessons)||!bank.lessons.length)throw Error('Unsupported or unapproved study bank');

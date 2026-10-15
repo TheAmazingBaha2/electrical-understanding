@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {countProperties,particleState,changeParticle,compareCounts,energyTransition,challengeWorking,challengeAction} from '../foundation-model.js';
-import {validateStudyBank,presentedItem,answerStudyItem} from '../study-bank.js';
+import {validateStudyBank,presentedItem,answerStudyItem,availableStudyItem} from '../study-bank.js';
 import {conceptEvidence,eligibleStudyItems,startReview,repairReview,makeStudyAttempt,lessonCompletion,DAY_MS} from '../review-engine.js';
 import {emptyStudyJournal,mergeStudyJournals,evidenceEvents,studyState,StudyStore} from '../study-journal.js';
 import {initialStudyLesson,initialStudyActivity,renderStudyWidget,renderLegacyReviewArchive,renderStudyReview} from '../study-module-view.js';
@@ -72,4 +72,10 @@ test('many local saves deduplicate presentations, retain all working revisions a
  let parent=null;for(let i=0;i<80;i++){state.step=i;const result=await store.updateState('test',parent,state,[],{id:'working'+i,at:at(i/100)});assert.equal(result.conflicted,false);parent='working'+i;}
  const doc=store.read();assert.equal(doc.events.filter(e=>e.type==='presentation').length,2);assert.equal(doc.events.filter(e=>e.type==='state').length,80);assert.equal(studyState(doc,'test').value.step,79);assert.ok(store.backups().length<=2);
  const restored=JSON.parse(store.export());assert.equal(restored.journal.events.length,82);assert.ok([...map.values()].reduce((n,v)=>n+v.length,0)<4000000);
+});
+
+test('saved review cannot activate an absent or retired content bank',()=>{
+ const bank=studyFixture(),session=startReview(bank,[intro()],{id:'saved',at:at(0)}),journal={...emptyStudyJournal(),events:[intro(),{id:'saved-state',type:'state',target:'review.active',parentId:null,at:at(0),value:session}]};
+ assert.equal(availableStudyItem(null,session.tasks[0].item),false);assert.doesNotMatch(renderStudyReview(null,journal),/data-study-submit|data-study-predict/);assert.match(renderStudyReview(null,journal),/matching approved lesson bank/);
+ const retired=structuredClone(bank);retired.questions.find(q=>q.id===session.tasks[0].item.id).retired=true;assert.equal(availableStudyItem(retired,session.tasks[0].item),false);assert.equal(journal.events.length,2);
 });

@@ -1,4 +1,4 @@
-import {allStudyItems,studyPresentation} from './study-bank.js';
+import {allStudyItems,studyPresentation,availableStudyItem} from './study-bank.js';
 import {challengeAction,challengeWorking} from './foundation-model.js';
 import {makeStudyAttempt,startReview,repairReview,introducedConcepts} from './review-engine.js';
 import {studyState,evidenceEvents} from './study-journal.js';
@@ -14,7 +14,7 @@ export function attachStudyModule(root,{bank,store,lesson=null,rerender,notify,n
  function currentItem(){return lesson?state.requiredItems[state.quizIndex]:state.tasks[state.cursor].item;}
  function currentActivity(){return lesson?state.activity:(state.tasks[state.cursor].activity??=initialStudyActivity(currentItem(),{compact:true}));}
  function challenge(){return lesson?allStudyItems(bank).find(i=>i.id===lesson.challengeId):currentItem();}
- function requireIntroduced(item){const introduced=introducedConcepts(events());if(!item.requiresIntroducedConceptIds.every(c=>introduced.has(c)))throw Error('Introduce the required teaching steps before this check');}
+ function requireIntroduced(item){if(!availableStudyItem(bank,item))throw Error('Reinstall the matching approved lesson bank before continuing this saved assessment. History is retained.');const introduced=introducedConcepts(events());if(!item.requiresIntroducedConceptIds.every(c=>introduced.has(c)))throw Error('Introduce the required teaching steps before this check');}
  function attempt(item,answer,{caseId=null,working=null}={}) {
   requireIntroduced(item);const task=lesson?null:state.tasks[state.cursor],id=(lesson?state.id+'/item/'+item.id:state.id+'/task/'+task.id)+(caseId?'/case/'+caseId:'');
   if(store.read().events.some(e=>e.id===id))throw Error('The first response is already saved; it cannot be replaced. Export recovery if saved copies disagree.');
