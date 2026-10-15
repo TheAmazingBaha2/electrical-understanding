@@ -19,6 +19,7 @@ export function validateStudyBank(bank) {
  for(const c of bank.concepts)refs(c.sourceIds,sources,'concept source');
  const ids=new Set();
  for(const item of allStudyItems(bank)) {
+  if(item.practiceCoverage!==undefined)throw Error('Practice coverage belongs to the concept, not an authored item');
   if(ids.has(item.id)||!Number.isInteger(item.revision)||item.revision<1||!lessons.has(item.lessonId)&&!(bank.additions||[]).some(a=>a.id===item.lessonId||a.importAliases.includes(item.lessonId))||!concepts.has(item.primaryConceptId)||!item.variantFamilyId||!item.evidencePolicy)throw Error('Invalid study item identity');ids.add(item.id);
   refs(item.requiresIntroducedConceptIds,concepts,'required concept');refs(item.sourceIds,sources,'item source');if(!item.requiresIntroducedConceptIds.includes(item.primaryConceptId))throw Error('Primary concept must be explicitly introduced');
   if(item.kind==='single_choice') {
@@ -46,7 +47,15 @@ export function validateStudyBank(bank) {
   for(const step of [...lesson.steps,...(lesson.preparation||[])]){refs(step.conceptIds,concepts,'step concept');refs(step.sourceIds,sources,'step source');if(!step.text||!step.title)throw Error('Empty teaching step');}
   if(lesson.requiredIds.some(id=>allStudyItems(bank).find(i=>i.id===id)?.lessonId!==lesson.id&&!lesson.addition?.importAliases.includes(allStudyItems(bank).find(i=>i.id===id)?.lessonId)))throw Error('Lesson check belongs to another lesson');
  }
- for(const c of bank.concepts){const families=new Set(allStudyItems(bank).filter(i=>i.primaryConceptId===c.id).map(i=>i.variantFamilyId));if(families.size<2)throw Error('Each assessed concept needs two distinct practice variants: '+c.id);}
+ for(const c of bank.concepts){
+  const items=allStudyItems(bank).filter(i=>i.primaryConceptId===c.id),families=new Set(items.map(i=>i.variantFamilyId));
+  if(c.practiceCoverage!==undefined){
+   // Explicitly limited new supplements must never weaken the core contract.
+   const coverage=c.practiceCoverage,coreUse=bank.lessons.some(l=>[...(l.steps||[]),...(l.preparation||[])].some(s=>s.conceptIds.includes(c.id)))||allStudyItems(bank).some(i=>lessons.has(i.lessonId)&&i.requiresIntroducedConceptIds.includes(c.id));
+   if(coverage?.kind!=='limited-supplement'||typeof coverage.reason!=='string'||!coverage.reason.trim()||coreUse||!items.length||items.some(i=>!(bank.additions||[]).some(a=>a.id===i.lessonId||a.importAliases.includes(i.lessonId))))throw Error('Limited coverage is only valid for explicitly explained supplemental concepts: '+c.id);
+  }
+  if(families.size<2&&!c.practiceCoverage)throw Error('Each assessed concept needs two distinct practice variants: '+c.id);
+ }
  if(/<\s*script|javascript:|sb_secret_|service_role/i.test(JSON.stringify(bank)))throw Error('Unsafe study content');
  validateLessonReferences(bank);return bank;
 }
@@ -56,7 +65,7 @@ export function presentedItem(item,seed) {
  const copy=structuredClone(item);if(copy.options)for(let i=copy.options.length-1;i>0;i--){n=(Math.imul(n,1664525)+1013904223)>>>0;const j=n%(i+1);[copy.options[i],copy.options[j]]=[copy.options[j],copy.options[i]];}
  copy.variantId=item.variantId||item.id+'@'+item.revision;return copy;
 }
-export function studyPresentation(bank,item,seed){return {...presentedItem(item,seed),bankId:bank.id,bankRevision:bank.revision,sourceSnapshot:structuredClone(bank.sources.filter(s=>item.sourceIds.includes(s.id)))};}
+export function studyPresentation(bank,item,seed){const coverage=bank.concepts.find(c=>c.id===item.primaryConceptId)?.practiceCoverage;return {...presentedItem(item,seed),bankId:bank.id,bankRevision:bank.revision,sourceSnapshot:structuredClone(bank.sources.filter(s=>item.sourceIds.includes(s.id))),...(coverage?{practiceCoverage:structuredClone(coverage)}:{})};}
 export function answerStudyItem(item,answer,{caseId=null}={}) {
  if(item.kind==='single_choice'){const option=item.options.find(o=>o.id===answer);if(!option)throw Error('Choose an available option');return {correct:answer===item.correctOptionId,feedback:option.feedback,misconception:option.misconception||null};}
  if(isLegacyClassifier(item)){const c=item.config.cases.find(c=>c.id===caseId);if(!c||!item.config.answerOptions.includes(answer))throw Error('Choose an available case label');return {correct:answer===c.answer,feedback:item.explanation,misconception:answer===c.answer?null:'relationship_classification'};}

@@ -11,13 +11,14 @@ export function conceptEvidence(events,{now=Date.now(),policy=REVIEW_POLICY}={})
   if(e.type==='introduction')for(const id of e.conceptIds)states[id]??={id,introducedAt:e.at,attempts:0,independent:0,assisted:0,misses:0,qualifying:0,stage:-1,variants:[],needsPractice:false,dueAt:null,lastSpacingAdvancementAt:null,lastMissAt:null,presentations:{}};
   if(e.type!=='attempt')continue;
   const id=e.item.primaryConceptId,s=states[id];if(!s)continue;
+  if(e.item.practiceCoverage?.kind==='limited-supplement')s.limitedCoverage=true;
   const at=Date.parse(e.at),previous=s.presentations[e.item.variantId];s.attempts++;s[e.assisted?'assisted':'independent']++;
   s.presentations[e.item.variantId]=at;s.lastAttemptAt=e.at;
   if(!e.result.correct){s.misses++;s.needsPractice=true;s.lastMissAt=at;s.misconception=e.result.misconception;s.qualifying=0;s.variants=[];s.stage=-1;s.dueAt=at+policy.intervalDays[0]*DAY_MS;continue;}
   if(e.assisted||(previous!==undefined&&at-previous<DAY_MS)||(s.lastSpacingAdvancementAt!==null&&at-s.lastSpacingAdvancementAt<DAY_MS)||(s.lastMissAt!==null&&at-s.lastMissAt<DAY_MS))continue;
-  s.qualifying++;s.stage=Math.min(s.stage+1,policy.intervalDays.length-1);s.variants=[...new Set([...s.variants,e.item.variantId])];s.needsPractice=false;s.lastSpacingAdvancementAt=at;s.dueAt=at+policy.intervalDays[s.stage]*DAY_MS;
+  s.qualifying++;s.stage=Math.min(s.stage+1,s.limitedCoverage?0:policy.intervalDays.length-1);s.variants=[...new Set([...s.variants,e.item.variantId])];s.needsPractice=false;s.lastSpacingAdvancementAt=at;s.dueAt=at+policy.intervalDays[s.stage]*DAY_MS;
  }
- for(const s of Object.values(states)){s.label=s.needsPractice?'Needs practice':s.qualifying>=policy.retainingSuccesses&&s.variants.length>=2?'Retaining':s.qualifying?'Building confidence':'Introduced';s.ready=s.dueAt!==null&&s.dueAt<=now;}
+ for(const s of Object.values(states)){s.label=s.needsPractice?'Needs practice':s.limitedCoverage?'Limited coverage':s.qualifying>=policy.retainingSuccesses&&s.variants.length>=2?'Retaining':s.qualifying?'Building confidence':'Introduced';s.ready=s.dueAt!==null&&s.dueAt<=now;}
  return states;
 }
 export function eligibleStudyItems(bank,events) {
@@ -32,7 +33,8 @@ export function reviewCandidates(bank,events,{now=Date.now(),exclude=[]}={}) {
  return expanded.filter(i=>!exclude.includes(i.variantId||i.id+'@'+i.revision)).map(i=>{
   const s=stats[i.primaryConceptId],v=i.variantId||i.id+'@'+i.revision,last=previous[v]||0;
   const reason=s.needsPractice?'recent error':s.ready?'ready for another look':flags[i.primaryConceptId]?'you flagged this':'recently introduced';
-  return {item:i,last,reason:reason+(last&&now-last<DAY_MS?' · repeated item, same-day practice cannot advance spacing':''),priority:s.needsPractice?0:s.ready?1:flags[i.primaryConceptId]?2:3};
+  const limited=bank.concepts.find(c=>c.id===i.primaryConceptId)?.practiceCoverage;
+  return {item:i,last,reason:reason+(limited?' · limited supplemental coverage: '+limited.reason:'')+(last&&now-last<DAY_MS?' · repeated item, same-day practice cannot advance spacing':''),priority:s.needsPractice?0:s.ready?1:flags[i.primaryConceptId]?2:3};
  }).sort((a,b)=>a.priority-b.priority||a.last-b.last||a.item.id.localeCompare(b.item.id));
 }
 export function startReview(bank,events,{id,at,limit=5,interactive=false}={}) {
