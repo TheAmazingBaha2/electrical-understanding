@@ -7,7 +7,7 @@ export function resolvePointerTarget(point,targets,{radius=24}={}){
 export function pointerDraft(start,point,{threshold=7}={}){
  return {point:{x:point.x,y:point.y},dragged:Math.hypot(point.x-start.x,point.y-start.y)>=threshold};
 }
-export function attachLabPointerInput(root,{handleSelector,targets,commit,preview=()=>{},status=()=>{},threshold=7}={}){
+export function attachLabPointerInput(root,{handleSelector,targets,commit,onTap=null,preview=()=>{},status=()=>{},threshold=7}={}){
  let active=null,frame=null,pending=null,suppressUntil=0,suppressedHandle=null;
  const view=root.ownerDocument.defaultView;
  const position=e=>({x:e.clientX,y:e.clientY});
@@ -16,12 +16,14 @@ export function attachLabPointerInput(root,{handleSelector,targets,commit,previe
  function finish(event,canceled=false){
   if(!active||event&&event.pointerId!==undefined&&event.pointerId!==active.pointerId)return;
   const previous=active;active=null;
-  if(previous.dragged){suppressUntil=Date.now()+500;suppressedHandle=previous.handle;}
+  const tapped=!previous.dragged&&!canceled&&!!event&&!!onTap;
+  if(previous.dragged||tapped){suppressUntil=Date.now()+500;suppressedHandle=previous.handle;}
   const hit=!canceled&&event?resolvePointerTarget(position(event),targets(previous.handle)):null;
   // Release before a host redraw removes the captured node.
   if(previous.handle.hasPointerCapture?.(previous.pointerId))previous.handle.releasePointerCapture(previous.pointerId);
   clear();
   if(previous.dragged&&!canceled&&hit?.target){try{commit(previous.handle,hit.target);}catch(error){status(error.message);}}
+  else if(tapped){try{onTap(previous.handle);}catch(error){status(error.message);}}
   else if(previous.dragged)status(hit?.ambiguous?'Several terminals are nearby. Use the named tap controls.':'Movement canceled; the previous connection is unchanged.');
  }
  function down(e){
@@ -50,4 +52,30 @@ export function pointerPreview(root){
   const line=doc.createElementNS(svg.namespaceURI,'line');for(const [key,value] of Object.entries({x1:start.x,y1:start.y,x2:point.x,y2:point.y,stroke:target?'#8ef0c0':'#f6d968','stroke-width':4,'stroke-dasharray':'7 5'}))line.setAttribute(key,value);svg.append(line);overlay.append(svg);
   const label=doc.createElement('span');label.textContent=ambiguous?'Ambiguous · use named controls':target?target.label+' · release to connect':'Uncommitted · choose a terminal';label.style.left=Math.max(4,Math.min(point.x-90,doc.documentElement.clientWidth-220))+'px';label.style.top=Math.max(4,point.y-64)+'px';overlay.append(label);
  };
+}
+
+// Touch/pen taps invoke the host's semantic command, not a fabricated DOM click.
+// Ordinary controls retain native scrolling and keyboard/mouse click fallback.
+export function attachLabTapControls(root,{selector,activate,threshold=7}={}){
+ const view=root.ownerDocument.defaultView;let pressed=null,handled=null;
+ const target=e=>e.target.closest?.(selector);
+ const reset=()=>{pressed=null;};
+ function down(e){
+  if(pressed){reset();return;}
+  if(!['touch','pen'].includes(e.pointerType)){handled=null;return;}
+  const element=target(e);if(!element||!root.contains(element)||element.disabled||e.isPrimary===false||e.button!==0)return;
+  pressed={element,pointerId:e.pointerId,x:e.clientX,y:e.clientY};
+ }
+ function move(e){if(pressed?.pointerId===e.pointerId&&Math.hypot(e.clientX-pressed.x,e.clientY-pressed.y)>threshold)reset();}
+ function up(e){
+  if(!pressed||pressed.pointerId!==e.pointerId)return;const p=pressed;reset();
+  const r=p.element.getBoundingClientRect();
+  if(p.element.disabled||!root.contains(p.element)||target(e)!==p.element||e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom||Math.hypot(e.clientX-p.x,e.clientY-p.y)>threshold)return;
+  handled={element:p.element,until:Date.now()+500};activate(p.element);
+ }
+ function click(e){if(e.detail===0){reset();return;}if(handled&&Date.now()<handled.until&&target(e)===handled.element){e.preventDefault();e.stopImmediatePropagation();}}
+ const key=e=>{if(['Escape','Enter',' '].includes(e.key))reset();},otherDown=e=>{if(pressed&&pressed.pointerId!==e.pointerId)reset();};
+ root.addEventListener('pointerdown',down);root.addEventListener('click',click,true);view.addEventListener('pointerdown',otherDown);view.addEventListener('pagehide',reset);
+ view.addEventListener('pointermove',move);view.addEventListener('pointerup',up);view.addEventListener('pointercancel',reset);view.addEventListener('blur',reset);view.addEventListener('orientationchange',reset);view.addEventListener('keydown',key);
+ return ()=>{reset();handled=null;view.removeEventListener('pointerdown',otherDown);view.removeEventListener('pagehide',reset);root.removeEventListener('pointerdown',down);root.removeEventListener('click',click,true);view.removeEventListener('pointermove',move);view.removeEventListener('pointerup',up);view.removeEventListener('pointercancel',reset);view.removeEventListener('blur',reset);view.removeEventListener('orientationchange',reset);view.removeEventListener('keydown',key);};
 }
