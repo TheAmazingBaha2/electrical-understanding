@@ -1198,3 +1198,7 @@ body:has(#main>.desktop-bench) .topbar{padding:12px 18px;min-height:52px}body:ha
 
 /* Keep phone probe handles and contacts together in short landscape views. */
 @media(max-height:500px){.mobile-circuit-graphic{max-height:280px;}}
+
+/* Ordinary buttons allow scrolling/pinch but do not consume a quick follow-up tap as double-tap zoom. */
+.mobile-lab button{touch-action:manipulation;}
+.mobile-lab [data-mobile-probe]{touch-action:none;}

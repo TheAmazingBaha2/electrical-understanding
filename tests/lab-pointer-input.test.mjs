@@ -15,7 +15,7 @@ function harness(){
  const root=new EventTarget(),handle={closest:()=>handle};root.ownerDocument={defaultView:view};root.contains=h=>h===handle;let captured=false;handle.setPointerCapture=()=>{captured=true;};handle.hasPointerCapture=()=>captured;handle.releasePointerCapture=()=>{captured=false;};
  const commits=[],previews=[],statuses=[];
  const detach=attachLabPointerInput(root,{handleSelector:'x',targets:()=>[{id:'b',x:100,y:20,label:'B'}],commit:(h,t)=>commits.push(t.id),preview:d=>previews.push(d),status:m=>statuses.push(m)});
- const fire=(name,props={})=>{const event=new Event(name,{cancelable:true});Object.defineProperties(event,Object.fromEntries(Object.entries({pointerId:1,clientX:10,clientY:20,button:0,isPrimary:true,...props}).map(([k,value])=>[k,{value}])));Object.defineProperty(event,'target',{value:handle});root.dispatchEvent(event);return event;};
+ const fire=(name,props={})=>{const {target:destination=handle,...fields}=props;const event=new Event(name,{cancelable:true});Object.defineProperties(event,Object.fromEntries(Object.entries({pointerId:1,clientX:10,clientY:20,button:0,isPrimary:true,...fields}).map(([k,value])=>[k,{value}])));Object.defineProperty(event,'target',{value:destination});root.dispatchEvent(event);return event;};
  return {root,view,fire,commits,previews,statuses,detach,paint:()=>frame?.(),get captured(){return captured;}};
 }
 test('one successful drag commits once; its compatibility click is suppressed but a tap remains a tap',()=>{
@@ -36,4 +36,8 @@ test('tap-pair and atomic drag connection share topology and solved electrical s
  const item=flowFixture().bank.challenges.find(c=>c.widgetKey==='simple-dc-scene'),initial=flowWorking(item);
  const drag=flowAction(item,initial,'connect-path'),tap=flowAction(item,flowAction(item,initial,'terminal:V1.p'),'terminal:R1.a');
  assert.deepEqual(drag.connection,tap.connection);assert.deepEqual(dcSceneReading(drag),dcSceneReading(tap));assert.deepEqual(initial,flowWorking(item));
+});
+
+test('post-drag suppression affects only the dragged handle, never keyboard activation or unrelated controls',()=>{
+ const h=harness();h.fire('pointerdown');h.fire('pointermove',{clientX:100});h.fire('pointerup',{clientX:100});assert.equal(h.fire('click',{detail:1}).defaultPrevented,true);assert.equal(h.fire('click',{detail:0}).defaultPrevented,false);assert.equal(h.fire('click',{detail:1,target:{closest:()=>null}}).defaultPrevented,false);h.detach();
 });

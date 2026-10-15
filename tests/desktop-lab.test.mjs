@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {dividerCircuit,solveDC,measureVoltage} from '../circuit-model.js';
-import {circuitCanvasLayout,editCircuitCanvas,canvasHistoryEdit,canvasHistoryRestore,canvasTerminals,canvasProbeTerminal,snapCanvasTerminal} from '../circuit-canvas.js';
+import {canvasConnectionCommand,circuitCanvasLayout,editCircuitCanvas,canvasHistoryEdit,canvasHistoryRestore,canvasTerminals,canvasProbeTerminal,snapCanvasTerminal} from '../circuit-canvas.js';
 import {newProject,validateProject,inventoryForCircuit,addSnapshot,restoreSnapshot} from '../project-store.js';
 import {defaultDesktopLayout,fitDesktopWindow,resizeDesktopWindow,dockDesktopWindow,validateDesktopLayout} from '../desktop-windows.js';
 import {detectLabPlatform,selectedLabPlatform,renderLabPlatform} from '../lab-platform.js';
@@ -85,4 +85,8 @@ test('illustrative wire routes preserve exact topology, readings, physical prope
  const undo=canvasHistoryRestore(routed.circuit,routed.layout,routed.history,'undo');assert.deepEqual(undo.layout,wired.layout);assert.deepEqual(canvasHistoryRestore(undo.circuit,undo.layout,undo.history,'redo').layout,routed.layout);
  const p=newProject('route-project');p.circuit=routed.circuit;p.experimentState.canvasLayout=routed.layout;validateProject(p);const copy=JSON.parse(JSON.stringify(p));validateProject(copy);assert.deepEqual(copy.experimentState.canvasLayout,routed.layout);
  assert.throws(()=>editCircuitCanvas(before,wired.layout,{type:'route-wire',id:'absent',points:[]}));assert.throws(()=>editCircuitCanvas(before,wired.layout,{type:'route-wire',id:'route-test',points:[{x:Infinity,y:2}]}));assert.deepEqual(wired.circuit,before);
+});
+
+test('drag, tap and keyboard connection commands reject duplicates without reinterpreting saved graphs',()=>{
+ const c=dividerCircuit(),before=structuredClone(c),command=canvasConnectionCommand(c,'V1.p','R1.a','unique-wire');assert.deepEqual(command,{type:'connect',id:'unique-wire',from:'V1.p',to:'R1.a'});const next=editCircuitCanvas(c,circuitCanvasLayout(c),command);assert.equal(canvasConnectionCommand(next.circuit,'V1.p','R1.a','another-wire'),null);assert.equal(canvasConnectionCommand(next.circuit,'R1.a','V1.p','another-wire'),null);assert.throws(()=>canvasConnectionCommand(c,'V1.p','V1.p','x'));assert.throws(()=>canvasConnectionCommand(c,'missing','R1.a','x'));assert.deepEqual(c,before);
 });

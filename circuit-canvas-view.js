@@ -1,6 +1,6 @@
 import {resolvePointerTarget,pointerDraft} from './lab-pointer-input.js';
 import {probeContact} from './circuit-model.js';
-import {canvasSize,canvasTerminals,canvasProbeTerminal,circuitCanvasLayout} from './circuit-canvas.js';
+import {canvasConnectionCommand,canvasSize,canvasTerminals,canvasProbeTerminal,circuitCanvasLayout} from './circuit-canvas.js';
 import {resistorBody,sourceBody,partIcon,escapeGraphic as esc} from './lab-graphics.js';
 import {boardPoint} from './graphical-breadboard.js';
 import {breadboardHoles} from './breadboard-model.js';
@@ -85,7 +85,7 @@ export function attachCircuitCanvasPointers(root,getState,onAction,onFeedback){
    if(d.kind==='bend'){onAction({type:'route-wire',id:d.id,points:[{x:Math.max(0,Math.min(1400,endpoint.x)),y:Math.max(0,Math.min(900,endpoint.y))}]});return;}
    if(d.kind==='part'){onAction({type:'move',id:d.id,position:limit(endpoint)});return;}
    const target=snap(d.svg,state,d.kind,endpoint,p);if(!target)throw Error('No unique contact snapped; previous connection retained. Use named tap controls for dense contacts, or Detach to unplug.');
-   if(d.kind==='new-wire'){if(target.id===d.id)throw Error('Choose a different terminal');if(state.circuit.connections.some(w=>w.from===d.id&&w.to===target.id||w.to===d.id&&w.from===target.id))throw Error('Those terminals already have a wire');onAction({type:'connect',id:'W-'+crypto.randomUUID(),from:d.id,to:target.id});}
+   if(d.kind==='new-wire'){const command=canvasConnectionCommand(state.circuit,d.id,target.id,'W-'+crypto.randomUUID());if(!command)throw Error('Those terminals already have a wire');onAction(command);}
    else if(d.kind==='board-probe')onAction({type:'board-probe',probe:d.id,hole:target.id});
    else if(d.kind==='wire-end')onAction({type:'reroute-wire',id:d.id,[d.end]:target.id});
    else onAction({type:'probe',probe:d.id,terminal:target.id});

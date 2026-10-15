@@ -9,7 +9,7 @@ test('SI conversions preserve dimensions, case, centi/deci and all three documen
 });
 test('malformed, dimensional, overflow and ambiguous separator inputs fail explicitly without evaluating text',()=>{
  for(const text of ['1 KV','1,000 V','1_000 V','Infinity V','NaN A','1e999 W','1e-999 V','1 v','1 S/m','2 Ω/km','1;alert(1) V'])assert.throws(()=>parseElectricalQuantity(text));
- assert.throws(()=>parseElectricalQuantity('1 V','A'));assert.throws(()=>displayQuantity(Infinity,'A'));assert.throws(()=>quantityFromDisplay(Infinity,'V'));assert.equal(displayQuantity(-0,'V').displayedValue,0);
+ assert.throws(()=>parseElectricalQuantity('1 V','A'));assert.throws(()=>displayQuantity(Infinity,'A'));assert.throws(()=>quantityFromDisplay(Infinity,'V'));assert.equal(displayQuantity(-0,'V').displayedValue,0);assert.throws(()=>displayQuantity(Number.MIN_VALUE,'A','T'),/too small/);
 });
 test('positive resistance/conductance and uniform single-wire examples match the source-bound arithmetic',()=>{
  for(const [r,g] of [[50,.02],[1000,.001],[.05,20]]){close(resistanceConductance(r).conductanceS,g);close(conductanceResistance(g).resistanceOhm,r);close(r*g,1);}
@@ -22,5 +22,5 @@ test('matched supplied DC power examples normalize first and handle zero divisio
  close(dcSuppliedCalculation('current',{powerW:6,voltageV:12}).value,.5);close(dcSuppliedCalculation('voltage',{powerW:24,currentA:2}).value,12);
  assert.equal(dcSuppliedCalculation('power',{voltageV:0,currentA:0}).value,0);
  for(const [unknown,values] of [['current',{powerW:0,voltageV:0}],['voltage',{powerW:24,currentA:0}]])assert.equal(dcSuppliedCalculation(unknown,values).status,'undefined');
- assert.throws(()=>dcSuppliedCalculation('power',{voltageV:Infinity,currentA:.1}));assert.throws(()=>dcSuppliedCalculation('power',{voltageV:1,currentA:-1}));
+ assert.throws(()=>dcSuppliedCalculation('power',{voltageV:Infinity,currentA:.1}));assert.throws(()=>dcSuppliedCalculation('power',{voltageV:1,currentA:-1}));assert.throws(()=>dcSuppliedCalculation('power',{voltageV:Number.MIN_VALUE,currentA:Number.MIN_VALUE}),/precision/);
 });

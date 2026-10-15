@@ -8,7 +8,7 @@ export function pointerDraft(start,point,{threshold=7}={}){
  return {point:{x:point.x,y:point.y},dragged:Math.hypot(point.x-start.x,point.y-start.y)>=threshold};
 }
 export function attachLabPointerInput(root,{handleSelector,targets,commit,preview=()=>{},status=()=>{},threshold=7}={}){
- let active=null,frame=null,pending=null,suppressUntil=0;
+ let active=null,frame=null,pending=null,suppressUntil=0,suppressedHandle=null;
  const view=root.ownerDocument.defaultView;
  const position=e=>({x:e.clientX,y:e.clientY});
  function paint(){frame=null;if(!active||!pending)return;const hit=resolvePointerTarget(pending,targets(active.handle));preview({handle:active.handle,start:active.start,point:pending,...hit});}
@@ -16,7 +16,7 @@ export function attachLabPointerInput(root,{handleSelector,targets,commit,previe
  function finish(event,canceled=false){
   if(!active||event&&event.pointerId!==undefined&&event.pointerId!==active.pointerId)return;
   const previous=active;active=null;
-  if(previous.dragged)suppressUntil=Date.now()+500;
+  if(previous.dragged){suppressUntil=Date.now()+500;suppressedHandle=previous.handle;}
   const hit=!canceled&&event?resolvePointerTarget(position(event),targets(previous.handle)):null;
   // Release before a host redraw removes the captured node.
   if(previous.handle.hasPointerCapture?.(previous.pointerId))previous.handle.releasePointerCapture(previous.pointerId);
@@ -32,7 +32,7 @@ export function attachLabPointerInput(root,{handleSelector,targets,commit,previe
  }
  function move(e){if(!active||active.pointerId!==e.pointerId)return;const p=position(e);active.dragged ||= pointerDraft(active.start,p,{threshold}).dragged;if(!active.dragged)return;e.preventDefault();e.stopPropagation();pending=p;if(frame===null)frame=view.requestAnimationFrame(paint);}
  const up=e=>finish(e),cancel=()=>finish(null,true),lost=e=>{if(active?.pointerId===e.pointerId)finish(null,true);};
- const click=e=>{if(Date.now()<suppressUntil){e.preventDefault();e.stopImmediatePropagation();}};
+ const click=e=>{if(e.detail!==0&&Date.now()<suppressUntil&&e.target.closest(handleSelector)===suppressedHandle){e.preventDefault();e.stopImmediatePropagation();}};
  const key=e=>{if(e.key==='Escape'&&active){e.preventDefault();cancel();}};
  root.addEventListener('pointerdown',down);root.addEventListener('pointermove',move);root.addEventListener('pointerup',up);root.addEventListener('pointercancel',cancel);root.addEventListener('lostpointercapture',lost);root.addEventListener('click',click,true);root.addEventListener('keydown',key);
  for(const event of ['blur','orientationchange','pagehide'])view.addEventListener(event,cancel);

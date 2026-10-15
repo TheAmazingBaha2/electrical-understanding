@@ -49,11 +49,12 @@ jobs:
           sleep 2
       - name: Run real desktop and mobile smoke tests
         run: |
-          result=0
-          for suite in sidebar-browser dashboard-browser source-browser workshops-browser browser-smoke persistence-browser v3-browser lab-guidance-browser breadboard-browser shared-meter-browser scope-browser graphical-lab-browser project-manager-browser math-browser adaptive-browser desktop-lab-browser desktop-workspace-browser contact-browser mobile-lab-browser dual-lab-browser modular-browser guided-private-browser foundations-browser foundations-continuation-browser foundations-materials-browser foundations-flow-browser study-additions-browser; do
-            timeout 180s node "tests/$suite.mjs" || result=1
+          # Exercise the changed pointer/route contracts first. A failed input
+          # check should return diagnostics before spending minutes on other suites.
+          # A green job still runs every one of the same 27 browser suites.
+          for suite in mobile-lab-browser contact-browser study-additions-browser sidebar-browser dashboard-browser source-browser workshops-browser browser-smoke persistence-browser v3-browser lab-guidance-browser breadboard-browser shared-meter-browser scope-browser graphical-lab-browser project-manager-browser math-browser adaptive-browser desktop-lab-browser desktop-workspace-browser dual-lab-browser modular-browser guided-private-browser foundations-browser foundations-continuation-browser foundations-materials-browser foundations-flow-browser; do
+            timeout 180s node "tests/$suite.mjs" || exit "$?"
           done
-          exit "$result"
       - name: Save visual QA screenshots
         uses: actions/upload-artifact@v4
         if: always()

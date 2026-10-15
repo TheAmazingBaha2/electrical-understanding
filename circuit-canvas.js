@@ -32,6 +32,13 @@ export function emptyCanvasCircuit(circuit){
  next.nodes=next.nodes.filter(n=>n.id===next.groundNode).map(n=>({...n,used:true}));
  next.instruments=next.instruments.map(i=>{const m={...i,redNode:next.groundNode,blackNode:next.groundNode,redConnected:false,blackConnected:false};delete m.redTerminalId;delete m.blackTerminalId;return m;});validateCircuit(next);return next;
 }
+// Shared by drag, tap-pair and keyboard. Existing saved parallel wires remain valid.
+export function canvasConnectionCommand(circuit,from,to,id){
+ const terminals=new Set(circuit.components.flatMap(p=>p.terminals.map(t=>t.id)));
+ if(from===to||!terminals.has(from)||!terminals.has(to))throw Error('Choose two different actual terminals');
+ if(circuit.connections.some(w=>w.from===from&&w.to===to||w.from===to&&w.to===from))return null;
+ return {type:'connect',id,from,to};
+}
 export function editCircuitCanvas(circuit,layout,action){
  validateCircuit(circuit);validateCanvasLayout(layout,circuit);assertSerializable(action);
  const c=clone(circuit),l=clone(layout),terminals=canvasTerminals(c,l);

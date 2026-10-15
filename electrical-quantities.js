@@ -8,8 +8,9 @@ const units=new Set(['V','A','Ω','S','W']);
 const finite=value=>{if(typeof value!=='number'||!Number.isFinite(value))throw Error('Use a finite electrical quantity');return Object.is(value,-0)?0:value;};
 function scale(prefix){const symbol=['u','μ'].includes(prefix)?'µ':prefix,p=electricalPrefixes.find(p=>p.symbol===symbol);if(!p)throw Error('Unknown case-sensitive prefix; use k, and distinguish m from M');return {symbol,factor:10**p.exponent};}
 export function displayQuantity(baseValue,unit,prefix=''){
- if(!units.has(unit))throw Error('Unsupported base unit');const {symbol,factor}=scale(prefix);
- return {baseValue:finite(baseValue),unit,prefix:symbol,displayedValue:finite(baseValue/factor),label:symbol+unit};
+ if(!units.has(unit))throw Error('Unsupported base unit');const {symbol,factor}=scale(prefix),base=finite(baseValue),displayedValue=finite(base/factor);
+ if(base!==0&&displayedValue===0)throw Error('Quantity is too small for this display prefix');
+ return {baseValue:base,unit,prefix:symbol,displayedValue,label:symbol+unit};
 }
 export function quantityFromDisplay(value,unit,prefix=''){
  if(!units.has(unit))throw Error('Unsupported base unit');const {factor}=scale(prefix),base=finite(finite(value)*factor);
@@ -43,5 +44,6 @@ export function dcSuppliedCalculation(unknown,values){
  if(!contract)throw Error('Choose power, current or voltage');
  const [a,b]=contract.inputs.map(k=>finite(values[k]));if(a<0||b<0)throw Error('This supplied-data exercise uses nonnegative magnitudes');
  if(unknown!=='power'&&b===0)return {status:'undefined',value:null,unit:contract.unit,reason:'Cannot determine this unknown by dividing by zero.'};
- return {status:'valid',value:finite(unknown==='power'?a*b:a/b),unit:contract.unit};
+ const value=finite(unknown==='power'?a*b:a/b);if(a!==0&&b!==0&&value===0)throw Error('Result is below the supported numeric precision');
+ return {status:'valid',value,unit:contract.unit};
 }
