@@ -1,0 +1,38 @@
+name: Verify Suite protected gateway
+
+on:
+  push:
+    branches: [suite/r3-2-integration]
+  pull_request:
+    paths:
+      - hosts/suite-gateway/**
+      - tests/cloudflare-branch-guard.test.mjs
+      - scripts/build.mjs
+      - .github/workflows/suite-gateway-checks.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: suite-gateway-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gateway:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install pinned gateway dependency
+        run: npm ci --ignore-scripts --prefix hosts/suite-gateway
+      - name: Verify cryptographic access and exact asset policy
+        run: node --test hosts/suite-gateway/test/gateway.test.mjs hosts/suite-gateway/test/assets.test.mjs
+      - name: Verify automatic Cloudflare builds refuse the Suite branch
+        run: node --test tests/cloudflare-branch-guard.test.mjs
+      # This workflow checks the gateway foundation only. It neither builds nor
+      # deploys the Suite app and cannot satisfy its complete release gate.
